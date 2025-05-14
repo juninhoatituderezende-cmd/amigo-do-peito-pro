@@ -1,5 +1,4 @@
 
-import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
@@ -8,27 +7,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 const Index = () => {
-  useEffect(() => {
-    // Animation on scroll
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('animated', 'opacity-100');
-        }
-      });
-    }, { threshold: 0.1 });
-
-    document.querySelectorAll('.animate-on-scroll').forEach(element => {
-      observer.observe(element);
-    });
-
-    return () => {
-      document.querySelectorAll('.animate-on-scroll').forEach(element => {
-        observer.unobserve(element);
-      });
-    };
-  }, []);
-
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -37,7 +15,7 @@ const Index = () => {
       <section className="py-16 md:py-24 bg-gradient-to-br from-ap-light-orange to-white">
         <div className="ap-container">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div className="animate-on-scroll">
+            <div>
               <h1 className="text-4xl md:text-5xl font-bold mb-6 text-gray-900">
                 Amigo do Peito
               </h1>
@@ -50,7 +28,7 @@ const Index = () => {
                 </Button>
               </Link>
             </div>
-            <div className="animate-on-scroll flex justify-center">
+            <div className="flex justify-center">
               <div className="relative">
                 <div className="absolute -inset-1 rounded-lg bg-gradient-to-r from-ap-orange to-ap-light-blue blur-md"></div>
                 <div className="relative bg-white p-6 rounded-lg shadow-xl">
@@ -73,12 +51,12 @@ const Index = () => {
       {/* Embaixadores Section */}
       <section className="section bg-white">
         <div className="ap-container">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 animate-on-scroll">
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
             Conheça Nossos Embaixadores
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-            <div className="animate-on-scroll">
-              <Card className="overflow-hidden transition-transform hover:scale-105">
+            <div>
+              <Card className="overflow-hidden transition-all duration-300 hover:shadow-lg">
                 <CardContent className="p-0">
                   <img 
                     src="/lovable-uploads/910e3e91-4363-4ada-849c-1b2d717d404a.png" 
@@ -94,8 +72,8 @@ const Index = () => {
               </Card>
             </div>
             
-            <div className="animate-on-scroll">
-              <Card className="overflow-hidden transition-transform hover:scale-105">
+            <div>
+              <Card className="overflow-hidden transition-all duration-300 hover:shadow-lg">
                 <CardContent className="p-0">
                   <img 
                     src="/lovable-uploads/91e2caa6-e4d2-4fbd-9cb8-646d49d0827f.png" 
@@ -117,7 +95,7 @@ const Index = () => {
       {/* How It Works Section */}
       <section className="section bg-ap-light-orange">
         <div className="ap-container">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 animate-on-scroll">
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
             Como Funciona
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 text-center">
@@ -170,8 +148,7 @@ const Index = () => {
             ].map((step, index) => (
               <div 
                 key={index}
-                className="bg-white p-6 rounded-lg shadow-md flex flex-col items-center animate-on-scroll"
-                style={{ animationDelay: `${index * 150}ms` }}
+                className="bg-white p-6 rounded-lg shadow-md flex flex-col items-center transition-all duration-300 hover:shadow-lg"
               >
                 <div className="mb-4">
                   {step.icon}
@@ -195,7 +172,7 @@ const Index = () => {
       {/* Call to Action */}
       <section className="section bg-gradient-to-r from-ap-orange to-ap-light-blue text-white">
         <div className="ap-container">
-          <div className="text-center max-w-3xl mx-auto animate-on-scroll">
+          <div className="text-center max-w-3xl mx-auto">
             <h2 className="text-3xl md:text-4xl font-bold mb-6">Pronto para crescer com a Amigo do Peito?</h2>
             <p className="text-xl mb-8">
               Cadastre-se agora como profissional e comece a expandir seu negócio através do nosso sistema inovador.
@@ -212,10 +189,10 @@ const Index = () => {
       {/* FAQ Section */}
       <section className="section bg-white">
         <div className="ap-container">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 animate-on-scroll">
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
             Perguntas Frequentes
           </h2>
-          <div className="max-w-3xl mx-auto animate-on-scroll">
+          <div className="max-w-3xl mx-auto">
             <Accordion type="single" collapsible className="w-full">
               {[
                 {
