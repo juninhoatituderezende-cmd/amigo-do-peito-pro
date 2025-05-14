@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,7 +62,11 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+                // Amigo do Peito custom colors
+                'ap-light-orange': '#FDE1D3',
+                'ap-orange': '#F97316',
+                'ap-light-blue': '#33C3F0',
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -84,12 +89,25 @@ export default {
 					to: {
 						height: '0'
 					}
-				}
+				},
+                'fade-in': {
+                    from: { opacity: '0' },
+                    to: { opacity: '1' },
+                },
+                'slide-in': {
+                    from: { transform: 'translateY(20px)', opacity: '0' },
+                    to: { transform: 'translateY(0)', opacity: '1' },
+                }
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
-			}
+				'accordion-up': 'accordion-up 0.2s ease-out',
+                'fade-in': 'fade-in 0.5s ease-in-out',
+                'slide-in': 'slide-in 0.5s ease-out'
+			},
+            fontFamily: {
+                'inter': ['Inter', 'sans-serif'],
+            }
 		}
 	},
 	plugins: [require("tailwindcss-animate")],
