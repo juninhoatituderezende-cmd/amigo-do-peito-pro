@@ -6,19 +6,35 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "../contexts/AuthContext";
 
 const InfluencerLogin = () => {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const { login } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulação de login - no futuro será integrado com Supabase
-    console.log("Login de influenciador:", formData);
-    navigate("/influenciador/dashboard");
+    setLoading(true);
+    
+    try {
+      await login(formData.email, formData.password, null);
+      navigate("/influenciador/dashboard");
+    } catch (error: any) {
+      toast({
+        title: "Erro no login",
+        description: error.message || "Credenciais inválidas",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -68,8 +84,12 @@ const InfluencerLogin = () => {
                     />
                   </div>
 
-                  <Button type="submit" className="w-full bg-ap-light-blue hover:bg-ap-light-blue/90">
-                    Entrar
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-ap-light-blue hover:bg-ap-light-blue/90"
+                    disabled={loading}
+                  >
+                    {loading ? "Entrando..." : "Entrar"}
                   </Button>
                 </form>
 

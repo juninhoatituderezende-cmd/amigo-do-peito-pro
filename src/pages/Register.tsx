@@ -15,10 +15,12 @@ import { useAuth } from "@/contexts/AuthContext";
 const Register = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, login } = useAuth();
+  const { register, user } = useAuth();
 
   const [formData, setFormData] = useState({
     fullName: "",
+    email: "",
+    password: "",
     category: "",
     location: "",
     phone: "",
@@ -56,7 +58,7 @@ const Register = () => {
   const handleNextStep = () => {
     // Validate current step
     if (step === 1) {
-      if (!formData.fullName || !formData.category || !formData.location) {
+      if (!formData.fullName || !formData.email || !formData.password || !formData.category || !formData.location) {
         toast({
           title: "Campos obrigatórios",
           description: "Por favor, preencha todos os campos obrigatórios.",
@@ -108,45 +110,33 @@ const Register = () => {
     setLoading(true);
 
     try {
-      // In a real app, this would be an API call to register the professional
-      // For this demo, we'll simulate a successful registration
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Save professional data to localStorage for admin approval
-      const professionalData = {
-        id: `pro-${Date.now()}`,
-        name: formData.fullName,
+      const userData = {
+        full_name: formData.fullName,
+        email: formData.email,
+        phone: formData.phone,
         category: formData.category,
         location: formData.location,
-        phone: formData.phone,
+        cep: "", // Not collected in this form
         instagram: formData.instagram,
-        pixKey: formData.pixKey,
-        status: "pending",
-        createdAt: new Date().toISOString(),
-        totalEarnings: 0,
-        servicesCompleted: 0,
-        idDocument: formData.idDocument?.name || "documento.pdf",
-        presentationVideo: formData.presentationVideo?.name || null
+        cpf: "", // Not collected in this form
+        description: "",
+        experience: "",
+        approved: false
       };
+
+      await register(formData.email, formData.password, userData, "professional");
       
-      // Get existing professionals from localStorage
-      const existingProfessionals = JSON.parse(localStorage.getItem("pendingProfessionals") || "[]");
-      existingProfessionals.push(professionalData);
-      localStorage.setItem("pendingProfessionals", JSON.stringify(existingProfessionals));
-      
-      // Clear any existing user session before logging in
-      localStorage.removeItem("user");
-      
-      // Log in the user as professional
-      await login(formData.fullName, "password123", "professional");
-      
-      // Redirect to confirmation page
+      toast({
+        title: "Cadastro realizado com sucesso!",
+        description: "Aguarde a aprovação do seu cadastro.",
+      });
+
       navigate("/confirmacao");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Registration error:", error);
       toast({
         title: "Erro no cadastro",
-        description: "Ocorreu um erro ao processar seu cadastro. Por favor, tente novamente.",
+        description: error.message || "Erro ao realizar cadastro. Tente novamente.",
         variant: "destructive",
       });
     } finally {
@@ -179,6 +169,32 @@ const Register = () => {
                 value={formData.fullName}
                 onChange={handleChange}
                 placeholder="Seu nome completo"
+                required
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="email">Email *</Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="seu@email.com"
+                required
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="password">Senha *</Label>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="Sua senha"
                 required
               />
             </div>
