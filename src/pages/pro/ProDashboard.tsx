@@ -17,6 +17,8 @@ import { supabase } from "../../lib/supabase";
 import { StripeOnboarding } from "@/components/stripe/StripeOnboarding";
 import { useStripeAccount } from "@/hooks/useStripeAccount";
 import { CheckCircle, CreditCard } from "lucide-react";
+import { ProductForm } from "@/components/marketplace/ProductForm";
+import { ProProducts } from "@/components/pro/ProProducts";
 
 interface Service {
   id: string;
@@ -279,8 +281,9 @@ const ProDashboard = () => {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="overview">Visão Geral</TabsTrigger>
+              <TabsTrigger value="products">Produtos</TabsTrigger>
               <TabsTrigger value="services">Serviços</TabsTrigger>
               <TabsTrigger value="transactions">Financeiro</TabsTrigger>
               <TabsTrigger value="payments">Pagamentos</TabsTrigger>
@@ -415,6 +418,12 @@ const ProDashboard = () => {
                   </CardContent>
                 </Card>
               )}
+            </TabsContent>
+
+            {/* PRODUTOS */}
+            <TabsContent value="products" className="space-y-6">
+              <ProductForm />
+              <ProProducts />
             </TabsContent>
 
             {/* SERVIÇOS */}

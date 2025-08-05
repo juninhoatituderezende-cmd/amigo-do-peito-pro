@@ -4,9 +4,14 @@ import Footer from "../../components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatsCards } from "@/components/influencer/StatsCards";
 import { ReferralLinks } from "@/components/influencer/ReferralLinks";
+import { PromoMaterials } from "@/components/influencer/PromoMaterials";
+import { Gamification } from "@/components/influencer/Gamification";
 import { CommissionHistory } from "@/components/influencer/CommissionHistory";
+import { NotificationCenter } from "@/components/shared/NotificationCenter";
+import { InfluencerProducts } from "@/components/influencer/InfluencerProducts";
 import { User, Instagram, CheckCircle, AlertCircle, Wallet, Megaphone } from "lucide-react";
 
 const InfluencerDashboard = () => {
@@ -61,61 +66,98 @@ const InfluencerDashboard = () => {
           </div>
         </div>
 
-        {/* Cards de estatísticas */}
-        <StatsCards 
-          totalEarnings={influencerData.totalEarnings}
-          pendingEarnings={influencerData.pendingEarnings}
-          totalReferrals={influencerData.totalReferrals}
-          conversionRate={influencerData.conversionRate}
-          clicksThisMonth={influencerData.clicksThisMonth}
-        />
+        <Tabs defaultValue="overview" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-7">
+            <TabsTrigger value="overview">Visão Geral</TabsTrigger>
+            <TabsTrigger value="products">Produtos</TabsTrigger>
+            <TabsTrigger value="tools">Ferramentas</TabsTrigger>
+            <TabsTrigger value="referrals">Indicações</TabsTrigger>
+            <TabsTrigger value="gamification">Gamificação</TabsTrigger>
+            <TabsTrigger value="commissions">Comissões</TabsTrigger>
+            <TabsTrigger value="notifications">Notificações</TabsTrigger>
+          </TabsList>
 
-        {/* Ações rápidas */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Wallet className="h-5 w-5" />
-                Saque via PIX
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground mb-4">
-                Você tem R$ {influencerData.totalEarnings.toLocaleString()} disponível para saque.
-              </p>
-              <Button className="w-full bg-ap-orange hover:bg-ap-orange/90">
-                Solicitar Saque
-              </Button>
-            </CardContent>
-          </Card>
+          <TabsContent value="overview" className="space-y-4">
+            <StatsCards 
+              totalEarnings={influencerData.totalEarnings}
+              pendingEarnings={influencerData.pendingEarnings}
+              totalReferrals={influencerData.totalReferrals}
+              conversionRate={influencerData.conversionRate}
+              clicksThisMonth={influencerData.clicksThisMonth}
+            />
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Megaphone className="h-5 w-5" />
-                Material Promocional
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground mb-4">
-                Acesse banners, textos prontos e templates para suas redes sociais.
-              </p>
-              <Button 
-                variant="outline" 
-                className="w-full"
-                onClick={() => window.location.href = "/influenciador/ferramentas"}
-              >
-                Ver Materiais
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+            {/* Ações rápidas */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Wallet className="h-5 w-5" />
+                    Saque via PIX
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground mb-4">
+                    Você tem R$ {influencerData.totalEarnings.toLocaleString()} disponível para saque.
+                  </p>
+                  <Button className="w-full bg-ap-orange hover:bg-ap-orange/90">
+                    Solicitar Saque
+                  </Button>
+                </CardContent>
+              </Card>
 
-        {/* Links de indicação e histórico */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <ReferralLinks />
-          <CommissionHistory />
-        </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Megaphone className="h-5 w-5" />
+                    Material Promocional
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground mb-4">
+                    Acesse banners, textos prontos e templates para suas redes sociais.
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => window.location.href = "/influenciador/ferramentas"}
+                  >
+                    Ver Materiais
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Links de indicação e histórico */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <ReferralLinks />
+              <CommissionHistory />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="products" className="space-y-4">
+            <InfluencerProducts />
+          </TabsContent>
+
+          <TabsContent value="tools" className="space-y-4">
+            <PromoMaterials />
+          </TabsContent>
+
+          <TabsContent value="referrals" className="space-y-4">
+            <ReferralLinks />
+          </TabsContent>
+
+          <TabsContent value="gamification" className="space-y-4">
+            <Gamification />
+          </TabsContent>
+
+          <TabsContent value="commissions" className="space-y-4">
+            <CommissionHistory />
+          </TabsContent>
+
+          <TabsContent value="notifications" className="space-y-4">
+            <NotificationCenter />
+          </TabsContent>
+        </Tabs>
       </main>
 
       <Footer />

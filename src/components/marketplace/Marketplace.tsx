@@ -1,373 +1,341 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { 
-  ShoppingCart, 
-  Search, 
-  Star, 
-  Filter,
-  Shirt,
-  Crown,
-  BookOpen,
-  Gift,
-  Smartphone,
-  Headphones
+  Package, 
+  DollarSign, 
+  Search,
+  ShoppingCart,
+  Star,
+  Grid3X3,
+  List,
+  Eye,
+  User
 } from "lucide-react";
-import { useCredits } from "@/hooks/useCredits";
 import { useToast } from "@/hooks/use-toast";
-import { formatCurrency } from "@/lib/utils";
+import { supabase } from "@/lib/supabase";
 
-interface MarketplaceItem {
+interface Product {
   id: string;
-  name: string;
+  title: string;
   description: string;
-  price: number; // Preço em créditos
-  category: 'clothing' | 'digital' | 'courses' | 'premium' | 'accessories';
-  image: string;
-  rating: number;
-  reviews: number;
-  inStock: boolean;
-  featured: boolean;
-  tags: string[];
+  category: string;
+  full_price: number;
+  down_payment: number;
+  image_url: string;
+  professional_id: string;
+  professional_name?: string;
+  professional_avatar?: string;
+  is_active: boolean;
+  created_at: string;
+  total_sales?: number;
+  rating?: number;
 }
 
-const mockMarketplaceItems: MarketplaceItem[] = [
-  {
-    id: "1",
-    name: "Camiseta Amigo do Peito - Edição Limitada",
-    description: "Camiseta 100% algodão com estampa exclusiva do Amigo do Peito. Design premium e confortável.",
-    price: 45.00,
-    category: "clothing",
-    image: "/placeholder.svg?height=200&width=200",
-    rating: 4.8,
-    reviews: 124,
-    inStock: true,
-    featured: true,
-    tags: ["camiseta", "exclusivo", "algodão"]
-  },
-  {
-    id: "2",
-    name: "Curso: Como Formar Grupos Rapidamente",
-    description: "Aprenda as melhores estratégias para formar seus grupos em até 15 dias. Inclui templates e scripts.",
-    price: 97.00,
-    category: "courses",
-    image: "/placeholder.svg?height=200&width=200",
-    rating: 4.9,
-    reviews: 89,
-    inStock: true,
-    featured: true,
-    tags: ["curso", "estratégia", "grupos"]
-  },
-  {
-    id: "3",
-    name: "Boné Amigo do Peito",
-    description: "Boné aba reta com bordado do logo. Perfeito para usar no dia a dia e divulgar a marca.",
-    price: 35.00,
-    category: "clothing",
-    image: "/placeholder.svg?height=200&width=200",
-    rating: 4.6,
-    reviews: 67,
-    inStock: true,
-    featured: false,
-    tags: ["boné", "bordado", "logo"]
-  },
-  {
-    id: "4",
-    name: "Pack Premium: Kit Influenciador",
-    description: "Acesso exclusivo a materiais premium, scripts, videos e suporte direto da equipe.",
-    price: 150.00,
-    category: "premium",
-    image: "/placeholder.svg?height=200&width=200",
-    rating: 5.0,
-    reviews: 43,
-    inStock: true,
-    featured: true,
-    tags: ["premium", "influenciador", "exclusivo"]
-  },
-  {
-    id: "5",
-    name: "E-book: Guia Completo de Indicações",
-    description: "Estratégias comprovadas para aumentar suas indicações. 50 páginas de conteúdo exclusivo.",
-    price: 25.00,
-    category: "digital",
-    image: "/placeholder.svg?height=200&width=200",
-    rating: 4.7,
-    reviews: 156,
-    inStock: true,
-    featured: false,
-    tags: ["ebook", "indicações", "digital"]
-  },
-  {
-    id: "6",
-    name: "Fone de Ouvido Bluetooth Premium",
-    description: "Fone de ouvido com cancelamento de ruído e qualidade premium. Ideal para chamadas e cursos.",
-    price: 120.00,
-    category: "accessories",
-    image: "/placeholder.svg?height=200&width=200",
-    rating: 4.5,
-    reviews: 78,
-    inStock: true,
-    featured: false,
-    tags: ["fone", "bluetooth", "premium"]
-  }
+const CATEGORIES = [
+  { value: "all", label: "Todos" },
+  { value: "servicos-profissionais", label: "Serviços Profissionais" },
+  { value: "produtos-digitais", label: "Produtos Digitais" },
+  { value: "cursos-online", label: "Cursos Online" },
+  { value: "consultoria", label: "Consultoria" },
+  { value: "eventos", label: "Eventos" },
+  { value: "outros", label: "Outros" }
 ];
 
 export const Marketplace = () => {
-  const [items] = useState<MarketplaceItem[]>(mockMarketplaceItems);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [cart, setCart] = useState<string[]>([]);
-  const { balance, useCredits: useUserCredits } = useCredits();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [sortBy, setSortBy] = useState<"newest" | "popular" | "price_low" | "price_high">("newest");
   const { toast } = useToast();
 
-  const categories = [
-    { value: "all", label: "Todos", icon: ShoppingCart },
-    { value: "clothing", label: "Roupas", icon: Shirt },
-    { value: "digital", label: "Digital", icon: Smartphone },
-    { value: "courses", label: "Cursos", icon: BookOpen },
-    { value: "premium", label: "Premium", icon: Crown },
-    { value: "accessories", label: "Acessórios", icon: Headphones }
-  ];
+  useEffect(() => {
+    loadProducts();
+  }, []);
 
-  const filteredItems = items.filter(item => {
-    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesCategory = selectedCategory === "all" || item.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const loadProducts = async () => {
+    try {
+      const { data: productsData, error } = await supabase
+        .from('products')
+        .select(`
+          *,
+          profiles(full_name, avatar_url),
+          sales!left(id)
+        `)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
 
-  const featuredItems = items.filter(item => item.featured);
+      if (error) throw error;
 
-  const handlePurchase = async (item: MarketplaceItem) => {
-    if (!balance) {
+      const enrichedProducts = (productsData || []).map(product => {
+        const salesCount = product.sales?.length || 0;
+        const rating = 4.2 + Math.random() * 0.8; // Mock rating for now
+
+        return {
+          ...product,
+          professional_name: product.profiles?.full_name || 'Profissional',
+          professional_avatar: product.profiles?.avatar_url,
+          total_sales: salesCount,
+          rating: Math.round(rating * 10) / 10
+        };
+      });
+
+      setProducts(enrichedProducts);
+    } catch (error: any) {
       toast({
-        title: "Erro",
-        description: "Não foi possível carregar seu saldo.",
+        title: "Erro ao carregar produtos",
+        description: error.message,
         variant: "destructive"
       });
-      return;
+    } finally {
+      setLoading(false);
     }
+  };
 
-    if (balance.availableCredits < item.price) {
-      toast({
-        title: "Saldo insuficiente",
-        description: `Você precisa de ${formatCurrency(item.price)} em créditos para comprar este item.`,
-        variant: "destructive"
-      });
-      return;
-    }
+  const handlePurchase = (product: Product) => {
+    // For now, just show a toast - later we'll implement Stripe checkout
+    toast({
+      title: "Funcionalidade em desenvolvimento",
+      description: `Compra do produto "${product.title}" será implementada em breve.`,
+    });
+  };
 
-    const success = await useUserCredits(
-      item.price,
-      'marketplace_purchase',
-      `Compra: ${item.name}`,
-      item.id
+  const filteredAndSortedProducts = products
+    .filter(product => {
+      const matchesSearch = product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           product.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           (product.professional_name || '').toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case "popular":
+          return (b.total_sales || 0) - (a.total_sales || 0);
+        case "price_low":
+          return a.down_payment - b.down_payment;
+        case "price_high":
+          return b.down_payment - a.down_payment;
+        default: // newest
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+    });
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Card key={i}>
+              <CardContent className="p-6">
+                <div className="animate-pulse space-y-4">
+                  <div className="h-32 bg-muted rounded"></div>
+                  <div className="h-4 bg-muted rounded w-2/3"></div>
+                  <div className="h-3 bg-muted rounded w-1/2"></div>
+                  <div className="h-8 bg-muted rounded"></div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
     );
-
-    if (success) {
-      toast({
-        title: "Compra realizada!",
-        description: `${item.name} foi adicionado aos seus itens.`,
-      });
-    }
-  };
-
-  const getCategoryIcon = (category: string) => {
-    const cat = categories.find(c => c.value === category);
-    if (!cat) return ShoppingCart;
-    return cat.icon;
-  };
+  }
 
   return (
     <div className="space-y-6">
-      {/* Saldo Disponível */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground">Saldo disponível</p>
-              <p className="text-2xl font-bold text-green-600">
-                {formatCurrency(balance?.availableCredits || 0)}
-              </p>
-            </div>
-            <Gift className="h-8 w-8 text-primary" />
-          </div>
-        </CardContent>
-      </Card>
+      {/* Header */}
+      <div className="text-center">
+        <h1 className="text-3xl font-bold mb-2">Marketplace</h1>
+        <p className="text-muted-foreground">
+          Descubra produtos e serviços incríveis de profissionais qualificados
+        </p>
+      </div>
 
-      {/* Filtros e Busca */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar produtos..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <div className="flex gap-2 overflow-x-auto">
-              {categories.map((category) => {
-                const IconComponent = category.icon;
-                return (
-                  <Button
-                    key={category.value}
-                    variant={selectedCategory === category.value ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setSelectedCategory(category.value)}
-                    className="whitespace-nowrap"
-                  >
-                    <IconComponent className="h-4 w-4 mr-2" />
-                    {category.label}
-                  </Button>
-                );
-              })}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Produtos em Destaque */}
-      {selectedCategory === "all" && featuredItems.length > 0 && (
-        <div>
-          <h2 className="text-xl font-semibold mb-4">🔥 Produtos em Destaque</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {featuredItems.map((item) => (
-              <Card key={item.id} className="border-2 border-orange-200">
-                <CardContent className="p-4">
-                  <div className="relative mb-4">
-                    <img
-                      src={item.image}
-                      alt={item.name}
-                      className="w-full h-40 object-cover rounded-lg"
-                    />
-                    <Badge className="absolute top-2 right-2 bg-orange-500">
-                      Destaque
-                    </Badge>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <h3 className="font-semibold line-clamp-2">{item.name}</h3>
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {item.description}
-                    </p>
-                    
-                    <div className="flex items-center gap-1">
-                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      <span className="text-sm font-medium">{item.rating}</span>
-                      <span className="text-sm text-muted-foreground">
-                        ({item.reviews} avaliações)
-                      </span>
-                    </div>
-                    
-                    <div className="flex items-center justify-between pt-2">
-                      <div className="text-xl font-bold text-primary">
-                        {formatCurrency(item.price)}
-                      </div>
-                      <Button
-                        onClick={() => handlePurchase(item)}
-                        disabled={!item.inStock || (balance?.availableCredits || 0) < item.price}
-                      >
-                        Comprar
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+      {/* Search and Filters */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar produtos, serviços ou profissionais..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
         </div>
-      )}
-
-      {/* Todos os Produtos */}
-      <div>
-        <h2 className="text-xl font-semibold mb-4">
-          {selectedCategory === "all" ? "Todos os Produtos" : categories.find(c => c.value === selectedCategory)?.label}
-          <span className="text-sm font-normal text-muted-foreground ml-2">
-            ({filteredItems.length} produtos)
-          </span>
-        </h2>
         
-        {filteredItems.length === 0 ? (
-          <Card>
-            <CardContent className="p-8 text-center">
-              <ShoppingCart className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p className="text-muted-foreground">
-                Nenhum produto encontrado para sua busca.
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {filteredItems.map((item) => {
-              const IconComponent = getCategoryIcon(item.category);
-              
-              return (
-                <Card key={item.id}>
-                  <CardContent className="p-4">
-                    <div className="relative mb-4">
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="w-full h-40 object-cover rounded-lg"
-                      />
-                      <div className="absolute top-2 left-2">
-                        <IconComponent className="h-5 w-5 text-white bg-black bg-opacity-50 rounded p-1" />
+        <select
+          value={selectedCategory}
+          onChange={(e) => setSelectedCategory(e.target.value)}
+          className="px-3 py-2 border rounded-md text-sm min-w-[180px]"
+        >
+          {CATEGORIES.map((category) => (
+            <option key={category.value} value={category.value}>
+              {category.label}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value as any)}
+          className="px-3 py-2 border rounded-md text-sm min-w-[140px]"
+        >
+          <option value="newest">Mais recentes</option>
+          <option value="popular">Mais populares</option>
+          <option value="price_low">Menor preço</option>
+          <option value="price_high">Maior preço</option>
+        </select>
+
+        <div className="flex gap-2">
+          <Button
+            variant={viewMode === "grid" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setViewMode("grid")}
+          >
+            <Grid3X3 className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={viewMode === "list" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setViewMode("list")}
+          >
+            <List className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Results Count */}
+      <div className="text-sm text-muted-foreground">
+        {filteredAndSortedProducts.length} produto{filteredAndSortedProducts.length !== 1 ? 's' : ''} encontrado{filteredAndSortedProducts.length !== 1 ? 's' : ''}
+      </div>
+
+      {/* Products Grid/List */}
+      {filteredAndSortedProducts.length === 0 ? (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+            <h3 className="text-lg font-semibold mb-2">Nenhum produto encontrado</h3>
+            <p className="text-muted-foreground">
+              {searchQuery || selectedCategory !== "all" 
+                ? "Tente ajustar seus filtros de busca" 
+                : "Ainda não há produtos disponíveis no marketplace"
+              }
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className={viewMode === "grid" 
+          ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" 
+          : "space-y-4"
+        }>
+          {filteredAndSortedProducts.map((product) => (
+            <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+              <div className={viewMode === "list" ? "flex" : ""}>
+                {/* Product Image */}
+                <div className={`bg-muted flex items-center justify-center overflow-hidden ${
+                  viewMode === "list" ? "w-48 h-32" : "h-48"
+                }`}>
+                  {product.image_url ? (
+                    <img
+                      src={product.image_url}
+                      alt={product.title}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <Package className="h-12 w-12 text-muted-foreground" />
+                  )}
+                </div>
+
+                {/* Product Content */}
+                <div className="flex-1">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <CardTitle className="text-lg line-clamp-2">{product.title}</CardTitle>
+                        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                          {product.description}
+                        </p>
                       </div>
-                      {!item.inStock && (
-                        <div className="absolute inset-0 bg-black bg-opacity-50 rounded-lg flex items-center justify-center">
-                          <span className="text-white font-semibold">Esgotado</span>
-                        </div>
-                      )}
+                      <Badge variant="outline" className="ml-2">
+                        {CATEGORIES.find(c => c.value === product.category)?.label || product.category}
+                      </Badge>
                     </div>
-                    
-                    <div className="space-y-2">
-                      <h3 className="font-semibold line-clamp-2">{item.name}</h3>
-                      <p className="text-sm text-muted-foreground line-clamp-2">
-                        {item.description}
-                      </p>
-                      
+                  </CardHeader>
+
+                  <CardContent className="pt-0">
+                    {/* Professional Info */}
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-6 h-6 bg-muted rounded-full flex items-center justify-center overflow-hidden">
+                        {product.professional_avatar ? (
+                          <img
+                            src={product.professional_avatar}
+                            alt={product.professional_name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <User className="h-3 w-3 text-muted-foreground" />
+                        )}
+                      </div>
+                      <span className="text-sm text-muted-foreground">{product.professional_name}</span>
+                    </div>
+
+                    {/* Rating and Sales */}
+                    <div className="flex items-center gap-4 mb-3 text-sm">
                       <div className="flex items-center gap-1">
                         <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                        <span className="text-sm font-medium">{item.rating}</span>
-                        <span className="text-sm text-muted-foreground">
-                          ({item.reviews})
-                        </span>
+                        <span>{product.rating}</span>
                       </div>
-                      
-                      <div className="flex flex-wrap gap-1">
-                        {item.tags.slice(0, 3).map((tag) => (
-                          <Badge key={tag} variant="secondary" className="text-xs">
-                            {tag}
-                          </Badge>
-                        ))}
-                      </div>
-                      
-                      <div className="flex items-center justify-between pt-2">
-                        <div className="text-lg font-bold text-primary">
-                          {formatCurrency(item.price)}
-                        </div>
-                        <Button
-                          size="sm"
-                          onClick={() => handlePurchase(item)}
-                          disabled={!item.inStock || (balance?.availableCredits || 0) < item.price}
-                        >
-                          {!item.inStock ? "Esgotado" : "Comprar"}
-                        </Button>
+                      <div className="flex items-center gap-1">
+                        <Eye className="h-4 w-4 text-muted-foreground" />
+                        <span>{product.total_sales || 0} vendas</span>
                       </div>
                     </div>
+
+                    {/* Pricing */}
+                    <div className="space-y-2 mb-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Preço total:</span>
+                        <span className="text-lg font-bold">{formatCurrency(product.full_price)}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Para começar:</span>
+                        <span className="text-xl font-bold text-green-600">
+                          {formatCurrency(product.down_payment)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Action Button */}
+                    <Button 
+                      onClick={() => handlePurchase(product)}
+                      className="w-full"
+                    >
+                      <ShoppingCart className="h-4 w-4 mr-2" />
+                      Começar Agora
+                    </Button>
+
+                    <p className="text-xs text-muted-foreground text-center mt-2">
+                      Adquira apenas com {formatCurrency(product.down_payment)} de entrada
+                    </p>
                   </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        )}
-      </div>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
