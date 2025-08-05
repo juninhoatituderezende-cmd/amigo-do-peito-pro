@@ -68,7 +68,7 @@ export function AdminPanel() {
       const { data: usersData } = await supabase
         .from('clientes')
         .select(`
-          id, nome, email, cpf, telefone, contemplacao_status,
+          id, nome, email, cpf, telefone, contemplacao_status, created_at,
           plan_participations(
             payment_status, entry_amount,
             plan_groups(
@@ -79,18 +79,19 @@ export function AdminPanel() {
         `)
         .order('created_at', { ascending: false });
 
+      let formattedUsers: UserRecord[] = [];
       if (usersData) {
-        const formattedUsers: UserRecord[] = usersData.map(user => ({
+        formattedUsers = usersData.map(user => ({
           id: user.id,
           name: user.nome || '',
           email: user.email || '',
           cpf: user.cpf || '',
           phone: user.telefone || '',
           contemplation_status: user.contemplacao_status || 'pending',
-          payment_status: user.plan_participations?.[0]?.payment_status || 'pending',
-          plan_name: user.plan_participations?.[0]?.plan_groups?.custom_plans?.name || 'N/A',
-          entry_amount: user.plan_participations?.[0]?.entry_amount || 0,
-          commission_amount: user.comissoes_influenciadores?.[0]?.valor_comissao || 0,
+          payment_status: (user.plan_participations as any)?.[0]?.payment_status || 'pending',
+          plan_name: (user.plan_participations as any)?.[0]?.plan_groups?.[0]?.custom_plans?.[0]?.name || 'N/A',
+          entry_amount: (user.plan_participations as any)?.[0]?.entry_amount || 0,
+          commission_amount: (user.comissoes_influenciadores as any)?.[0]?.valor_comissao || 0,
           created_at: user.created_at || ''
         }));
         setUsers(formattedUsers);
@@ -117,20 +118,20 @@ export function AdminPanel() {
         ...(professionalPayments || []).map(p => ({
           id: p.id,
           type: 'professional' as const,
-          recipient_name: p.profissionais?.nome || '',
+          recipient_name: (p.profissionais as any)?.[0]?.nome || '',
           amount: p.valor_repasse,
           status: p.status,
           created_at: p.created_at,
-          client_name: p.clientes?.nome || ''
+          client_name: (p.clientes as any)?.[0]?.nome || ''
         })),
         ...(influencerCommissions || []).map(c => ({
           id: c.id,
           type: 'influencer' as const,
-          recipient_name: c.influenciadores?.nome || '',
+          recipient_name: (c.influenciadores as any)?.[0]?.nome || '',
           amount: c.valor_comissao,
           status: c.status,
           created_at: c.created_at,
-          client_name: c.clientes?.nome || ''
+          client_name: (c.clientes as any)?.[0]?.nome || ''
         }))
       ];
 
