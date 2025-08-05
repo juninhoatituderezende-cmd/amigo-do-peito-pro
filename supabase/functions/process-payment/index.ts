@@ -74,9 +74,9 @@ serve(async (req) => {
 
     // Calcular comissões com base nas regras definidas
     const amountTotal = amount * 100; // Converter para centavos
-    const amountProfessional = Math.round(amountTotal * 0.85); // 85%
-    const amountInfluencer = influencer ? Math.round(amountTotal * 0.05) : 0; // 5% se houver influenciador
-    const amountPlatform = amountTotal - amountProfessional - amountInfluencer; // 10% ou 15%
+    const amountProfessional = Math.round(amountTotal * 0.50); // 50%
+    const amountInfluencer = influencer ? Math.round(amountTotal * 0.25) : 0; // 25% se houver influenciador
+    const amountPlatform = amountTotal - amountProfessional - amountInfluencer; // 25% ou 50%
 
     // Buscar conta Stripe do profissional
     const { data: stripeAccount, error: accountError } = await supabase

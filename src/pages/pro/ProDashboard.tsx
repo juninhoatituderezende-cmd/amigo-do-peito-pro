@@ -710,15 +710,15 @@ const ProDashboard = () => {
                   <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="text-center p-4 border rounded-lg">
-                        <div className="text-2xl font-bold text-green-600">85%</div>
+                        <div className="text-2xl font-bold text-green-600">50%</div>
                         <div className="text-sm text-muted-foreground">Você recebe</div>
                       </div>
                       <div className="text-center p-4 border rounded-lg">
-                        <div className="text-2xl font-bold text-blue-600">5%</div>
+                        <div className="text-2xl font-bold text-blue-600">25%</div>
                         <div className="text-sm text-muted-foreground">Influenciador (se houver)</div>
                       </div>
                       <div className="text-center p-4 border rounded-lg">
-                        <div className="text-2xl font-bold text-purple-600">10%</div>
+                        <div className="text-2xl font-bold text-purple-600">25%</div>
                         <div className="text-sm text-muted-foreground">Plataforma</div>
                       </div>
                     </div>

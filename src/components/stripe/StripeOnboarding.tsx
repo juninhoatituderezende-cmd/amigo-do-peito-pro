@@ -259,7 +259,8 @@ export function StripeOnboarding() {
           <AlertDescription className="text-sm">
             <p className="font-medium mb-2">Informações importantes:</p>
             <ul className="space-y-1 list-disc list-inside">
-              <li>Você receberá 85% de cada pagamento realizado</li>
+              <li>Você receberá 50% de cada pagamento realizado</li>
+              <li>Influenciadores recebem 25% (quando aplicável)</li>
               <li>Os valores são transferidos automaticamente para sua conta</li>
               <li>É necessário completar a verificação de identidade</li>
               <li>As transferências seguem o cronograma do Stripe (geralmente 2 dias úteis)</li>
