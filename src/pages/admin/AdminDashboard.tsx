@@ -276,15 +276,17 @@ const AdminDashboard = () => {
           </div>
           
           <Tabs defaultValue="overview" onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid grid-cols-7 max-w-4xl">
-              <TabsTrigger value="overview">Visão Geral</TabsTrigger>
-              <TabsTrigger value="professionals">Profissionais</TabsTrigger>
-              <TabsTrigger value="users">Usuários</TabsTrigger>
-              <TabsTrigger value="influencers">Influenciadores</TabsTrigger>
-              <TabsTrigger value="transactions">Transações</TabsTrigger>
-              <TabsTrigger value="withdrawals">Saques</TabsTrigger>
-              <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            </TabsList>
+            <div className="overflow-x-auto">
+              <TabsList className="grid grid-cols-4 md:grid-cols-7 min-w-max">
+                <TabsTrigger value="overview" className="text-xs md:text-sm">Visão Geral</TabsTrigger>
+                <TabsTrigger value="professionals" className="text-xs md:text-sm">Profissionais</TabsTrigger>
+                <TabsTrigger value="users" className="text-xs md:text-sm">Usuários</TabsTrigger>
+                <TabsTrigger value="influencers" className="text-xs md:text-sm">Influenciadores</TabsTrigger>
+                <TabsTrigger value="transactions" className="text-xs md:text-sm">Transações</TabsTrigger>
+                <TabsTrigger value="withdrawals" className="text-xs md:text-sm">Saques</TabsTrigger>
+                <TabsTrigger value="analytics" className="text-xs md:text-sm">Analytics</TabsTrigger>
+              </TabsList>
+            </div>
 
             {/* VISÃO GERAL */}
             <TabsContent value="overview" className="space-y-6">
@@ -662,52 +664,65 @@ const AdminDashboard = () => {
               <div className="space-y-4">
                 {mockWithdrawals.map((withdrawal) => (
                   <Card key={withdrawal.id}>
-                    <CardContent className="p-6">
-                      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
-                        <div>
-                          <p className="font-medium">{withdrawal.professional}</p>
-                          <p className="text-sm text-gray-600">PIX: {withdrawal.pixKey}</p>
+                    <CardContent className="p-4 md:p-6">
+                      <div className="space-y-4">
+                        {/* Header com nome e valor */}
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-medium text-lg">{withdrawal.professional}</p>
+                            <p className="text-sm text-gray-600">PIX: {withdrawal.pixKey}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold text-xl text-green-600">R$ {withdrawal.amount.toFixed(2)}</p>
+                            <Badge variant={
+                              withdrawal.status === 'processed' ? 'default' :
+                              withdrawal.status === 'approved' ? 'secondary' :
+                              withdrawal.status === 'pending' ? 'outline' : 'destructive'
+                            }>
+                              {withdrawal.status === 'processed' ? 'Processado' :
+                               withdrawal.status === 'approved' ? 'Aprovado' :
+                               withdrawal.status === 'pending' ? 'Pendente' : 'Rejeitado'}
+                            </Badge>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-bold text-lg">R$ {withdrawal.amount.toFixed(2)}</p>
+
+                        {/* Data da solicitação */}
+                        <div className="border-t pt-3">
+                          <p className="text-sm text-gray-600">
+                            Solicitado em: {new Date(withdrawal.requestDate).toLocaleDateString('pt-BR')} às {new Date(withdrawal.requestDate).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                          </p>
                         </div>
-                        <div>
-                          <p className="text-sm text-gray-600">Solicitado em:</p>
-                          <p className="text-sm">{new Date(withdrawal.requestDate).toLocaleDateString('pt-BR')}</p>
-                        </div>
-                        <div>
-                          <Badge variant={
-                            withdrawal.status === 'processed' ? 'default' :
-                            withdrawal.status === 'approved' ? 'secondary' :
-                            withdrawal.status === 'pending' ? 'outline' : 'destructive'
-                          }>
-                            {withdrawal.status === 'processed' ? 'Processado' :
-                             withdrawal.status === 'approved' ? 'Aprovado' :
-                             withdrawal.status === 'pending' ? 'Pendente' : 'Rejeitado'}
-                          </Badge>
-                        </div>
-                        <div className="flex gap-2">
+
+                        {/* Botões de ação */}
+                        <div className="border-t pt-4">
                           {withdrawal.status === 'pending' && (
-                            <>
-                              <Button size="sm" className="bg-green-600 hover:bg-green-700"
-                                      onClick={() => handleWithdrawal(withdrawal.id, "aprovado")}>
-                                Aprovar
+                            <div className="flex flex-col sm:flex-row gap-3">
+                              <Button 
+                                className="flex-1 bg-green-600 hover:bg-green-700 h-12"
+                                onClick={() => handleWithdrawal(withdrawal.id, "aprovado")}
+                              >
+                                ✅ Aprovar Saque
                               </Button>
-                              <Button size="sm" variant="outline" className="border-red-500 text-red-500"
-                                      onClick={() => handleWithdrawal(withdrawal.id, "rejeitado")}>
-                                Rejeitar
+                              <Button 
+                                variant="outline" 
+                                className="flex-1 border-red-500 text-red-500 hover:bg-red-50 h-12"
+                                onClick={() => handleWithdrawal(withdrawal.id, "rejeitado")}
+                              >
+                                ❌ Rejeitar
                               </Button>
-                            </>
+                            </div>
                           )}
                           {withdrawal.status === 'approved' && (
-                            <Button size="sm" className="bg-blue-600 hover:bg-blue-700"
-                                    onClick={() => handleWithdrawal(withdrawal.id, "processado")}>
-                              Processar PIX
+                            <Button 
+                              className="w-full bg-blue-600 hover:bg-blue-700 h-12"
+                              onClick={() => handleWithdrawal(withdrawal.id, "processado")}
+                            >
+                              💳 Processar PIX Agora
                             </Button>
                           )}
                           {(withdrawal.status === 'processed' || withdrawal.status === 'rejected') && (
-                            <Button size="sm" variant="outline">
-                              Ver Detalhes
+                            <Button variant="outline" className="w-full h-12">
+                              📄 Ver Detalhes Completos
                             </Button>
                           )}
                         </div>
