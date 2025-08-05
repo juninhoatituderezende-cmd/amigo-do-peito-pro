@@ -74,8 +74,42 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [searchQuery, setSearchQuery] = useState("");
   
-  // Mock data - em produção viria do Supabase
-  const [mockProfessionals] = useState<Professional[]>([
+  // State for real professionals data
+  const [professionals, setProfessionals] = useState<Professional[]>([]);
+  
+  // Load data from localStorage on component mount
+  useEffect(() => {
+    const loadProfessionals = () => {
+      // Get pending professionals from localStorage
+      const pendingProfessionals = JSON.parse(localStorage.getItem("pendingProfessionals") || "[]");
+      
+      // Get approved professionals from localStorage
+      const approvedProfessionals = JSON.parse(localStorage.getItem("approvedProfessionals") || "[]");
+      
+      // Get rejected professionals from localStorage
+      const rejectedProfessionals = JSON.parse(localStorage.getItem("rejectedProfessionals") || "[]");
+      
+      // Combine all professionals
+      const allProfessionals = [...pendingProfessionals, ...approvedProfessionals, ...rejectedProfessionals];
+      
+      // If no real data exists, use mock data
+      if (allProfessionals.length === 0) {
+        setProfessionals(mockProfessionals);
+      } else {
+        setProfessionals(allProfessionals);
+      }
+    };
+    
+    loadProfessionals();
+    
+    // Set up interval to check for new registrations
+    const interval = setInterval(loadProfessionals, 5000);
+    
+    return () => clearInterval(interval);
+  }, []);
+  
+  // Mock data - mantido para fallback
+  const mockProfessionals: Professional[] = [
     {
       id: "pro1",
       name: "Carlos Silva",
@@ -115,7 +149,7 @@ const AdminDashboard = () => {
       totalEarnings: 3200.00,
       servicesCompleted: 4
     }
-  ]);
+  ];
 
   const [mockUsers] = useState<User[]>([
     {
@@ -218,6 +252,28 @@ const AdminDashboard = () => {
   ]);
 
   const handleApprove = (id: string, type: string) => {
+    if (type === "Profissional") {
+      // Find the professional in current list
+      const professional = professionals.find(p => p.id === id);
+      if (professional) {
+        // Update status
+        professional.status = "approved";
+        
+        // Remove from pending
+        const pendingProfessionals = JSON.parse(localStorage.getItem("pendingProfessionals") || "[]");
+        const updatedPending = pendingProfessionals.filter((p: Professional) => p.id !== id);
+        localStorage.setItem("pendingProfessionals", JSON.stringify(updatedPending));
+        
+        // Add to approved
+        const approvedProfessionals = JSON.parse(localStorage.getItem("approvedProfessionals") || "[]");
+        approvedProfessionals.push(professional);
+        localStorage.setItem("approvedProfessionals", JSON.stringify(approvedProfessionals));
+        
+        // Update state
+        setProfessionals(prev => prev.map(p => p.id === id ? {...p, status: "approved"} : p));
+      }
+    }
+    
     toast({
       title: `${type} aprovado`,
       description: `${type} foi aprovado com sucesso.`,
@@ -225,6 +281,28 @@ const AdminDashboard = () => {
   };
 
   const handleReject = (id: string, type: string) => {
+    if (type === "Profissional") {
+      // Find the professional in current list
+      const professional = professionals.find(p => p.id === id);
+      if (professional) {
+        // Update status
+        professional.status = "rejected";
+        
+        // Remove from pending
+        const pendingProfessionals = JSON.parse(localStorage.getItem("pendingProfessionals") || "[]");
+        const updatedPending = pendingProfessionals.filter((p: Professional) => p.id !== id);
+        localStorage.setItem("pendingProfessionals", JSON.stringify(updatedPending));
+        
+        // Add to rejected
+        const rejectedProfessionals = JSON.parse(localStorage.getItem("rejectedProfessionals") || "[]");
+        rejectedProfessionals.push(professional);
+        localStorage.setItem("rejectedProfessionals", JSON.stringify(rejectedProfessionals));
+        
+        // Update state
+        setProfessionals(prev => prev.map(p => p.id === id ? {...p, status: "rejected"} : p));
+      }
+    }
+    
     toast({
       title: `${type} rejeitado`,
       description: `${type} foi rejeitado.`,
@@ -238,16 +316,17 @@ const AdminDashboard = () => {
     });
   };
 
-  // Estatísticas gerais
+  // Calculate real statistics
   const stats = {
-    totalProfessionals: mockProfessionals.length,
-    pendingProfessionals: mockProfessionals.filter(p => p.status === "pending").length,
+    totalProfessionals: professionals.length,
+    pendingProfessionals: professionals.filter(p => p.status === "pending").length,
+    approvedProfessionals: professionals.filter(p => p.status === "approved").length,
     totalUsers: mockUsers.length,
     totalInfluencers: mockInfluencers.length,
     pendingInfluencers: mockInfluencers.filter(i => i.status === "pending").length,
     totalRevenue: mockTransactions.filter(t => t.status === "completed").reduce((sum, t) => sum + t.amount, 0),
     pendingWithdrawals: mockWithdrawals.filter(w => w.status === "pending").length,
-    monthlyGrowth: "+15%"
+    monthlyGrowth: "+15.3%"
   };
 
   return (
@@ -400,7 +479,7 @@ const AdminDashboard = () => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {mockProfessionals.map((pro) => (
+                {professionals.map((pro) => (
                   <Card key={pro.id} className="overflow-hidden">
                     <CardHeader className="pb-3">
                       <div className="flex justify-between items-start">

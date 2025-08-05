@@ -112,6 +112,28 @@ const Register = () => {
       // For this demo, we'll simulate a successful registration
       await new Promise(resolve => setTimeout(resolve, 1500));
       
+      // Save professional data to localStorage for admin approval
+      const professionalData = {
+        id: `pro-${Date.now()}`,
+        name: formData.fullName,
+        category: formData.category,
+        location: formData.location,
+        phone: formData.phone,
+        instagram: formData.instagram,
+        pixKey: formData.pixKey,
+        status: "pending",
+        createdAt: new Date().toISOString(),
+        totalEarnings: 0,
+        servicesCompleted: 0,
+        idDocument: formData.idDocument?.name || "documento.pdf",
+        presentationVideo: formData.presentationVideo?.name || null
+      };
+      
+      // Get existing professionals from localStorage
+      const existingProfessionals = JSON.parse(localStorage.getItem("pendingProfessionals") || "[]");
+      existingProfessionals.push(professionalData);
+      localStorage.setItem("pendingProfessionals", JSON.stringify(existingProfessionals));
+      
       // Clear any existing user session before logging in
       localStorage.removeItem("user");
       
