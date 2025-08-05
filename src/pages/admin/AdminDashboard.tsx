@@ -9,43 +9,38 @@ import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
+import { supabase } from "../../lib/supabase";
 
 interface Professional {
   id: string;
-  name: string;
+  full_name: string;
+  email: string;
   category: string;
   location: string;
   phone: string;
   instagram: string;
-  pixKey: string;
-  status: "pending" | "approved" | "rejected";
-  createdAt: string;
-  totalEarnings: number;
-  servicesCompleted: number;
+  approved: boolean;
+  created_at: string;
 }
 
 interface User {
   id: string;
-  name: string;
+  full_name: string;
   email: string;
   phone: string;
-  city: string;
-  status: "active" | "inactive";
-  registeredAt: string;
-  totalSpent: number;
-  groupsParticipated: number;
+  created_at: string;
+  referral_code: string;
 }
 
 interface Influencer {
   id: string;
-  name: string;
+  full_name: string;
   email: string;
+  phone: string;
   instagram: string;
   followers: string;
-  niche: string;
-  status: "pending" | "approved" | "rejected";
-  totalCommissions: number;
-  referrals: number;
+  approved: boolean;
+  created_at: string;
 }
 
 interface Transaction {
@@ -73,134 +68,78 @@ const AdminDashboard = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("overview");
   const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(true);
   
-  // State for real professionals data
+  // State for data from Supabase
   const [professionals, setProfessionals] = useState<Professional[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [influencers, setInfluencers] = useState<Influencer[]>([]);
   
-  // Load data from localStorage on component mount
+  // Load data from Supabase
   useEffect(() => {
-    const loadProfessionals = () => {
-      // Get pending professionals from localStorage
-      const pendingProfessionals = JSON.parse(localStorage.getItem("pendingProfessionals") || "[]");
-      
-      // Get approved professionals from localStorage
-      const approvedProfessionals = JSON.parse(localStorage.getItem("approvedProfessionals") || "[]");
-      
-      // Get rejected professionals from localStorage
-      const rejectedProfessionals = JSON.parse(localStorage.getItem("rejectedProfessionals") || "[]");
-      
-      // Combine all professionals
-      const allProfessionals = [...pendingProfessionals, ...approvedProfessionals, ...rejectedProfessionals];
-      
-      // If no real data exists, use mock data
-      if (allProfessionals.length === 0) {
-        setProfessionals(mockProfessionals);
-      } else {
-        setProfessionals(allProfessionals);
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        
+        // Load professionals
+        const { data: professionalsData, error: professionalsError } = await supabase
+          .from('professionals')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (professionalsError) {
+          console.error('Error loading professionals:', professionalsError);
+        } else {
+          setProfessionals(professionalsData || []);
+        }
+        
+        // Load users
+        const { data: usersData, error: usersError } = await supabase
+          .from('users')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (usersError) {
+          console.error('Error loading users:', usersError);
+        } else {
+          setUsers(usersData || []);
+        }
+        
+        // Load influencers
+        const { data: influencersData, error: influencersError } = await supabase
+          .from('influencers')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (influencersError) {
+          console.error('Error loading influencers:', influencersError);
+        } else {
+          setInfluencers(influencersData || []);
+        }
+        
+      } catch (error) {
+        console.error('Error loading data:', error);
+        toast({
+          title: "Erro",
+          description: "Erro ao carregar dados do dashboard.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
       }
     };
     
-    loadProfessionals();
+    loadData();
     
-    // Set up interval to check for new registrations
-    const interval = setInterval(loadProfessionals, 5000);
+    // Refresh data every 30 seconds
+    const interval = setInterval(loadData, 30000);
     
     return () => clearInterval(interval);
-  }, []);
+  }, [toast]);
   
-  // Mock data - mantido para fallback
-  const mockProfessionals: Professional[] = [
-    {
-      id: "pro1",
-      name: "Carlos Silva",
-      category: "tatuador",
-      location: "São Paulo, SP",
-      phone: "(11) 98765-4321",
-      instagram: "carlossilvatattoo",
-      pixKey: "carlos@email.com",
-      status: "pending",
-      createdAt: "2024-01-10T14:30:00Z",
-      totalEarnings: 0,
-      servicesCompleted: 0
-    },
-    {
-      id: "pro2",
-      name: "Ana Costa",
-      category: "dentista",
-      location: "Rio de Janeiro, RJ",
-      phone: "(21) 98877-6655",
-      instagram: "draanacosta",
-      pixKey: "ana.costa@email.com",
-      status: "approved",
-      createdAt: "2024-01-05T10:15:00Z",
-      totalEarnings: 4500.00,
-      servicesCompleted: 3
-    },
-    {
-      id: "pro3",
-      name: "Pedro Santos",
-      category: "tatuador",
-      location: "Belo Horizonte, MG",
-      phone: "(31) 99988-7766",
-      instagram: "pedrotattoobh",
-      pixKey: "11999887766",
-      status: "approved",
-      createdAt: "2024-01-03T08:45:00Z",
-      totalEarnings: 3200.00,
-      servicesCompleted: 4
-    }
-  ];
-
-  const [mockUsers] = useState<User[]>([
-    {
-      id: "user1",
-      name: "João Silva",
-      email: "joao@email.com",
-      phone: "(11) 99999-8888",
-      city: "São Paulo, SP",
-      status: "active",
-      registeredAt: "2024-01-15T09:00:00Z",
-      totalSpent: 1070.00,
-      groupsParticipated: 2
-    },
-    {
-      id: "user2",
-      name: "Maria Santos",
-      email: "maria@email.com",
-      phone: "(21) 98888-7777",
-      city: "Rio de Janeiro, RJ",
-      status: "active",
-      registeredAt: "2024-01-12T14:30:00Z",
-      totalSpent: 720.00,
-      groupsParticipated: 1
-    }
-  ]);
-
-  const [mockInfluencers] = useState<Influencer[]>([
-    {
-      id: "inf1",
-      name: "Julia Influence",
-      email: "julia@email.com",
-      instagram: "@juliainfluence",
-      followers: "50k-100k",
-      niche: "beleza",
-      status: "pending",
-      totalCommissions: 0,
-      referrals: 0
-    },
-    {
-      id: "inf2",
-      name: "Bruno Digital",
-      email: "bruno@email.com",
-      instagram: "@brunodigital",
-      followers: "10k-50k",
-      niche: "lifestyle",
-      status: "approved",
-      totalCommissions: 850.00,
-      referrals: 15
-    }
-  ]);
-
+  // Mock data removed - now using real Supabase data
+  
+  // Mock transactions for demo (will be replaced with real data later)
   const [mockTransactions] = useState<Transaction[]>([
     {
       id: "tx1",
@@ -251,62 +190,96 @@ const AdminDashboard = () => {
     }
   ]);
 
-  const handleApprove = (id: string, type: string) => {
-    if (type === "Profissional") {
-      // Find the professional in current list
-      const professional = professionals.find(p => p.id === id);
-      if (professional) {
-        // Update status
-        professional.status = "approved";
+  const handleApprove = async (id: string, type: string) => {
+    try {
+      if (type === "Profissional") {
+        const { error } = await supabase
+          .from('professionals')
+          .update({ approved: true })
+          .eq('id', id);
         
-        // Remove from pending
-        const pendingProfessionals = JSON.parse(localStorage.getItem("pendingProfessionals") || "[]");
-        const updatedPending = pendingProfessionals.filter((p: Professional) => p.id !== id);
-        localStorage.setItem("pendingProfessionals", JSON.stringify(updatedPending));
+        if (error) {
+          throw error;
+        }
         
-        // Add to approved
-        const approvedProfessionals = JSON.parse(localStorage.getItem("approvedProfessionals") || "[]");
-        approvedProfessionals.push(professional);
-        localStorage.setItem("approvedProfessionals", JSON.stringify(approvedProfessionals));
+        // Update local state
+        setProfessionals(prev => prev.map(p => 
+          p.id === id ? { ...p, approved: true } : p
+        ));
+      } else if (type === "Influenciador") {
+        const { error } = await supabase
+          .from('influencers')
+          .update({ approved: true })
+          .eq('id', id);
         
-        // Update state
-        setProfessionals(prev => prev.map(p => p.id === id ? {...p, status: "approved"} : p));
+        if (error) {
+          throw error;
+        }
+        
+        // Update local state
+        setInfluencers(prev => prev.map(i => 
+          i.id === id ? { ...i, approved: true } : i
+        ));
       }
+      
+      toast({
+        title: `${type} aprovado`,
+        description: `${type} foi aprovado com sucesso.`,
+      });
+    } catch (error) {
+      console.error('Error approving:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao aprovar. Tente novamente.",
+        variant: "destructive",
+      });
     }
-    
-    toast({
-      title: `${type} aprovado`,
-      description: `${type} foi aprovado com sucesso.`,
-    });
   };
 
-  const handleReject = (id: string, type: string) => {
-    if (type === "Profissional") {
-      // Find the professional in current list
-      const professional = professionals.find(p => p.id === id);
-      if (professional) {
-        // Update status
-        professional.status = "rejected";
+  const handleReject = async (id: string, type: string) => {
+    try {
+      if (type === "Profissional") {
+        const { error } = await supabase
+          .from('professionals')
+          .update({ approved: false })
+          .eq('id', id);
         
-        // Remove from pending
-        const pendingProfessionals = JSON.parse(localStorage.getItem("pendingProfessionals") || "[]");
-        const updatedPending = pendingProfessionals.filter((p: Professional) => p.id !== id);
-        localStorage.setItem("pendingProfessionals", JSON.stringify(updatedPending));
+        if (error) {
+          throw error;
+        }
         
-        // Add to rejected
-        const rejectedProfessionals = JSON.parse(localStorage.getItem("rejectedProfessionals") || "[]");
-        rejectedProfessionals.push(professional);
-        localStorage.setItem("rejectedProfessionals", JSON.stringify(rejectedProfessionals));
+        // Update local state
+        setProfessionals(prev => prev.map(p => 
+          p.id === id ? { ...p, approved: false } : p
+        ));
+      } else if (type === "Influenciador") {
+        const { error } = await supabase
+          .from('influencers')
+          .update({ approved: false })
+          .eq('id', id);
         
-        // Update state
-        setProfessionals(prev => prev.map(p => p.id === id ? {...p, status: "rejected"} : p));
+        if (error) {
+          throw error;
+        }
+        
+        // Update local state
+        setInfluencers(prev => prev.map(i => 
+          i.id === id ? { ...i, approved: false } : i
+        ));
       }
+      
+      toast({
+        title: `${type} rejeitado`,
+        description: `${type} foi rejeitado.`,
+      });
+    } catch (error) {
+      console.error('Error rejecting:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao rejeitar. Tente novamente.",
+        variant: "destructive",
+      });
     }
-    
-    toast({
-      title: `${type} rejeitado`,
-      description: `${type} foi rejeitado.`,
-    });
   };
 
   const handleWithdrawal = (id: string, action: string) => {
@@ -319,13 +292,13 @@ const AdminDashboard = () => {
   // Calculate real statistics
   const stats = {
     totalProfessionals: professionals.length,
-    pendingProfessionals: professionals.filter(p => p.status === "pending").length,
-    approvedProfessionals: professionals.filter(p => p.status === "approved").length,
-    totalUsers: mockUsers.length,
-    totalInfluencers: mockInfluencers.length,
-    pendingInfluencers: mockInfluencers.filter(i => i.status === "pending").length,
-    totalRevenue: mockTransactions.filter(t => t.status === "completed").reduce((sum, t) => sum + t.amount, 0),
-    pendingWithdrawals: mockWithdrawals.filter(w => w.status === "pending").length,
+    pendingProfessionals: professionals.filter(p => !p.approved).length,
+    approvedProfessionals: professionals.filter(p => p.approved).length,
+    totalUsers: users.length,
+    totalInfluencers: influencers.length,
+    pendingInfluencers: influencers.filter(i => !i.approved).length,
+    totalRevenue: 0, // Will be calculated from transactions later
+    pendingWithdrawals: 0, // Will be calculated from withdrawals later
     monthlyGrowth: "+15.3%"
   };
 
@@ -479,62 +452,61 @@ const AdminDashboard = () => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {professionals.map((pro) => (
-                  <Card key={pro.id} className="overflow-hidden">
-                    <CardHeader className="pb-3">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <CardTitle className="text-lg">{pro.name}</CardTitle>
-                          <p className="text-sm text-gray-600 capitalize">{pro.category}</p>
+                {loading ? (
+                  <div className="col-span-full text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-ap-orange mx-auto" />
+                    <p className="mt-2 text-gray-600">Carregando profissionais...</p>
+                  </div>
+                ) : professionals.length === 0 ? (
+                  <div className="col-span-full text-center py-8">
+                    <p className="text-gray-600">Nenhum profissional cadastrado ainda.</p>
+                  </div>
+                ) : (
+                  professionals.map((pro) => (
+                    <Card key={pro.id} className="overflow-hidden">
+                      <CardHeader className="pb-3">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <CardTitle className="text-lg">{pro.full_name}</CardTitle>
+                            <p className="text-sm text-gray-600 capitalize">{pro.category}</p>
+                          </div>
+                          <Badge variant={pro.approved ? "default" : "secondary"}>
+                            {pro.approved ? "Aprovado" : "Pendente"}
+                          </Badge>
                         </div>
-                        <Badge variant={pro.status === "approved" ? "default" : pro.status === "pending" ? "secondary" : "destructive"}>
-                          {pro.status === "approved" ? "Aprovado" : pro.status === "pending" ? "Pendente" : "Rejeitado"}
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="space-y-2 text-sm">
-                        <p>📍 {pro.location}</p>
-                        <p>📱 {pro.phone}</p>
-                        <p>📸 @{pro.instagram}</p>
-                        <p>💳 {pro.pixKey}</p>
-                        <p>📅 {new Date(pro.createdAt).toLocaleDateString('pt-BR')}</p>
-                      </div>
-                      
-                      {pro.status === "approved" && (
-                        <div className="bg-green-50 p-3 rounded">
-                          <p className="text-sm"><strong>Ganhos:</strong> R$ {pro.totalEarnings.toFixed(2)}</p>
-                          <p className="text-sm"><strong>Serviços:</strong> {pro.servicesCompleted}</p>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <div className="space-y-2 text-sm">
+                          <p>📍 {pro.location}</p>
+                          <p>📱 {pro.phone}</p>
+                          <p>📸 @{pro.instagram}</p>
+                          <p>✉️ {pro.email}</p>
+                          <p>📅 {new Date(pro.created_at).toLocaleDateString('pt-BR')}</p>
                         </div>
-                      )}
-                      
-                      <div className="flex gap-2">
-                        {pro.status === "pending" && (
-                          <>
-                            <Button size="sm" className="flex-1 bg-green-600 hover:bg-green-700" 
-                                    onClick={() => handleApprove(pro.id, "Profissional")}>
-                              Aprovar
+                        
+                        <div className="flex gap-2">
+                          {!pro.approved && (
+                            <>
+                              <Button size="sm" className="flex-1 bg-green-600 hover:bg-green-700" 
+                                      onClick={() => handleApprove(pro.id, "Profissional")}>
+                                Aprovar
+                              </Button>
+                              <Button size="sm" variant="outline" className="flex-1 border-red-500 text-red-500"
+                                      onClick={() => handleReject(pro.id, "Profissional")}>
+                                Rejeitar
+                              </Button>
+                            </>
+                          )}
+                          {pro.approved && (
+                            <Button size="sm" variant="outline" className="w-full">
+                              Ver Detalhes
                             </Button>
-                            <Button size="sm" variant="outline" className="flex-1 border-red-500 text-red-500"
-                                    onClick={() => handleReject(pro.id, "Profissional")}>
-                              Rejeitar
-                            </Button>
-                          </>
-                        )}
-                        {pro.status === "approved" && (
-                          <Button size="sm" variant="outline" className="w-full">
-                            Ver Detalhes
-                          </Button>
-                        )}
-                        {pro.status === "rejected" && (
-                          <Button size="sm" className="w-full" onClick={() => handleApprove(pro.id, "Profissional")}>
-                            Reconsiderar
-                          </Button>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
               </div>
             </TabsContent>
 
@@ -543,9 +515,20 @@ const AdminDashboard = () => {
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold">Gestão de Usuários</h2>
                 <div className="text-sm text-gray-600">
-                  Total: {mockUsers.length} usuários
+                  Total: {users.length} usuários
                 </div>
               </div>
+
+              {loading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-ap-orange mx-auto" />
+                  <p className="mt-2 text-gray-600">Carregando usuários...</p>
+                </div>
+              ) : users.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-600">Nenhum usuário cadastrado ainda.</p>
+                </div>
+              ) : (
 
               <div className="overflow-x-auto">
                 <table className="min-w-full bg-white rounded-lg overflow-hidden shadow-sm">
@@ -553,27 +536,23 @@ const AdminDashboard = () => {
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nome</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cidade</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Gasto Total</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Grupos</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Telefone</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Código</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ações</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {mockUsers.map((user) => (
+                    {users.map((user) => (
                       <tr key={user.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{user.name}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{user.full_name}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.city}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
-                          R$ {user.totalSpent.toFixed(2)}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.phone}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600">
+                          {user.referral_code}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">{user.groupsParticipated}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <Badge variant={user.status === "active" ? "default" : "secondary"}>
-                            {user.status === "active" ? "Ativo" : "Inativo"}
-                          </Badge>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          {new Date(user.created_at).toLocaleDateString('pt-BR')}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
                           <Button size="sm" variant="outline">Ver Perfil</Button>
@@ -583,6 +562,7 @@ const AdminDashboard = () => {
                   </tbody>
                 </table>
               </div>
+              )}
             </TabsContent>
 
             {/* INFLUENCIADORES */}
@@ -590,40 +570,45 @@ const AdminDashboard = () => {
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold">Gestão de Influenciadores</h2>
                 <div className="text-sm text-gray-600">
-                  Total: {mockInfluencers.length} influenciadores
+                  Total: {influencers.length} influenciadores
                 </div>
               </div>
 
+              {loading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-ap-orange mx-auto" />
+                  <p className="mt-2 text-gray-600">Carregando influenciadores...</p>
+                </div>
+              ) : influencers.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-600">Nenhum influenciador cadastrado ainda.</p>
+                </div>
+              ) : (
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {mockInfluencers.map((inf) => (
+                {influencers.map((inf) => (
                   <Card key={inf.id}>
                     <CardHeader>
                       <div className="flex justify-between items-start">
                         <div>
-                          <CardTitle>{inf.name}</CardTitle>
+                          <CardTitle>{inf.full_name}</CardTitle>
                           <p className="text-sm text-gray-600">{inf.instagram}</p>
                         </div>
-                        <Badge variant={inf.status === "approved" ? "default" : "secondary"}>
-                          {inf.status === "approved" ? "Aprovado" : "Pendente"}
+                        <Badge variant={inf.approved ? "default" : "secondary"}>
+                          {inf.approved ? "Aprovado" : "Pendente"}
                         </Badge>
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-3">
                       <div className="space-y-2 text-sm">
                         <p><strong>Seguidores:</strong> {inf.followers}</p>
-                        <p><strong>Nicho:</strong> {inf.niche}</p>
                         <p><strong>Email:</strong> {inf.email}</p>
+                        <p><strong>Telefone:</strong> {inf.phone}</p>
+                        <p><strong>Data:</strong> {new Date(inf.created_at).toLocaleDateString('pt-BR')}</p>
                       </div>
 
-                      {inf.status === "approved" && (
-                        <div className="bg-purple-50 p-3 rounded">
-                          <p className="text-sm"><strong>Comissões:</strong> R$ {inf.totalCommissions.toFixed(2)}</p>
-                          <p className="text-sm"><strong>Indicações:</strong> {inf.referrals}</p>
-                        </div>
-                      )}
-
                       <div className="flex gap-2">
-                        {inf.status === "pending" && (
+                        {!inf.approved && (
                           <>
                             <Button size="sm" className="flex-1 bg-purple-600 hover:bg-purple-700"
                                     onClick={() => handleApprove(inf.id, "Influenciador")}>
@@ -635,7 +620,7 @@ const AdminDashboard = () => {
                             </Button>
                           </>
                         )}
-                        {inf.status === "approved" && (
+                        {inf.approved && (
                           <Button size="sm" variant="outline" className="w-full">
                             Ver Detalhes
                           </Button>
@@ -645,6 +630,7 @@ const AdminDashboard = () => {
                   </Card>
                 ))}
               </div>
+              )}
             </TabsContent>
 
             {/* TRANSAÇÕES */}
