@@ -45,6 +45,11 @@ const Header = () => {
               Meu Painel
             </Link>
           )}
+          {user && user.role === "influencer" && (
+            <Link to="/influenciador/dashboard" className="text-gray-800 hover:text-ap-orange transition-colors">
+              Painel Influenciador
+            </Link>
+          )}
           {user && user.role === "admin" && (
             <Link to="/admin" className="text-gray-800 hover:text-ap-orange transition-colors">
               Dashboard Admin
@@ -114,6 +119,14 @@ const Header = () => {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Meu Painel
+              </Link>
+            )}
+            {user && user.role === "influencer" && (
+              <Link to="/influenciador/dashboard" 
+                className="text-gray-800 hover:text-ap-orange transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Painel Influenciador
               </Link>
             )}
             {user && user.role === "admin" && (

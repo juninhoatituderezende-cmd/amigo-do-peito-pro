@@ -56,7 +56,11 @@ const App = () => (
             {/* Influencer Routes */}
             <Route path="/influenciador/cadastro" element={<InfluencerRegister />} />
             <Route path="/influenciador/login" element={<InfluencerLogin />} />
-            <Route path="/influenciador/dashboard" element={<InfluencerDashboard />} />
+            <Route path="/influenciador/dashboard" element={
+              <ProtectedRoute role="influencer">
+                <InfluencerDashboard />
+              </ProtectedRoute>
+            } />
             
             {/* MLM Routes */}
             <Route path="/mlm/products" element={<MLMProducts />} />
