@@ -7,6 +7,37 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
+import { Separator } from "@/components/ui/separator";
+// import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+import { 
+  Users, 
+  UserCheck, 
+  UserX, 
+  Calendar, 
+  TrendingUp, 
+  TrendingDown, 
+  AlertTriangle, 
+  CheckCircle, 
+  Clock, 
+  DollarSign,
+  Eye,
+  FileText,
+  Download,
+  Filter,
+  Search,
+  RefreshCw,
+  MoreHorizontal,
+  Star,
+  Heart,
+  MessageSquare,
+  Activity,
+  BarChart3,
+  PieChart as PieChartIcon,
+  Target,
+  Zap
+} from "lucide-react";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import { supabase } from "../../lib/supabase";
@@ -64,11 +95,38 @@ interface WithdrawalRequest {
   requestDate: string;
 }
 
+interface ActivityLog {
+  id: string;
+  type: "registration" | "approval" | "transaction" | "login" | "profile_update";
+  user: string;
+  description: string;
+  timestamp: string;
+  metadata?: any;
+}
+
+interface RegistrationTrend {
+  date: string;
+  professionals: number;
+  users: number;
+  influencers: number;
+}
+
+interface CategoryStats {
+  name: string;
+  value: number;
+  color: string;
+}
+
 const AdminDashboard = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("overview");
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [selectedProfile, setSelectedProfile] = useState<any>(null);
+  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
+  const [dateRange, setDateRange] = useState("7days");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [lastRefresh, setLastRefresh] = useState(new Date());
   
   // State for data from Supabase
   const [professionals, setProfessionals] = useState<Professional[]>([]);
@@ -137,7 +195,48 @@ const AdminDashboard = () => {
     return () => clearInterval(interval);
   }, [toast]);
   
-  // Mock data removed - now using real Supabase data
+  // Activity logs para monitoramento (mock data - será substituído por dados reais)
+  const [activityLogs] = useState<ActivityLog[]>([
+    {
+      id: "1",
+      type: "registration",
+      user: "João Silva",
+      description: "Novo usuário se cadastrou na plataforma",
+      timestamp: "2024-01-22T10:30:00Z"
+    },
+    {
+      id: "2",
+      type: "approval",
+      user: "Admin",
+      description: "Profissional Ana Costa foi aprovado",
+      timestamp: "2024-01-22T09:15:00Z"
+    },
+    {
+      id: "3",
+      type: "profile_update",
+      user: "Pedro Santos",
+      description: "Profissional atualizou informações do perfil",
+      timestamp: "2024-01-22T08:45:00Z"
+    }
+  ]);
+
+  // Dados de tendência de cadastros (mock data)
+  const [registrationTrends] = useState<RegistrationTrend[]>([
+    { date: "16/01", professionals: 2, users: 8, influencers: 1 },
+    { date: "17/01", professionals: 3, users: 12, influencers: 0 },
+    { date: "18/01", professionals: 1, users: 15, influencers: 2 },
+    { date: "19/01", professionals: 4, users: 10, influencers: 1 },
+    { date: "20/01", professionals: 2, users: 18, influencers: 0 },
+    { date: "21/01", professionals: 5, users: 14, influencers: 3 },
+    { date: "22/01", professionals: 3, users: 20, influencers: 1 }
+  ]);
+
+  // Estatísticas por categoria
+  const categoryStats: CategoryStats[] = [
+    { name: "Tatuadores", value: professionals.filter(p => p.category === "tattoo").length, color: "#8884d8" },
+    { name: "Dentistas", value: professionals.filter(p => p.category === "dental").length, color: "#82ca9d" },
+    { name: "Outros", value: professionals.filter(p => !["tattoo", "dental"].includes(p.category)).length, color: "#ffc658" }
+  ];
   
   // Mock transactions for demo (will be replaced with real data later)
   const [mockTransactions] = useState<Transaction[]>([
@@ -289,6 +388,44 @@ const AdminDashboard = () => {
     });
   };
 
+  const handleProfileView = (profile: any, type: string) => {
+    setSelectedProfile({ ...profile, type });
+    setProfileDialogOpen(true);
+  };
+
+  const refreshData = async () => {
+    const currentTime = new Date();
+    setLastRefresh(currentTime);
+    setLoading(true);
+    
+    try {
+      // Recarregar dados do Supabase
+      const [professionalsRes, usersRes, influencersRes] = await Promise.all([
+        supabase.from('professionals').select('*').order('created_at', { ascending: false }),
+        supabase.from('users').select('*').order('created_at', { ascending: false }),
+        supabase.from('influencers').select('*').order('created_at', { ascending: false })
+      ]);
+
+      if (professionalsRes.data) setProfessionals(professionalsRes.data);
+      if (usersRes.data) setUsers(usersRes.data);
+      if (influencersRes.data) setInfluencers(influencersRes.data);
+
+      toast({
+        title: "Dados atualizados!",
+        description: "Dashboard foi atualizado com os dados mais recentes.",
+      });
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+      toast({
+        title: "Erro ao atualizar",
+        description: "Não foi possível atualizar os dados.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Calculate real statistics
   const stats = {
     totalProfessionals: professionals.length,
@@ -299,171 +436,399 @@ const AdminDashboard = () => {
     pendingInfluencers: influencers.filter(i => !i.approved).length,
     totalRevenue: 0, // Will be calculated from transactions later
     pendingWithdrawals: 0, // Will be calculated from withdrawals later
-    monthlyGrowth: "+15.3%"
+    monthlyGrowth: "+15.3%",
+    approvalRate: professionals.length > 0 ? Math.round((professionals.filter(p => p.approved).length / professionals.length) * 100) : 0,
+    recentRegistrations: [...professionals, ...users, ...influencers]
+      .filter(item => {
+        const itemDate = new Date(item.created_at);
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        return itemDate > weekAgo;
+      }).length
   };
 
+  // Filtros para diferentes seções
+  const filteredProfessionals = professionals.filter(p => {
+    const matchesSearch = p.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         p.email.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === "all" || 
+                         (statusFilter === "pending" && !p.approved) ||
+                         (statusFilter === "approved" && p.approved);
+    return matchesSearch && matchesStatus;
+  });
+
+  const filteredUsers = users.filter(u => 
+    u.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    u.email.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredInfluencers = influencers.filter(i => {
+    const matchesSearch = i.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         i.email.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === "all" || 
+                         (statusFilter === "pending" && !i.approved) ||
+                         (statusFilter === "approved" && i.approved);
+    return matchesSearch && matchesStatus;
+  });
+
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-blue-50">
       <Header />
       
-      <div className="flex-1 bg-slate-50">
-        <div className="ap-container py-8">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+      <div className="flex-1">
+        <div className="container mx-auto px-4 py-8 max-w-7xl">
+          {/* Header Section */}
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-4">
             <div>
-              <h1 className="text-3xl font-bold">Painel Administrativo Completo</h1>
-              <p className="text-gray-600">Controle total da plataforma Amigo do Peito</p>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                Dashboard Administrativo
+              </h1>
+              <p className="text-gray-600">
+                Monitore cadastros, aprove perfis e acompanhe o crescimento da plataforma
+              </p>
+              <div className="flex items-center gap-2 mt-2">
+                <Activity className="h-4 w-4 text-green-500" />
+                <span className="text-sm text-gray-500">
+                  Última atualização: {lastRefresh.toLocaleTimeString('pt-BR')}
+                </span>
+              </div>
             </div>
             
-            <div className="mt-4 md:mt-0 flex gap-2">
-              <Input 
-                placeholder="Buscar..." 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-64"
-              />
-              <Button className="bg-ap-orange hover:bg-ap-orange/90">
-                Exportar Relatório
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input 
+                  placeholder="Buscar perfis..." 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 w-64"
+                />
+              </div>
+              <Button 
+                onClick={refreshData} 
+                variant="outline" 
+                className="flex items-center gap-2"
+                disabled={loading}
+              >
+                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                Atualizar
+              </Button>
+              <Button className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2">
+                <Download className="h-4 w-4" />
+                Exportar
               </Button>
             </div>
           </div>
           
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <Card className="border-l-4 border-l-blue-500 hover:shadow-lg transition-shadow">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Total Profissionais</p>
+                    <p className="text-3xl font-bold text-blue-600">{stats.totalProfessionals}</p>
+                    <p className="text-sm text-gray-500">
+                      {stats.pendingProfessionals} aguardando aprovação
+                    </p>
+                  </div>
+                  <div className="p-3 bg-blue-100 rounded-full">
+                    <Users className="h-6 w-6 text-blue-600" />
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <Progress value={stats.approvalRate} className="h-2" />
+                  <p className="text-xs text-gray-500 mt-1">Taxa de aprovação: {stats.approvalRate}%</p>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="border-l-4 border-l-green-500 hover:shadow-lg transition-shadow">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Total Usuários</p>
+                    <p className="text-3xl font-bold text-green-600">{stats.totalUsers}</p>
+                    <p className="text-sm text-gray-500">Usuários ativos</p>
+                  </div>
+                  <div className="p-3 bg-green-100 rounded-full">
+                    <UserCheck className="h-6 w-6 text-green-600" />
+                  </div>
+                </div>
+                <div className="mt-4 flex items-center">
+                  <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
+                  <span className="text-sm text-green-600 font-medium">{stats.monthlyGrowth}</span>
+                  <span className="text-sm text-gray-500 ml-1">este mês</span>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="border-l-4 border-l-purple-500 hover:shadow-lg transition-shadow">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Influenciadores</p>
+                    <p className="text-3xl font-bold text-purple-600">{stats.totalInfluencers}</p>
+                    <p className="text-sm text-gray-500">
+                      {stats.pendingInfluencers} pendentes
+                    </p>
+                  </div>
+                  <div className="p-3 bg-purple-100 rounded-full">
+                    <Star className="h-6 w-6 text-purple-600" />
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <div className="flex items-center">
+                    <Activity className="h-4 w-4 text-purple-500 mr-1" />
+                    <span className="text-sm text-purple-600 font-medium">Ativos</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="border-l-4 border-l-orange-500 hover:shadow-lg transition-shadow">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Cadastros Recentes</p>
+                    <p className="text-3xl font-bold text-orange-600">{stats.recentRegistrations}</p>
+                    <p className="text-sm text-gray-500">Últimos 7 dias</p>
+                  </div>
+                  <div className="p-3 bg-orange-100 rounded-full">
+                    <Calendar className="h-6 w-6 text-orange-600" />
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <div className="flex items-center">
+                    <Zap className="h-4 w-4 text-orange-500 mr-1" />
+                    <span className="text-sm text-orange-600 font-medium">Crescimento acelerado</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
           <Tabs defaultValue="overview" onValueChange={setActiveTab} className="space-y-6">
-            <div className="overflow-x-auto">
-              <TabsList className="grid grid-cols-4 md:grid-cols-7 min-w-max">
-                <TabsTrigger value="overview" className="text-xs md:text-sm">Visão Geral</TabsTrigger>
-                <TabsTrigger value="professionals" className="text-xs md:text-sm">Profissionais</TabsTrigger>
-                <TabsTrigger value="users" className="text-xs md:text-sm">Usuários</TabsTrigger>
-                <TabsTrigger value="influencers" className="text-xs md:text-sm">Influenciadores</TabsTrigger>
-                <TabsTrigger value="transactions" className="text-xs md:text-sm">Transações</TabsTrigger>
-                <TabsTrigger value="withdrawals" className="text-xs md:text-sm">Saques</TabsTrigger>
-                <TabsTrigger value="analytics" className="text-xs md:text-sm">Analytics</TabsTrigger>
+            <div className="border-b">
+              <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 h-auto p-1 bg-gray-100">
+                <TabsTrigger value="overview" className="text-sm py-3">
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  Visão Geral
+                </TabsTrigger>
+                <TabsTrigger value="professionals" className="text-sm py-3">
+                  <Users className="h-4 w-4 mr-2" />
+                  Profissionais
+                </TabsTrigger>
+                <TabsTrigger value="users" className="text-sm py-3">
+                  <UserCheck className="h-4 w-4 mr-2" />
+                  Usuários
+                </TabsTrigger>
+                <TabsTrigger value="influencers" className="text-sm py-3">
+                  <Star className="h-4 w-4 mr-2" />
+                  Influenciadores
+                </TabsTrigger>
+                <TabsTrigger value="analytics" className="text-sm py-3">
+                  <Activity className="h-4 w-4 mr-2" />
+                  Analytics
+                </TabsTrigger>
+                <TabsTrigger value="monitoring" className="text-sm py-3">
+                  <Eye className="h-4 w-4 mr-2" />
+                  Monitoramento
+                </TabsTrigger>
+                <TabsTrigger value="reports" className="text-sm py-3">
+                  <FileText className="h-4 w-4 mr-2" />
+                  Relatórios
+                </TabsTrigger>
               </TabsList>
             </div>
 
             {/* VISÃO GERAL */}
             <TabsContent value="overview" className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {[
-                  {
-                    title: "Total Profissionais",
-                    value: stats.totalProfessionals,
-                    subtitle: `${stats.pendingProfessionals} pendentes`,
-                    color: "bg-blue-50 text-blue-700",
-                    icon: "👨‍⚕️"
-                  },
-                  {
-                    title: "Total Usuários",
-                    value: stats.totalUsers,
-                    subtitle: "Usuários ativos",
-                    color: "bg-green-50 text-green-700",
-                    icon: "👥"
-                  },
-                  {
-                    title: "Influenciadores",
-                    value: stats.totalInfluencers,
-                    subtitle: `${stats.pendingInfluencers} pendentes`,
-                    color: "bg-purple-50 text-purple-700",
-                    icon: "📱"
-                  },
-                  {
-                    title: "Receita Total",
-                    value: `R$ ${stats.totalRevenue.toLocaleString('pt-BR')}`,
-                    subtitle: stats.monthlyGrowth + " este mês",
-                    color: "bg-orange-50 text-orange-700",
-                    icon: "💰"
-                  }
-                ].map((stat, index) => (
-                  <Card key={index} className="border-none shadow-sm">
-                    <CardContent className={`p-6 ${stat.color} rounded-lg`}>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium">{stat.title}</p>
-                          <h2 className="text-2xl font-bold mt-1">{stat.value}</h2>
-                          <p className="text-sm opacity-80 mt-1">{stat.subtitle}</p>
-                        </div>
-                        <div className="text-2xl">{stat.icon}</div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-
-              {/* Ações rápidas */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Gráfico de Tendência de Cadastros */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>Ações Pendentes</CardTitle>
+                    <CardTitle className="flex items-center gap-2">
+                      <TrendingUp className="h-5 w-5" />
+                      Tendência de Cadastros (7 dias)
+                    </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex justify-between items-center p-3 bg-yellow-50 rounded">
-                      <span>{stats.pendingProfessionals} profissionais aguardando aprovação</span>
-                      <Button size="sm" onClick={() => setActiveTab("professionals")}>Ver</Button>
+                  <CardContent>
+                    <div className="h-[300px] flex items-center justify-center bg-gray-50 rounded-lg">
+                      <div className="text-center">
+                        <TrendingUp className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+                        <p className="text-gray-600">Gráfico de tendência de cadastros</p>
+                        <div className="mt-4 grid grid-cols-3 gap-4 text-sm">
+                          <div className="text-center">
+                            <div className="h-2 w-full bg-blue-200 rounded mb-1"></div>
+                            <span className="text-blue-600">Profissionais</span>
+                          </div>
+                          <div className="text-center">
+                            <div className="h-2 w-full bg-green-200 rounded mb-1"></div>
+                            <span className="text-green-600">Usuários</span>
+                          </div>
+                          <div className="text-center">
+                            <div className="h-2 w-full bg-yellow-200 rounded mb-1"></div>
+                            <span className="text-yellow-600">Influenciadores</span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex justify-between items-center p-3 bg-orange-50 rounded">
-                      <span>{stats.pendingWithdrawals} solicitações de saque</span>
-                      <Button size="sm" onClick={() => setActiveTab("withdrawals")}>Ver</Button>
+                  </CardContent>
+                </Card>
+
+                {/* Distribuição por Categoria */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <PieChartIcon className="h-5 w-5" />
+                      Distribuição de Profissionais por Categoria
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-[300px] flex items-center justify-center bg-gray-50 rounded-lg">
+                      <div className="text-center">
+                        <PieChartIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <p className="text-gray-600 mb-4">Distribuição por categoria</p>
+                        <div className="space-y-2 text-sm">
+                          {categoryStats.map((stat, index) => (
+                            <div key={index} className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <div 
+                                  className="w-3 h-3 rounded-full" 
+                                  style={{ backgroundColor: stat.color }}
+                                ></div>
+                                <span>{stat.name}</span>
+                              </div>
+                              <span className="font-medium">{stat.value}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex justify-between items-center p-3 bg-purple-50 rounded">
-                      <span>{stats.pendingInfluencers} influenciadores aguardando</span>
-                      <Button size="sm" onClick={() => setActiveTab("influencers")}>Ver</Button>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Ações Pendentes e Atividade Recente */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <AlertTriangle className="h-5 w-5 text-yellow-500" />
+                      Ações Pendentes
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="p-4 bg-yellow-50 rounded-lg border-l-4 border-yellow-400">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <p className="font-medium text-yellow-800">Profissionais Pendentes</p>
+                          <p className="text-sm text-yellow-600">{stats.pendingProfessionals} aguardando aprovação</p>
+                        </div>
+                        <Button size="sm" onClick={() => setActiveTab("professionals")} className="bg-yellow-500 hover:bg-yellow-600">
+                          Revisar
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <div className="p-4 bg-purple-50 rounded-lg border-l-4 border-purple-400">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <p className="font-medium text-purple-800">Influenciadores Pendentes</p>
+                          <p className="text-sm text-purple-600">{stats.pendingInfluencers} aguardando análise</p>
+                        </div>
+                        <Button size="sm" onClick={() => setActiveTab("influencers")} className="bg-purple-500 hover:bg-purple-600">
+                          Analisar
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <div className="p-4 bg-blue-50 rounded-lg border-l-4 border-blue-400">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <p className="font-medium text-blue-800">Novos Cadastros</p>
+                          <p className="text-sm text-blue-600">{stats.recentRegistrations} nos últimos 7 dias</p>
+                        </div>
+                        <Button size="sm" onClick={() => setActiveTab("monitoring")} variant="outline">
+                          Ver Todos
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
 
                 <Card>
                   <CardHeader>
-                    <CardTitle>Últimas Atividades</CardTitle>
+                    <CardTitle className="flex items-center gap-2">
+                      <Activity className="h-5 w-5 text-green-500" />
+                      Atividade Recente
+                    </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3">
-                    {mockTransactions.slice(0, 5).map((tx) => (
-                      <div key={tx.id} className="flex justify-between items-center p-2 border-b">
-                        <div>
-                          <p className="font-medium">{tx.professional}</p>
-                          <p className="text-sm text-gray-600">{tx.type === "service" ? tx.service : tx.type}</p>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {activityLogs.slice(0, 5).map((log) => (
+                        <div key={log.id} className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50">
+                          <div className={`p-2 rounded-full ${
+                            log.type === 'registration' ? 'bg-blue-100' :
+                            log.type === 'approval' ? 'bg-green-100' :
+                            'bg-gray-100'
+                          }`}>
+                            {log.type === 'registration' ? <UserCheck className="h-4 w-4 text-blue-600" /> :
+                             log.type === 'approval' ? <CheckCircle className="h-4 w-4 text-green-600" /> :
+                             <Activity className="h-4 w-4 text-gray-600" />}
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm font-medium">{log.user}</p>
+                            <p className="text-sm text-gray-600">{log.description}</p>
+                            <p className="text-xs text-gray-400">
+                              {new Date(log.timestamp).toLocaleString('pt-BR')}
+                            </p>
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <p className="font-medium">R$ {tx.amount.toFixed(2)}</p>
-                          <Badge variant={tx.status === "completed" ? "default" : "secondary"}>
-                            {tx.status}
-                          </Badge>
-                        </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </CardContent>
                 </Card>
               </div>
             </TabsContent>
 
             {/* PROFISSIONAIS */}
-            <TabsContent value="professionals" className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold">Gestão de Profissionais</h2>
-                <Select>
-                  <SelectTrigger className="w-48">
-                    <SelectValue placeholder="Filtrar por status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="pending">Pendentes</SelectItem>
-                    <SelectItem value="approved">Aprovados</SelectItem>
-                    <SelectItem value="rejected">Rejeitados</SelectItem>
-                  </SelectContent>
-                </Select>
+            <TabsContent value="professionals" className="space-y-6">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                  <h2 className="text-2xl font-bold">Gestão de Profissionais</h2>
+                  <p className="text-gray-600">Total: {filteredProfessionals.length} profissionais</p>
+                </div>
+                <div className="flex gap-2">
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-48">
+                      <SelectValue placeholder="Filtrar por status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos os Status</SelectItem>
+                      <SelectItem value="pending">Pendentes</SelectItem>
+                      <SelectItem value="approved">Aprovados</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {loading ? (
-                  <div className="col-span-full text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-ap-orange mx-auto" />
-                    <p className="mt-2 text-gray-600">Carregando profissionais...</p>
-                  </div>
-                ) : professionals.length === 0 ? (
-                  <div className="col-span-full text-center py-8">
-                    <p className="text-gray-600">Nenhum profissional cadastrado ainda.</p>
-                  </div>
-                ) : (
-                  professionals.map((pro) => (
-                    <Card key={pro.id} className="overflow-hidden">
+              {loading ? (
+                <div className="flex justify-center items-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600" />
+                </div>
+              ) : filteredProfessionals.length === 0 ? (
+                <Card>
+                  <CardContent className="text-center py-12">
+                    <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600">Nenhum profissional encontrado</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {filteredProfessionals.map((pro) => (
+                    <Card key={pro.id} className="hover:shadow-lg transition-shadow">
                       <CardHeader className="pb-3">
                         <div className="flex justify-between items-start">
                           <div>
@@ -475,39 +840,70 @@ const AdminDashboard = () => {
                           </Badge>
                         </div>
                       </CardHeader>
-                      <CardContent className="space-y-3">
+                      <CardContent className="space-y-4">
                         <div className="space-y-2 text-sm">
-                          <p>📍 {pro.location}</p>
-                          <p>📱 {pro.phone}</p>
-                          <p>📸 @{pro.instagram}</p>
-                          <p>✉️ {pro.email}</p>
-                          <p>📅 {new Date(pro.created_at).toLocaleDateString('pt-BR')}</p>
+                          <div className="flex items-center gap-2">
+                            <span className="text-gray-400">📍</span>
+                            <span>{pro.location}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-gray-400">📱</span>
+                            <span>{pro.phone}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-gray-400">📸</span>
+                            <span>@{pro.instagram}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-gray-400">✉️</span>
+                            <span className="text-xs">{pro.email}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-gray-400">📅</span>
+                            <span>{new Date(pro.created_at).toLocaleDateString('pt-BR')}</span>
+                          </div>
                         </div>
                         
+                        <Separator />
+                        
                         <div className="flex gap-2">
-                          {!pro.approved && (
+                          {!pro.approved ? (
                             <>
-                              <Button size="sm" className="flex-1 bg-green-600 hover:bg-green-700" 
-                                      onClick={() => handleApprove(pro.id, "Profissional")}>
+                              <Button 
+                                size="sm" 
+                                className="flex-1 bg-green-600 hover:bg-green-700" 
+                                onClick={() => handleApprove(pro.id, "Profissional")}
+                              >
+                                <CheckCircle className="h-4 w-4 mr-2" />
                                 Aprovar
                               </Button>
-                              <Button size="sm" variant="outline" className="flex-1 border-red-500 text-red-500"
-                                      onClick={() => handleReject(pro.id, "Profissional")}>
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                className="flex-1 border-red-500 text-red-500 hover:bg-red-50"
+                                onClick={() => handleReject(pro.id, "Profissional")}
+                              >
+                                <UserX className="h-4 w-4 mr-2" />
                                 Rejeitar
                               </Button>
                             </>
-                          )}
-                          {pro.approved && (
-                            <Button size="sm" variant="outline" className="w-full">
+                          ) : (
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="w-full"
+                              onClick={() => handleProfileView(pro, 'professional')}
+                            >
+                              <Eye className="h-4 w-4 mr-2" />
                               Ver Detalhes
                             </Button>
                           )}
                         </div>
                       </CardContent>
                     </Card>
-                  ))
-                )}
-              </div>
+                  ))}
+                </div>
+              )}
             </TabsContent>
 
             {/* USUÁRIOS */}
