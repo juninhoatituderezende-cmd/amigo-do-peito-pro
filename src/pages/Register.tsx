@@ -112,7 +112,10 @@ const Register = () => {
       // For this demo, we'll simulate a successful registration
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // Log in the user
+      // Clear any existing user session before logging in
+      localStorage.removeItem("user");
+      
+      // Log in the user as professional
       await login(formData.fullName, "password123", "professional");
       
       // Redirect to confirmation page
