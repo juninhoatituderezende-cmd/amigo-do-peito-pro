@@ -53,7 +53,7 @@ export function PlanSubscription() {
   const [searchParams] = useSearchParams();
   const referralCode = searchParams.get('ref');
   const { toast } = useToast();
-  const { user, signUp, signIn } = useAuth();
+  const { user, register, login } = useAuth();
   
   const [planData, setPlanData] = useState<PlanData | null>(null);
   const [professionals, setProfessionals] = useState<Professional[]>([]);
@@ -125,7 +125,7 @@ export function PlanSubscription() {
 
         if (linkData && planData) {
           setReferrerInfo({
-            name: linkData.clientes?.nome || 'Usuário',
+            name: (linkData as any).clientes?.nome || 'Usuário',
             commission: planData.entry_price * 0.25
           });
         }
@@ -180,28 +180,27 @@ export function PlanSubscription() {
 
       // Se é novo usuário, criar conta
       if (isNewUser && !user) {
-        const { data: authData, error: authError } = await signUp(userForm.email, userForm.password);
-        if (authError) throw authError;
+        await register(userForm.email, userForm.password, {
+          nome: userForm.nome,
+          email: userForm.email,
+          telefone: userForm.telefone
+        }, null);
         
-        // Criar registro na tabela clientes
-        const { error: clientError } = await supabase
-          .from('clientes')
-          .insert({
-            auth_user_id: authData.user?.id,
-            nome: userForm.nome,
-            email: userForm.email,
-            telefone: userForm.telefone
-          });
-
-        if (clientError) throw clientError;
-        userId = authData.user?.id;
+        // Após registro, fazer login
+        await login(userForm.email, userForm.password, null);
+        
+        // Buscar o usuário atual após login
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        userId = currentUser?.id;
       }
 
       // Se é usuário existente, fazer login
       if (!isNewUser && !user) {
-        const { data: authData, error: authError } = await signIn(userForm.email, userForm.password);
-        if (authError) throw authError;
-        userId = authData.user?.id;
+        await login(userForm.email, userForm.password, null);
+        
+        // Buscar o usuário atual após login
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        userId = currentUser?.id;
       }
 
       // Buscar ID do cliente na tabela
