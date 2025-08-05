@@ -21,6 +21,10 @@ import UserDashboard from "./pages/user/UserDashboard";
 import InfluencerRegister from "./pages/InfluencerRegister";
 import InfluencerLogin from "./pages/InfluencerLogin";
 import InfluencerDashboard from "./pages/influencer/InfluencerDashboard";
+import MLMProducts from "./pages/MLMProducts";
+import MLMDashboard from "./pages/MLMDashboard";
+import MLMSuccess from "./pages/MLMSuccess";
+import MLMCancel from "./pages/MLMCancel";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import About from "./pages/About";
@@ -53,6 +57,12 @@ const App = () => (
             <Route path="/influenciador/cadastro" element={<InfluencerRegister />} />
             <Route path="/influenciador/login" element={<InfluencerLogin />} />
             <Route path="/influenciador/dashboard" element={<InfluencerDashboard />} />
+            
+            {/* MLM Routes */}
+            <Route path="/mlm/products" element={<MLMProducts />} />
+            <Route path="/mlm/dashboard" element={<MLMDashboard />} />
+            <Route path="/mlm/success" element={<MLMSuccess />} />
+            <Route path="/mlm/cancel" element={<MLMCancel />} />
             
             {/* Admin Protected Routes */}
             <Route path="/admin" element={
