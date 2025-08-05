@@ -1,0 +1,501 @@
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { 
+  Package, 
+  DollarSign, 
+  Share2, 
+  Search,
+  ExternalLink,
+  Copy,
+  TrendingUp,
+  Target,
+  Eye,
+  BarChart3,
+  Link2
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
+
+interface Product {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  full_price: number;
+  down_payment: number;
+  image_url: string;
+  professional_id: string;
+  professional_name?: string;
+  created_at: string;
+  my_affiliate_link?: string;
+  my_clicks?: number;
+  my_conversions?: number;
+  my_commission_earned?: number;
+}
+
+interface AffiliateStats {
+  total_links: number;
+  total_clicks: number;
+  total_conversions: number;
+  total_commission: number;
+  conversion_rate: number;
+}
+
+export const InfluencerProducts = () => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [affiliateStats, setAffiliateStats] = useState<AffiliateStats>({
+    total_links: 0,
+    total_clicks: 0,
+    total_conversions: 0,
+    total_commission: 0,
+    conversion_rate: 0
+  });
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const { toast } = useToast();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      loadProducts();
+      loadAffiliateStats();
+    }
+  }, [user]);
+
+  const loadProducts = async () => {
+    try {
+      // Load all active products with affiliate data
+      const { data: productsData, error } = await supabase
+        .from('products')
+        .select(`
+          *,
+          profiles(full_name),
+          affiliate_links!left(referral_code, clicks, conversions),
+          sales!left(amount_paid)
+        `)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const enrichedProducts = (productsData || []).map(product => {
+        const userAffiliateLink = product.affiliate_links.find((link: any) => 
+          link.user_id === user?.id
+        );
+        
+        const userSales = product.sales.filter((sale: any) => 
+          sale.influencer_id === user?.id && sale.payment_status === 'paid'
+        );
+
+        const myCommission = userSales.reduce((sum: number, sale: any) => 
+          sum + (Number(sale.amount_paid) * 0.25), 0
+        );
+
+        return {
+          ...product,
+          professional_name: product.profiles?.full_name || 'Profissional',
+          my_affiliate_link: userAffiliateLink ? 
+            `${window.location.origin}/ref/${userAffiliateLink.referral_code}` : '',
+          my_clicks: userAffiliateLink?.clicks || 0,
+          my_conversions: userSales.length,
+          my_commission_earned: myCommission
+        };
+      });
+
+      setProducts(enrichedProducts);
+    } catch (error: any) {
+      toast({
+        title: "Erro ao carregar produtos",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadAffiliateStats = async () => {
+    try {
+      // Get affiliate statistics for the current user
+      const { data: linksData } = await supabase
+        .from('affiliate_links')
+        .select('clicks, conversions')
+        .eq('user_id', user?.id);
+
+      const { data: commissionsData } = await supabase
+        .from('commissions')
+        .select('commission_amount')
+        .eq('user_id', user?.id)
+        .eq('user_type', 'influencer');
+
+      const totalLinks = linksData?.length || 0;
+      const totalClicks = linksData?.reduce((sum, link) => sum + (link.clicks || 0), 0) || 0;
+      const totalConversions = linksData?.reduce((sum, link) => sum + (link.conversions || 0), 0) || 0;
+      const totalCommission = commissionsData?.reduce((sum, comm) => sum + Number(comm.commission_amount), 0) || 0;
+      const conversionRate = totalClicks > 0 ? (totalConversions / totalClicks) * 100 : 0;
+
+      setAffiliateStats({
+        total_links: totalLinks,
+        total_clicks: totalClicks,
+        total_conversions: totalConversions,
+        total_commission: totalCommission,
+        conversion_rate: conversionRate
+      });
+    } catch (error: any) {
+      console.error('Error loading affiliate stats:', error);
+    }
+  };
+
+  const createAffiliateLink = async (productId: string) => {
+    try {
+      const referralCode = `INF${user?.id?.slice(-6)}${productId.slice(-6)}${Date.now().toString().slice(-4)}`.toUpperCase();
+      
+      const { data, error } = await supabase
+        .from('affiliate_links')
+        .insert({
+          user_id: user?.id,
+          product_id: productId,
+          referral_code: referralCode
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const affiliateUrl = `${window.location.origin}/ref/${referralCode}`;
+      
+      // Update the product in state
+      setProducts(prev => prev.map(product => 
+        product.id === productId 
+          ? { ...product, my_affiliate_link: affiliateUrl }
+          : product
+      ));
+
+      toast({
+        title: "Link de afiliado criado!",
+        description: "Seu link único foi gerado com sucesso.",
+      });
+
+      return affiliateUrl;
+    } catch (error: any) {
+      toast({
+        title: "Erro ao criar link",
+        description: error.message,
+        variant: "destructive"
+      });
+      return null;
+    }
+  };
+
+  const copyAffiliateLink = async (link: string) => {
+    try {
+      await navigator.clipboard.writeText(link);
+      toast({
+        title: "Link copiado!",
+        description: "O link de afiliado foi copiado para a área de transferência.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro ao copiar link",
+        description: "Não foi possível copiar o link.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const shareProduct = async (product: Product) => {
+    let shareLink = product.my_affiliate_link;
+    
+    if (!shareLink) {
+      shareLink = await createAffiliateLink(product.id);
+      if (!shareLink) return;
+    }
+
+    const shareData = {
+      title: product.title,
+      text: `${product.description}\n\nConfira este produto incrível!`,
+      url: shareLink
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (error) {
+        copyAffiliateLink(shareLink);
+      }
+    } else {
+      copyAffiliateLink(shareLink);
+    }
+  };
+
+  const filteredProducts = products.filter(product => {
+    const matchesSearch = product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         product.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('pt-BR');
+  };
+
+  const calculateCommission = (price: number) => {
+    return price * 0.25; // 25% commission for influencers
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        {[1, 2, 3].map((i) => (
+          <Card key={i}>
+            <CardContent className="p-6">
+              <div className="animate-pulse space-y-4">
+                <div className="h-4 bg-muted rounded w-1/3"></div>
+                <div className="h-3 bg-muted rounded w-2/3"></div>
+                <div className="h-20 bg-muted rounded"></div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">Produtos para Afiliação</h2>
+          <p className="text-muted-foreground">
+            Encontre produtos para promover e ganhe 25% de comissão
+          </p>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-blue-100 rounded-full">
+                <Link2 className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Links Ativos</p>
+                <p className="text-2xl font-bold">{affiliateStats.total_links}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-green-100 rounded-full">
+                <Eye className="h-5 w-5 text-green-600" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Cliques</p>
+                <p className="text-2xl font-bold">{affiliateStats.total_clicks}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-purple-100 rounded-full">
+                <Target className="h-5 w-5 text-purple-600" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Conversões</p>
+                <p className="text-2xl font-bold">{affiliateStats.total_conversions}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-orange-100 rounded-full">
+                <BarChart3 className="h-5 w-5 text-orange-600" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Taxa Conversão</p>
+                <p className="text-2xl font-bold">{affiliateStats.conversion_rate.toFixed(1)}%</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-green-100 rounded-full">
+                <DollarSign className="h-5 w-5 text-green-600" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Comissões</p>
+                <p className="text-lg font-bold">{formatCurrency(affiliateStats.total_commission)}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Search and Filter */}
+      <div className="flex gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar produtos..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <select
+          value={selectedCategory}
+          onChange={(e) => setSelectedCategory(e.target.value)}
+          className="px-3 py-2 border rounded-md text-sm min-w-[200px]"
+        >
+          <option value="all">Todas as categorias</option>
+          <option value="servicos-profissionais">Serviços Profissionais</option>
+          <option value="produtos-digitais">Produtos Digitais</option>
+          <option value="cursos-online">Cursos Online</option>
+          <option value="consultoria">Consultoria</option>
+          <option value="eventos">Eventos</option>
+          <option value="outros">Outros</option>
+        </select>
+      </div>
+
+      {/* Products List */}
+      {filteredProducts.length === 0 ? (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+            <h3 className="text-lg font-semibold mb-2">Nenhum produto encontrado</h3>
+            <p className="text-muted-foreground">
+              {searchQuery ? "Tente ajustar sua busca" : "Ainda não há produtos disponíveis para afiliação"}
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {filteredProducts.map((product) => (
+            <Card key={product.id}>
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4">
+                  {/* Product Image */}
+                  <div className="w-20 h-20 bg-muted rounded-lg flex items-center justify-center overflow-hidden">
+                    {product.image_url ? (
+                      <img
+                        src={product.image_url}
+                        alt={product.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <Package className="h-8 w-8 text-muted-foreground" />
+                    )}
+                  </div>
+
+                  {/* Product Info */}
+                  <div className="flex-1">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h3 className="text-lg font-semibold">{product.title}</h3>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          {product.description}
+                        </p>
+                        <div className="flex items-center gap-4 text-sm mb-2">
+                          <span>Preço: {formatCurrency(product.full_price)}</span>
+                          <span>Entrada: {formatCurrency(product.down_payment)}</span>
+                          <Badge variant="outline">{product.category}</Badge>
+                          <span className="text-muted-foreground">por {product.professional_name}</span>
+                        </div>
+                        <div className="text-sm font-medium text-green-600">
+                          Sua comissão: {formatCurrency(calculateCommission(product.down_payment))} por venda
+                        </div>
+                      </div>
+
+                      {/* Affiliate Stats */}
+                      {product.my_affiliate_link && (
+                        <div className="text-right text-sm">
+                          <div className="font-semibold">{product.my_clicks || 0} cliques</div>
+                          <div className="text-green-600">{product.my_conversions || 0} vendas</div>
+                          <div className="text-muted-foreground">
+                            {formatCurrency(product.my_commission_earned || 0)} ganho
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-2 mt-4">
+                      <Button
+                        size="sm"
+                        variant="default"
+                        onClick={() => shareProduct(product)}
+                      >
+                        <Share2 className="h-4 w-4 mr-1" />
+                        {product.my_affiliate_link ? 'Compartilhar' : 'Criar Link & Compartilhar'}
+                      </Button>
+
+                      {product.my_affiliate_link && (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => copyAffiliateLink(product.my_affiliate_link!)}
+                          >
+                            <Copy className="h-4 w-4 mr-1" />
+                            Copiar Link
+                          </Button>
+
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => window.open(product.my_affiliate_link, '_blank')}
+                          >
+                            <ExternalLink className="h-4 w-4 mr-1" />
+                            Ver Página
+                          </Button>
+                        </>
+                      )}
+
+                      {!product.my_affiliate_link && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => createAffiliateLink(product.id)}
+                        >
+                          <Link2 className="h-4 w-4 mr-1" />
+                          Criar Link de Afiliado
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
