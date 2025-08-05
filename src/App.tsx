@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import MLMAdmin from "./pages/admin/MLMAdmin";
 import Register from "./pages/Register";
 import Confirmation from "./pages/Confirmation";
 import ProDashboard from "./pages/pro/ProDashboard";
@@ -72,6 +73,11 @@ const App = () => (
             <Route path="/admin" element={
               <ProtectedRoute role="admin">
                 <AdminDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/mlm" element={
+              <ProtectedRoute role="admin">
+                <MLMAdmin />
               </ProtectedRoute>
             } />
             
