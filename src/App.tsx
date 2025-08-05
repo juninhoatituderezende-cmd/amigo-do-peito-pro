@@ -15,6 +15,12 @@ import ProProfile from "./pages/pro/ProProfile";
 import ProSchedule from "./pages/pro/ProSchedule";
 import ProFinances from "./pages/pro/ProFinances";
 import ProServices from "./pages/pro/ProServices";
+import UserRegister from "./pages/UserRegister";
+import UserLogin from "./pages/UserLogin";
+import UserDashboard from "./pages/user/UserDashboard";
+import InfluencerRegister from "./pages/InfluencerRegister";
+import InfluencerLogin from "./pages/InfluencerLogin";
+import InfluencerDashboard from "./pages/influencer/InfluencerDashboard";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import About from "./pages/About";
@@ -35,6 +41,16 @@ const App = () => (
             <Route path="/cadastro" element={<Register />} />
             <Route path="/confirmacao" element={<Confirmation />} />
             <Route path="/admin-login" element={<AdminLogin />} />
+            
+            {/* User Routes */}
+            <Route path="/usuario/cadastro" element={<UserRegister />} />
+            <Route path="/usuario/login" element={<UserLogin />} />
+            <Route path="/usuario/dashboard" element={<UserDashboard />} />
+            
+            {/* Influencer Routes */}
+            <Route path="/influenciador/cadastro" element={<InfluencerRegister />} />
+            <Route path="/influenciador/login" element={<InfluencerLogin />} />
+            <Route path="/influenciador/dashboard" element={<InfluencerDashboard />} />
             
             {/* Admin Protected Routes */}
             <Route path="/admin" element={

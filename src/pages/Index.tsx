@@ -22,11 +22,23 @@ const Index = () => {
               <p className="text-xl md:text-2xl text-gray-800 mb-8">
                 A plataforma que conecta profissionais de saúde estética com clientes através de um sistema inovador de marketing multinível.
               </p>
-              <Link to="/cadastro">
-                <Button className="bg-ap-orange hover:bg-ap-orange/90 text-white px-8 py-6 text-lg">
-                  Cadastre-se como Profissional
-                </Button>
-              </Link>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link to="/cadastro">
+                  <Button className="bg-ap-orange hover:bg-ap-orange/90 text-white px-8 py-6 text-lg">
+                    Cadastre-se como Profissional
+                  </Button>
+                </Link>
+                <Link to="/usuario/cadastro">
+                  <Button className="bg-ap-light-blue hover:bg-ap-light-blue/90 text-white px-8 py-6 text-lg">
+                    Sou Cliente
+                  </Button>
+                </Link>
+                <Link to="/influenciador/cadastro">
+                  <Button variant="outline" className="border-2 border-ap-orange text-ap-orange hover:bg-ap-orange hover:text-white px-8 py-6 text-lg">
+                    Sou Influenciador
+                  </Button>
+                </Link>
+              </div>
             </div>
             <div className="flex justify-center">
               <div className="relative">
@@ -177,11 +189,23 @@ const Index = () => {
             <p className="text-xl mb-8">
               Cadastre-se agora como profissional e comece a expandir seu negócio através do nosso sistema inovador.
             </p>
-            <Link to="/cadastro">
-              <Button className="bg-white text-ap-orange hover:bg-gray-100 px-8 py-6 text-lg">
-                Começar Agora
-              </Button>
-            </Link>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link to="/cadastro">
+                <Button className="bg-white text-ap-orange hover:bg-gray-100 px-8 py-6 text-lg">
+                  Sou Profissional
+                </Button>
+              </Link>
+              <Link to="/usuario/cadastro">
+                <Button className="bg-white text-ap-light-blue hover:bg-gray-100 px-8 py-6 text-lg">
+                  Sou Cliente
+                </Button>
+              </Link>
+              <Link to="/influenciador/cadastro">
+                <Button variant="outline" className="border-2 border-white text-white hover:bg-white hover:text-ap-orange px-8 py-6 text-lg">
+                  Sou Influenciador
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </section>
