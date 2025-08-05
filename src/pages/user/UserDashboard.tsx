@@ -5,8 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserGroupsHistory } from "@/components/user/UserGroupsHistory";
+import { UserProfile } from "@/components/user/UserProfile";
 import { NotificationCenter } from "@/components/shared/NotificationCenter";
-import { User, Users, Bell, ShoppingCart } from "lucide-react";
+import { User, Users, Bell, ShoppingCart, Settings } from "lucide-react";
 
 const UserDashboard = () => {
   const userData = {
@@ -39,7 +40,7 @@ const UserDashboard = () => {
         </div>
 
         <Tabs defaultValue="groups" className="space-y-6">
-          <TabsList className="grid w-full lg:w-auto grid-cols-3">
+          <TabsList className="grid w-full lg:w-auto grid-cols-4">
             <TabsTrigger value="groups" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               Meus Grupos
@@ -51,6 +52,10 @@ const UserDashboard = () => {
             <TabsTrigger value="marketplace" className="flex items-center gap-2">
               <ShoppingCart className="h-4 w-4" />
               Participar
+            </TabsTrigger>
+            <TabsTrigger value="profile" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              Perfil
             </TabsTrigger>
           </TabsList>
 
@@ -137,6 +142,10 @@ const UserDashboard = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="profile">
+            <UserProfile />
           </TabsContent>
         </Tabs>
       </main>
