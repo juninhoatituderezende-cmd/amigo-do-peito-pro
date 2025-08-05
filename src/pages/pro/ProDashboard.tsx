@@ -1,219 +1,681 @@
 
-import { useState, useEffect } from "react";
-import ProSidebar from "../../components/pro/ProSidebar";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import Header from "../../components/Header";
+import Footer from "../../components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/AuthContext";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "../../contexts/AuthContext";
+import { supabase } from "../../lib/supabase";
 
-interface Appointment {
+interface Service {
   id: string;
-  clientName: string;
-  service: string;
-  date: string;
-  status: "pending" | "completed" | "canceled";
+  name: string;
+  description: string;
+  price: number;
+  duration: string;
+  category: string;
+  created_at: string;
 }
 
-interface FinanceData {
-  balance: number;
-  pendingPayments: number;
-  completedServices: number;
+interface Transaction {
+  id: string;
+  amount: number;
+  type: string;
+  status: string;
+  description: string;
+  created_at: string;
+}
+
+interface Professional {
+  id: string;
+  full_name: string;
+  email: string;
+  category: string;
+  location: string;
+  phone: string;
+  instagram: string;
+  approved: boolean;
+  created_at: string;
 }
 
 const ProDashboard = () => {
-  const { user } = useAuth();
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [financeData, setFinanceData] = useState<FinanceData>({
-    balance: 0,
-    pendingPayments: 0,
-    completedServices: 0,
+  const { user, logout } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  
+  const [professionalData, setProfessionalData] = useState<Professional | null>(null);
+  const [services, setServices] = useState<Service[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("overview");
+
+  // Service form state
+  const [serviceForm, setServiceForm] = useState({
+    name: "",
+    description: "",
+    price: "",
+    duration: "",
+    category: ""
   });
 
   useEffect(() => {
-    // In a real app, this would be an API call to fetch the dashboard data
-    // For this demo, we'll use mock data
-    setAppointments([
-      {
-        id: "appt1",
-        clientName: "Maria Silva",
-        service: user?.category === "tatuador" ? "Tatuagem braço" : "Lentes de contato dental",
-        date: "2023-05-20T14:00:00",
-        status: "pending",
-      },
-      {
-        id: "appt2",
-        clientName: "João Santos",
-        service: user?.category === "tatuador" ? "Tatuagem costas pequena" : "Lentes de contato (4 unidades)",
-        date: "2023-05-21T10:30:00",
-        status: "pending",
-      },
-      {
-        id: "appt3",
-        clientName: "Ana Oliveira",
-        service: user?.category === "tatuador" ? "Tatuagem pulso" : "Avaliação inicial",
-        date: "2023-05-18T16:00:00",
-        status: "completed",
-      },
-    ]);
+    if (!user || user.role !== "professional") {
+      navigate("/profissional/login");
+      return;
+    }
 
-    setFinanceData({
-      balance: 1250.75,
-      pendingPayments: 850.00,
-      completedServices: 5,
-    });
-  }, [user]);
+    if (!user.approved) {
+      navigate("/confirmacao");
+      return;
+    }
+
+    loadDashboardData();
+  }, [user, navigate]);
+
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+
+      // Load professional data
+      const { data: profData, error: profError } = await supabase
+        .from('professionals')
+        .select('*')
+        .eq('id', user?.id)
+        .single();
+
+      if (profError) {
+        console.error('Error loading professional:', profError);
+      } else {
+        setProfessionalData(profData);
+      }
+
+      // Load services
+      const { data: servicesData, error: servicesError } = await supabase
+        .from('services')
+        .select('*')
+        .eq('professional_id', user?.id)
+        .order('created_at', { ascending: false });
+
+      if (servicesError) {
+        console.error('Error loading services:', servicesError);
+      } else {
+        setServices(servicesData || []);
+      }
+
+      // Load transactions
+      const { data: transactionsData, error: transactionsError } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('professional_id', user?.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (transactionsError) {
+        console.error('Error loading transactions:', transactionsError);
+      } else {
+        setTransactions(transactionsData || []);
+      }
+
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar dados do dashboard.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleServiceFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setServiceForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleServiceCategoryChange = (value: string) => {
+    setServiceForm(prev => ({ ...prev, category: value }));
+  };
+
+  const handleCreateService = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!serviceForm.name || !serviceForm.description || !serviceForm.price || !serviceForm.duration || !serviceForm.category) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Por favor, preencha todos os campos.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('services')
+        .insert({
+          professional_id: user?.id,
+          name: serviceForm.name,
+          description: serviceForm.description,
+          price: parseFloat(serviceForm.price),
+          duration: serviceForm.duration,
+          category: serviceForm.category
+        })
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      setServices(prev => [data, ...prev]);
+      setServiceForm({ name: "", description: "", price: "", duration: "", category: "" });
+      
+      toast({
+        title: "Serviço criado!",
+        description: "Seu novo serviço foi adicionado com sucesso.",
+      });
+
+    } catch (error: any) {
+      console.error('Error creating service:', error);
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao criar serviço.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteService = async (serviceId: string) => {
+    try {
+      const { error } = await supabase
+        .from('services')
+        .delete()
+        .eq('id', serviceId);
+
+      if (error) {
+        throw error;
+      }
+
+      setServices(prev => prev.filter(s => s.id !== serviceId));
+      
+      toast({
+        title: "Serviço removido",
+        description: "Serviço foi removido com sucesso.",
+      });
+
+    } catch (error: any) {
+      console.error('Error deleting service:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao remover serviço.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
+
+  // Calculate stats
+  const totalEarnings = transactions
+    .filter(t => t.type === 'service' && t.status === 'completed')
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const pendingEarnings = transactions
+    .filter(t => t.type === 'service' && t.status === 'pending')
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const completedServices = transactions
+    .filter(t => t.type === 'service' && t.status === 'completed').length;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-ap-orange" />
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
-    <div className="flex h-screen bg-slate-50">
-      <ProSidebar />
+    <div className="min-h-screen flex flex-col">
+      <Header />
       
-      <div className="flex-1 overflow-y-auto">
-        <div className="p-8">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold">Dashboard</h1>
-            <p className="text-gray-600">
-              Bem-vindo de volta, {user?.name.split(" ")[0] || "Profissional"}! Aqui está um resumo da sua atividade.
-            </p>
-          </div>
-          
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-500">Saldo Disponível</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  R$ {financeData.balance.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Disponível para saque via PIX
-                </p>
-                <Button className="mt-4 w-full bg-ap-orange hover:bg-ap-orange/90">
-                  Solicitar Saque
-                </Button>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-500">Pagamentos Pendentes</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  R$ {financeData.pendingPayments.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Serviços aguardando conclusão
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-500">Serviços Realizados</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {financeData.completedServices}
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Total de serviços concluídos
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-          
-          {/* Upcoming Appointments */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">Próximos Atendimentos</h2>
-              <Button variant="outline" onClick={() => {}}>
-                Ver Todos
+      <main className="flex-1 py-8 bg-slate-50">
+        <div className="ap-container">
+          {/* Header */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+            <div>
+              <h1 className="text-3xl font-bold">Dashboard Profissional</h1>
+              <p className="text-gray-600">
+                Bem-vindo, {professionalData?.full_name || user?.name}!
+              </p>
+            </div>
+            <div className="mt-4 md:mt-0 flex gap-2">
+              <Button variant="outline" onClick={() => navigate("/profissional/perfil")}>
+                Editar Perfil
+              </Button>
+              <Button variant="outline" onClick={handleLogout}>
+                Sair
               </Button>
             </div>
-            
-            <div className="space-y-4">
-              {appointments.filter(apt => apt.status === "pending").map((appointment) => (
-                <Card key={appointment.id} className="overflow-hidden">
-                  <div className="border-l-4 border-ap-orange p-4">
-                    <div className="flex flex-col sm:flex-row justify-between">
-                      <div>
-                        <h3 className="font-medium">{appointment.clientName}</h3>
-                        <p className="text-gray-600 text-sm">{appointment.service}</p>
-                      </div>
-                      <div className="mt-2 sm:mt-0 text-sm">
-                        <div className="text-gray-700 font-medium">
-                          {new Date(appointment.date).toLocaleDateString("pt-BR")} às {new Date(appointment.date).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-                        </div>
-                      </div>
+          </div>
+
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="overview">Visão Geral</TabsTrigger>
+              <TabsTrigger value="services">Serviços</TabsTrigger>
+              <TabsTrigger value="transactions">Financeiro</TabsTrigger>
+              <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            </TabsList>
+
+            {/* VISÃO GERAL */}
+            <TabsContent value="overview" className="space-y-6">
+              {/* Stats Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Ganhos Totais</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-green-600">
+                      R$ {totalEarnings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </div>
-                  </div>
+                    <p className="text-sm text-gray-600">Serviços completados</p>
+                  </CardContent>
                 </Card>
-              ))}
-              
-              {appointments.filter(apt => apt.status === "pending").length === 0 && (
-                <div className="text-center py-8 bg-white rounded-lg border">
-                  <p className="text-gray-600">Nenhum atendimento agendado.</p>
-                </div>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Ganhos Pendentes</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-yellow-600">
+                      R$ {pendingEarnings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </div>
+                    <p className="text-sm text-gray-600">Aguardando confirmação</p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Serviços Realizados</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-blue-600">
+                      {completedServices}
+                    </div>
+                    <p className="text-sm text-gray-600">Total de atendimentos</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Quick Actions */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Ações Rápidas</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <Button 
+                      className="w-full justify-start" 
+                      onClick={() => setActiveTab("services")}
+                    >
+                      📋 Gerenciar Serviços
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start"
+                      onClick={() => navigate("/profissional/financas")}
+                    >
+                      💰 Ver Finanças
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start"
+                      onClick={() => navigate("/profissional/perfil")}
+                    >
+                      👤 Editar Perfil
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Status da Conta</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span>Status:</span>
+                      <Badge variant="default" className="bg-green-600">
+                        Aprovado
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>Categoria:</span>
+                      <Badge variant="outline" className="capitalize">
+                        {professionalData?.category}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>Serviços Ativos:</span>
+                      <Badge variant="secondary">
+                        {services.length}
+                      </Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Recent Transactions */}
+              {transactions.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Transações Recentes</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {transactions.slice(0, 5).map((transaction) => (
+                        <div key={transaction.id} className="flex items-center justify-between p-3 border rounded">
+                          <div>
+                            <p className="font-medium">{transaction.description}</p>
+                            <p className="text-sm text-gray-600">
+                              {new Date(transaction.created_at).toLocaleDateString('pt-BR')}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold text-green-600">
+                              R$ {transaction.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </p>
+                            <Badge variant={transaction.status === 'completed' ? 'default' : 'secondary'}>
+                              {transaction.status === 'completed' ? 'Pago' : 'Pendente'}
+                            </Badge>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
               )}
-            </div>
-          </div>
-          
-          {/* Recent Activity */}
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">Atividades Recentes</h2>
-            </div>
-            
-            <div className="bg-white rounded-lg border p-4">
-              <ul className="space-y-4 divide-y divide-gray-100">
-                <li className="pt-4 first:pt-0">
-                  <div className="flex items-start">
-                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
+            </TabsContent>
+
+            {/* SERVIÇOS */}
+            <TabsContent value="services" className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Service Form */}
+                <Card className="lg:col-span-1">
+                  <CardHeader>
+                    <CardTitle>Adicionar Novo Serviço</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <form onSubmit={handleCreateService} className="space-y-4">
+                      <div>
+                        <Label htmlFor="name">Nome do Serviço *</Label>
+                        <Input
+                          id="name"
+                          name="name"
+                          value={serviceForm.name}
+                          onChange={handleServiceFormChange}
+                          placeholder="Ex: Tatuagem Blackwork"
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="price">Preço (R$) *</Label>
+                        <Input
+                          id="price"
+                          name="price"
+                          type="number"
+                          step="0.01"
+                          value={serviceForm.price}
+                          onChange={handleServiceFormChange}
+                          placeholder="0.00"
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="duration">Duração *</Label>
+                        <Input
+                          id="duration"
+                          name="duration"
+                          value={serviceForm.duration}
+                          onChange={handleServiceFormChange}
+                          placeholder="Ex: 2 horas, 30 min"
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="category">Categoria *</Label>
+                        <Select onValueChange={handleServiceCategoryChange}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione a categoria" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="tatuagem">Tatuagem</SelectItem>
+                            <SelectItem value="dentista">Odontologia</SelectItem>
+                            <SelectItem value="estetica">Estética</SelectItem>
+                            <SelectItem value="outros">Outros</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="description">Descrição *</Label>
+                        <Textarea
+                          id="description"
+                          name="description"
+                          value={serviceForm.description}
+                          onChange={handleServiceFormChange}
+                          placeholder="Descreva seu serviço em detalhes..."
+                          rows={3}
+                          required
+                        />
+                      </div>
+
+                      <Button type="submit" className="w-full bg-ap-orange hover:bg-ap-orange/90">
+                        Adicionar Serviço
+                      </Button>
+                    </form>
+                  </CardContent>
+                </Card>
+
+                {/* Services List */}
+                <div className="lg:col-span-2 space-y-4">
+                  <h3 className="text-xl font-semibold">Meus Serviços ({services.length})</h3>
+                  
+                  {services.length === 0 ? (
+                    <Card>
+                      <CardContent className="text-center py-8">
+                        <p className="text-gray-600">Você ainda não tem serviços cadastrados.</p>
+                        <p className="text-sm text-gray-500">Adicione seu primeiro serviço ao lado.</p>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <div className="space-y-4">
+                      {services.map((service) => (
+                        <Card key={service.id}>
+                          <CardHeader>
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <CardTitle className="text-lg">{service.name}</CardTitle>
+                                <div className="flex gap-2 mt-2">
+                                  <Badge variant="outline" className="capitalize">
+                                    {service.category}
+                                  </Badge>
+                                  <Badge variant="secondary">
+                                    {service.duration}
+                                  </Badge>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-2xl font-bold text-green-600">
+                                  R$ {service.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </p>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => deleteService(service.id)}
+                                  className="mt-2 text-red-600 border-red-200 hover:bg-red-50"
+                                >
+                                  Remover
+                                </Button>
+                              </div>
+                            </div>
+                          </CardHeader>
+                          <CardContent>
+                            <p className="text-gray-600">{service.description}</p>
+                            <p className="text-xs text-gray-500 mt-2">
+                              Criado em {new Date(service.created_at).toLocaleDateString('pt-BR')}
+                            </p>
+                          </CardContent>
+                        </Card>
+                      ))}
                     </div>
-                    <div className="ml-4">
-                      <p className="text-sm font-medium">Pagamento recebido</p>
-                      <p className="text-xs text-gray-500">Você recebeu R$ 450,00 pelo serviço realizado para Ana Oliveira</p>
-                      <p className="text-xs text-gray-400 mt-1">Há 2 dias</p>
+                  )}
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* FINANCEIRO */}
+            <TabsContent value="transactions" className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="text-center">
+                      <p className="text-sm text-gray-600">Saldo Disponível</p>
+                      <p className="text-2xl font-bold text-green-600">
+                        R$ {totalEarnings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </p>
                     </div>
-                  </div>
-                </li>
-                <li className="pt-4">
-                  <div className="flex items-start">
-                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="text-center">
+                      <p className="text-sm text-gray-600">Pendente</p>
+                      <p className="text-2xl font-bold text-yellow-600">
+                        R$ {pendingEarnings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </p>
                     </div>
-                    <div className="ml-4">
-                      <p className="text-sm font-medium">Novo agendamento</p>
-                      <p className="text-xs text-gray-500">João Santos agendou um serviço para 21/05/2023</p>
-                      <p className="text-xs text-gray-400 mt-1">Ontem</p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="text-center">
+                      <Button className="w-full bg-ap-orange hover:bg-ap-orange/90">
+                        Solicitar Saque
+                      </Button>
                     </div>
-                  </div>
-                </li>
-                <li className="pt-4">
-                  <div className="flex items-start">
-                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                      </svg>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Histórico de Transações</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {transactions.length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-gray-600">Nenhuma transação encontrada.</p>
                     </div>
-                    <div className="ml-4">
-                      <p className="text-sm font-medium">Serviço concluído</p>
-                      <p className="text-xs text-gray-500">Você concluiu o serviço para Ana Oliveira</p>
-                      <p className="text-xs text-gray-400 mt-1">Há 3 dias</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {transactions.map((transaction) => (
+                        <div key={transaction.id} className="flex items-center justify-between p-4 border rounded-lg">
+                          <div>
+                            <p className="font-medium">{transaction.description}</p>
+                            <p className="text-sm text-gray-600 capitalize">
+                              {transaction.type} • {new Date(transaction.created_at).toLocaleDateString('pt-BR')}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold text-green-600">
+                              + R$ {transaction.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </p>
+                            <Badge variant={transaction.status === 'completed' ? 'default' : 'secondary'}>
+                              {transaction.status === 'completed' ? 'Concluído' : 'Pendente'}
+                            </Badge>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  </div>
-                </li>
-              </ul>
-            </div>
-          </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* ANALYTICS */}
+            <TabsContent value="analytics" className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Resumo do Mês</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex justify-between">
+                      <span>Serviços Realizados:</span>
+                      <span className="font-bold">{completedServices}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Receita Gerada:</span>
+                      <span className="font-bold text-green-600">
+                        R$ {totalEarnings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Ticket Médio:</span>
+                      <span className="font-bold">
+                        R$ {completedServices > 0 ? (totalEarnings / completedServices).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0,00'}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Performance</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex justify-between">
+                      <span>Taxa de Conversão:</span>
+                      <span className="font-bold text-green-600">85%</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Avaliação Média:</span>
+                      <span className="font-bold text-yellow-600">4.8 ⭐</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Clientes Recorrentes:</span>
+                      <span className="font-bold">60%</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
-      </div>
+      </main>
+
+      <Footer />
     </div>
   );
 };
