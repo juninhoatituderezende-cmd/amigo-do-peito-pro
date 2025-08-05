@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
@@ -130,13 +130,15 @@ const Register = () => {
   };
 
   // If the user is already logged in, redirect to their dashboard
-  if (user) {
-    if (user.role === "professional") {
-      navigate("/profissional");
-    } else if (user.role === "admin") {
-      navigate("/admin");
+  useEffect(() => {
+    if (user) {
+      if (user.role === "professional") {
+        navigate("/profissional");
+      } else if (user.role === "admin") {
+        navigate("/admin");
+      }
     }
-  }
+  }, [user, navigate]);
 
   const renderStep = () => {
     switch (step) {
