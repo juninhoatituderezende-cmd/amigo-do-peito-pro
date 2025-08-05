@@ -22,6 +22,7 @@ import UserDashboard from "./pages/user/UserDashboard";
 import InfluencerRegister from "./pages/InfluencerRegister";
 import InfluencerLogin from "./pages/InfluencerLogin";
 import InfluencerDashboard from "./pages/influencer/InfluencerDashboard";
+import InfluencerTools from "./pages/influencer/InfluencerTools";
 import MLMProducts from "./pages/MLMProducts";
 import MLMDashboard from "./pages/MLMDashboard";
 import MLMSuccess from "./pages/MLMSuccess";
@@ -60,6 +61,11 @@ const App = () => (
             <Route path="/influenciador/dashboard" element={
               <ProtectedRoute role="influencer">
                 <InfluencerDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/influenciador/ferramentas" element={
+              <ProtectedRoute role="influencer">
+                <InfluencerTools />
               </ProtectedRoute>
             } />
             

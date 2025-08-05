@@ -100,7 +100,11 @@ const InfluencerDashboard = () => {
               <p className="text-muted-foreground mb-4">
                 Acesse banners, textos prontos e templates para suas redes sociais.
               </p>
-              <Button variant="outline" className="w-full">
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => window.location.href = "/influenciador/ferramentas"}
+              >
                 Ver Materiais
               </Button>
             </CardContent>
