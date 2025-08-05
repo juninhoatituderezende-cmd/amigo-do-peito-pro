@@ -132,13 +132,14 @@ const Register = () => {
     }
   };
 
-  // If the user is already logged in, redirect to their dashboard
+  // If the user is already logged in, show a message instead of redirecting
   useEffect(() => {
     if (user) {
       if (user.role === "professional") {
         navigate("/profissional");
       } else if (user.role === "admin") {
-        navigate("/admin");
+        // Don't redirect admin automatically, let them see the form
+        console.log("Admin user detected, showing registration form");
       }
     }
   }, [user, navigate]);
