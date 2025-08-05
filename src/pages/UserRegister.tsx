@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { Button } from "@/components/ui/button";
@@ -7,8 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
 
 const UserRegister = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -18,11 +23,45 @@ const UserRegister = () => {
     interests: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulação de cadastro - no futuro será integrado com Supabase
-    console.log("Cadastro de usuário:", formData);
-    alert("Cadastro realizado com sucesso! Você será redirecionado para o login.");
+    
+    // Validation
+    if (!formData.name || !formData.email || !formData.password || 
+        !formData.phone || !formData.city) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Por favor, preencha todos os campos obrigatórios.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    
+    try {
+      // Simulação de cadastro - no futuro será integrado com Supabase
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      console.log("Cadastro de usuário:", formData);
+      
+      toast({
+        title: "Cadastro realizado com sucesso!",
+        description: "Você será redirecionado para o login.",
+      });
+      
+      // Redirect to login after successful registration
+      setTimeout(() => {
+        navigate("/usuario/login");
+      }, 2000);
+    } catch (error) {
+      toast({
+        title: "Erro no cadastro",
+        description: "Ocorreu um erro ao processar seu cadastro. Por favor, tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -120,8 +159,12 @@ const UserRegister = () => {
                     />
                   </div>
 
-                  <Button type="submit" className="w-full bg-ap-orange hover:bg-ap-orange/90">
-                    Cadastrar
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-ap-orange hover:bg-ap-orange/90"
+                    disabled={loading}
+                  >
+                    {loading ? "Cadastrando..." : "Cadastrar"}
                   </Button>
                 </form>
 
