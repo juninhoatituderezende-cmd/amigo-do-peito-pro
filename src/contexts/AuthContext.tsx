@@ -1,5 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { supabase } from "../lib/supabase";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 type UserRole = "admin" | "professional" | null;
 
@@ -14,7 +16,9 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
+  supabaseUser: SupabaseUser | null;
   login: (email: string, password: string, role: UserRole) => Promise<void>;
+  register: (email: string, password: string, userData: any, role: UserRole) => Promise<void>;
   adminLogin: (password: string) => Promise<void>;
   logout: () => void;
   loading: boolean;
@@ -24,40 +28,178 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [supabaseUser, setSupabaseUser] = useState<SupabaseUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is logged in from localStorage
-    const storedUser = localStorage.getItem("user");
-    
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    
-    setLoading(false);
+    // Get initial session
+    const getInitialSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user) {
+        setSupabaseUser(session.user);
+        await loadUserProfile(session.user.id, session.user.email!);
+      }
+      
+      setLoading(false);
+    };
+
+    getInitialSession();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        setSupabaseUser(session.user);
+        await loadUserProfile(session.user.id, session.user.email!);
+      } else {
+        setSupabaseUser(null);
+        setUser(null);
+      }
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
+
+  const loadUserProfile = async (id: string, email: string) => {
+    try {
+      // Check if user is admin
+      if (email === "admin@amigodopeito.com") {
+        setUser({
+          id,
+          name: "Administrador",
+          email,
+          role: "admin"
+        });
+        return;
+      }
+
+      // Check professionals table
+      const { data: professional } = await supabase
+        .from('professionals')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (professional) {
+        setUser({
+          id: professional.id,
+          name: professional.full_name,
+          email: professional.email,
+          role: "professional",
+          category: professional.category,
+          approved: professional.approved
+        });
+        return;
+      }
+
+      // Check users table
+      const { data: regularUser } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (regularUser) {
+        setUser({
+          id: regularUser.id,
+          name: regularUser.full_name,
+          email: regularUser.email,
+          role: null
+        });
+        return;
+      }
+
+      // Check influencers table
+      const { data: influencer } = await supabase
+        .from('influencers')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (influencer) {
+        setUser({
+          id: influencer.id,
+          name: influencer.full_name,
+          email: influencer.email,
+          role: null // Will be handled differently for influencers
+        });
+      }
+    } catch (error) {
+      console.error('Error loading user profile:', error);
+    }
+  };
 
   const login = async (email: string, password: string, role: UserRole) => {
     setLoading(true);
     
     try {
-      // In a real app, this would be an API call
-      // For now, we'll simulate a successful login for demonstration
-      const mockUser = {
-        id: "pro-123",
-        name: "Professional User",
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
-        role,
-        category: "tatuador", // or "dentista"
-        approved: role === "admin" ? true : Math.random() > 0.5, // Random approval for demo
-      };
+        password
+      });
 
-      // Store the user in localStorage
-      localStorage.setItem("user", JSON.stringify(mockUser));
-      setUser(mockUser);
-    } catch (error) {
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      if (data.user) {
+        setSupabaseUser(data.user);
+        await loadUserProfile(data.user.id, data.user.email!);
+      }
+    } catch (error: any) {
       console.error("Login failed:", error);
-      throw new Error("Falha no login. Por favor, tente novamente.");
+      throw new Error(error.message || "Falha no login. Por favor, tente novamente.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const register = async (email: string, password: string, userData: any, role: UserRole) => {
+    setLoading(true);
+    
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      if (data.user) {
+        // Insert user data into appropriate table
+        if (role === "professional") {
+          const { error: insertError } = await supabase
+            .from('professionals')
+            .insert({
+              id: data.user.id,
+              ...userData
+            });
+
+          if (insertError) {
+            throw new Error(insertError.message);
+          }
+        } else {
+          const { error: insertError } = await supabase
+            .from('users')
+            .insert({
+              id: data.user.id,
+              ...userData
+            });
+
+          if (insertError) {
+            throw new Error(insertError.message);
+          }
+        }
+
+        setSupabaseUser(data.user);
+        await loadUserProfile(data.user.id, data.user.email!);
+      }
+    } catch (error: any) {
+      console.error("Registration failed:", error);
+      throw new Error(error.message || "Falha no cadastro. Por favor, tente novamente.");
     } finally {
       setLoading(false);
     }
@@ -89,13 +231,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem("user");
+  const logout = async () => {
+    await supabase.auth.signOut();
     setUser(null);
+    setSupabaseUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, adminLogin, logout, loading }}>
+    <AuthContext.Provider value={{ user, supabaseUser, login, register, adminLogin, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );
