@@ -1,95 +1,88 @@
-
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import Header from "../../components/Header";
-import Footer from "../../components/Footer";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "../../contexts/AuthContext";
-import { supabase } from "../../lib/supabase";
-import { StripeOnboarding } from "@/components/stripe/StripeOnboarding";
-import { useStripeAccount } from "@/hooks/useStripeAccount";
-import { CheckCircle, CreditCard } from "lucide-react";
-import { ProductForm } from "@/components/marketplace/ProductForm";
-import { ProProducts } from "@/components/pro/ProProducts";
-
-interface Service {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  duration: string;
-  category: string;
-  created_at: string;
-}
-
-interface Transaction {
-  id: string;
-  amount: number;
-  type: string;
-  status: string;
-  description: string;
-  created_at: string;
-}
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/lib/supabase';
+import { useToast } from '@/hooks/use-toast';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import SimpleImageUpload from '@/components/SimpleImageUpload';
+import { Bell, Camera, Star, Calendar, DollarSign, User, MapPin, CreditCard, Phone, Mail, Instagram } from 'lucide-react';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 
 interface Professional {
   id: string;
-  full_name: string;
+  name: string;
   email: string;
-  category: string;
-  location: string;
-  phone: string;
-  instagram: string;
-  approved: boolean;
-  created_at: string;
+  specialty?: string;
+  location?: string;
+  phone?: string;
+  instagram?: string;
+  bank_data?: any;
+  rating?: number;
+  total_earnings?: number;
+  avatar_url?: string;
 }
 
-const ProDashboard = () => {
-  const { user, logout } = useAuth();
-  const { toast } = useToast();
-  const navigate = useNavigate();
-  const { account: stripeAccount, isConfigured: stripeConfigured } = useStripeAccount();
-  
-  const [professionalData, setProfessionalData] = useState<Professional | null>(null);
-  const [services, setServices] = useState<Service[]>([]);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("overview");
+interface Contemplation {
+  id: string;
+  user_id: string;
+  user_name: string;
+  entry_date: string;
+  referral_count: number;
+  service_confirmed: boolean;
+  payment_status: 'pending' | 'released' | 'paid';
+  before_photos?: string[];
+  after_photos?: string[];
+}
 
-  // Service form state
-  const [serviceForm, setServiceForm] = useState({
-    name: "",
-    description: "",
-    price: "",
-    duration: "",
-    category: ""
-  });
+interface ServiceHistory {
+  id: string;
+  client_name: string;
+  service_date: string;
+  amount: number;
+  payment_status: 'pending' | 'released' | 'paid';
+  rating?: number;
+  review?: string;
+}
+
+interface Notification {
+  id: string;
+  message: string;
+  type: 'contemplation' | 'payment';
+  created_at: string;
+  read: boolean;
+}
+
+const ProDashboard: React.FC = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  
+  const [professional, setProfessional] = useState<Professional | null>(null);
+  const [contemplations, setContemplations] = useState<Contemplation[]>([]);
+  const [serviceHistory, setServiceHistory] = useState<ServiceHistory[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedContemplation, setSelectedContemplation] = useState<string | null>(null);
+  const [beforePhotos, setBeforePhotos] = useState<string[]>([]);
+  const [afterPhotos, setAfterPhotos] = useState<string[]>([]);
 
   useEffect(() => {
-    if (!user || user.role !== "professional") {
-      navigate("/profissional/login");
+    if (!user || user.role !== 'professional') {
+      navigate('/profissional');
       return;
     }
-
-    if (!user.approved) {
-      navigate("/confirmacao");
-      return;
-    }
-
     loadDashboardData();
   }, [user, navigate]);
 
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-
+      
       // Load professional data
       const { data: profData, error: profError } = await supabase
         .from('professionals')
@@ -97,44 +90,76 @@ const ProDashboard = () => {
         .eq('id', user?.id)
         .single();
 
-      if (profError) {
-        console.error('Error loading professional:', profError);
-      } else {
-        setProfessionalData(profData);
-      }
+      if (profError) throw profError;
+      
+      const professionalInfo: Professional = {
+        id: profData.id,
+        name: profData.full_name || profData.name || user?.name || '',
+        email: profData.email || user?.email || '',
+        specialty: profData.category || profData.specialty,
+        location: profData.location,
+        phone: profData.phone,
+        instagram: profData.instagram,
+        bank_data: profData.bank_data,
+        rating: profData.rating || 0,
+        total_earnings: profData.total_earnings || 0,
+        avatar_url: profData.avatar_url
+      };
+      
+      setProfessional(professionalInfo);
 
-      // Load services
-      const { data: servicesData, error: servicesError } = await supabase
-        .from('services')
-        .select('*')
+      // Load contemplations for this professional
+      const { data: contemplationData, error: contemplationError } = await supabase
+        .from('contemplations')
+        .select(`
+          *,
+          users:user_id (name)
+        `)
         .eq('professional_id', user?.id)
         .order('created_at', { ascending: false });
 
-      if (servicesError) {
-        console.error('Error loading services:', servicesError);
-      } else {
-        setServices(servicesData || []);
-      }
+      if (contemplationError) throw contemplationError;
+      
+      const formattedContemplations = contemplationData?.map(c => ({
+        id: c.id,
+        user_id: c.user_id,
+        user_name: c.users?.name || 'Cliente',
+        entry_date: c.created_at,
+        referral_count: 9, // Since they're contemplated
+        service_confirmed: c.service_confirmed || false,
+        payment_status: c.payment_status || 'pending',
+        before_photos: c.before_photos || [],
+        after_photos: c.after_photos || []
+      })) || [];
 
-      // Load transactions
-      const { data: transactionsData, error: transactionsError } = await supabase
-        .from('transactions')
+      setContemplations(formattedContemplations);
+
+      // Load service history
+      const { data: historyData, error: historyError } = await supabase
+        .from('service_history')
         .select('*')
         .eq('professional_id', user?.id)
-        .order('created_at', { ascending: false })
-        .limit(10);
+        .order('service_date', { ascending: false });
 
-      if (transactionsError) {
-        console.error('Error loading transactions:', transactionsError);
-      } else {
-        setTransactions(transactionsData || []);
-      }
+      if (historyError) throw historyError;
+      setServiceHistory(historyData || []);
+
+      // Load notifications
+      const { data: notificationData, error: notificationError } = await supabase
+        .from('professional_notifications')
+        .select('*')
+        .eq('professional_id', user?.id)
+        .eq('read', false)
+        .order('created_at', { ascending: false });
+
+      if (notificationError) throw notificationError;
+      setNotifications(notificationData || []);
 
     } catch (error) {
       console.error('Error loading dashboard data:', error);
       toast({
-        title: "Erro",
-        description: "Erro ao carregar dados do dashboard.",
+        title: "Erro ao carregar dados",
+        description: "Não foi possível carregar as informações do painel.",
         variant: "destructive",
       });
     } finally {
@@ -142,601 +167,451 @@ const ProDashboard = () => {
     }
   };
 
-  const handleServiceFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setServiceForm(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleServiceCategoryChange = (value: string) => {
-    setServiceForm(prev => ({ ...prev, category: value }));
-  };
-
-  const handleCreateService = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!serviceForm.name || !serviceForm.description || !serviceForm.price || !serviceForm.duration || !serviceForm.category) {
-      toast({
-        title: "Campos obrigatórios",
-        description: "Por favor, preencha todos os campos.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const { data, error } = await supabase
-        .from('services')
-        .insert({
-          professional_id: user?.id,
-          name: serviceForm.name,
-          description: serviceForm.description,
-          price: parseFloat(serviceForm.price),
-          duration: serviceForm.duration,
-          category: serviceForm.category
-        })
-        .select()
-        .single();
-
-      if (error) {
-        throw error;
-      }
-
-      setServices(prev => [data, ...prev]);
-      setServiceForm({ name: "", description: "", price: "", duration: "", category: "" });
-      
-      toast({
-        title: "Serviço criado!",
-        description: "Seu novo serviço foi adicionado com sucesso.",
-      });
-
-    } catch (error: any) {
-      console.error('Error creating service:', error);
-      toast({
-        title: "Erro",
-        description: error.message || "Erro ao criar serviço.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const deleteService = async (serviceId: string) => {
+  const handleConfirmService = async (contemplationId: string) => {
     try {
       const { error } = await supabase
-        .from('services')
-        .delete()
-        .eq('id', serviceId);
+        .from('contemplations')
+        .update({
+          service_confirmed: true,
+          before_photos: beforePhotos,
+          after_photos: afterPhotos,
+          confirmation_date: new Date().toISOString()
+        })
+        .eq('id', contemplationId);
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
-      setServices(prev => prev.filter(s => s.id !== serviceId));
-      
       toast({
-        title: "Serviço removido",
-        description: "Serviço foi removido com sucesso.",
+        title: "Serviço confirmado!",
+        description: "O serviço foi confirmado e o pagamento será liberado.",
       });
 
-    } catch (error: any) {
-      console.error('Error deleting service:', error);
+      setSelectedContemplation(null);
+      setBeforePhotos([]);
+      setAfterPhotos([]);
+      loadDashboardData();
+    } catch (error) {
+      console.error('Error confirming service:', error);
       toast({
         title: "Erro",
-        description: "Erro ao remover serviço.",
+        description: "Não foi possível confirmar o serviço.",
         variant: "destructive",
       });
     }
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate("/");
+  const markNotificationAsRead = async (notificationId: string) => {
+    try {
+      await supabase
+        .from('professional_notifications')
+        .update({ read: true })
+        .eq('id', notificationId);
+
+      setNotifications(notifications.filter(n => n.id !== notificationId));
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
   };
-
-  // Calculate stats
-  const totalEarnings = transactions
-    .filter(t => t.type === 'service' && t.status === 'completed')
-    .reduce((sum, t) => sum + t.amount, 0);
-
-  const pendingEarnings = transactions
-    .filter(t => t.type === 'service' && t.status === 'pending')
-    .reduce((sum, t) => sum + t.amount, 0);
-
-  const completedServices = transactions
-    .filter(t => t.type === 'service' && t.status === 'completed').length;
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-ap-orange" />
-        </div>
-        <Footer />
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary" />
       </div>
     );
   }
 
+  const averageRating = professional?.rating || 0;
+  const totalEarnings = professional?.total_earnings || 0;
+  const reviewCount = serviceHistory.filter(s => s.rating).length;
+
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen bg-background">
       <Header />
       
-      <main className="flex-1 py-8 bg-slate-50">
-        <div className="ap-container">
-          {/* Header */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
-            <div>
-              <h1 className="text-3xl font-bold">Dashboard Profissional</h1>
-              <p className="text-gray-600">
-                Bem-vindo, {professionalData?.full_name || user?.name}!
-              </p>
-            </div>
-            <div className="mt-4 md:mt-0 flex gap-2">
-              <Button variant="outline" onClick={() => navigate("/profissional/perfil")}>
-                Editar Perfil
-              </Button>
-              <Button variant="outline" onClick={handleLogout}>
-                Sair
-              </Button>
-            </div>
-          </div>
-
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-6">
-              <TabsTrigger value="overview">Visão Geral</TabsTrigger>
-              <TabsTrigger value="products">Produtos</TabsTrigger>
-              <TabsTrigger value="services">Serviços</TabsTrigger>
-              <TabsTrigger value="transactions">Financeiro</TabsTrigger>
-              <TabsTrigger value="payments">Pagamentos</TabsTrigger>
-              <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            </TabsList>
-
-            {/* VISÃO GERAL */}
-            <TabsContent value="overview" className="space-y-6">
-              {/* Stats Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Ganhos Totais</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-green-600">
-                      R$ {totalEarnings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+      <main className="container mx-auto px-4 py-8">
+        {/* Professional Info Header */}
+        <Card className="mb-8">
+          <CardHeader>
+            <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+              <Avatar className="h-20 w-20">
+                <AvatarImage src={professional?.avatar_url} />
+                <AvatarFallback>
+                  {professional?.name?.split(' ').map(n => n[0]).join('')}
+                </AvatarFallback>
+              </Avatar>
+              
+              <div className="flex-1">
+                <h1 className="text-2xl font-bold">{professional?.name}</h1>
+                <div className="flex flex-wrap gap-4 mt-2 text-muted-foreground">
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    <span>{professional?.specialty || 'Especialidade não definida'}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4" />
+                    <span>{professional?.location || 'Local não definido'}</span>
+                  </div>
+                  {professional?.phone && (
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-4 w-4" />
+                      <span>{professional.phone}</span>
                     </div>
-                    <p className="text-sm text-gray-600">Serviços completados</p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Ganhos Pendentes</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-yellow-600">
-                      R$ {pendingEarnings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  )}
+                  {professional?.instagram && (
+                    <div className="flex items-center gap-2">
+                      <Instagram className="h-4 w-4" />
+                      <span>@{professional.instagram}</span>
                     </div>
-                    <p className="text-sm text-gray-600">Aguardando confirmação</p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Serviços Realizados</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-blue-600">
-                      {completedServices}
-                    </div>
-                    <p className="text-sm text-gray-600">Total de atendimentos</p>
-                  </CardContent>
-                </Card>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="h-4 w-4" />
+                    <span>{professional?.bank_data ? 'Dados bancários cadastrados' : 'Dados bancários pendentes'}</span>
+                  </div>
+                </div>
               </div>
 
-              {/* Quick Actions */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Ações Rápidas</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <Button 
-                      className="w-full justify-start" 
-                      onClick={() => setActiveTab("services")}
-                    >
-                      📋 Gerenciar Serviços
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="w-full justify-start"
-                      onClick={() => navigate("/profissional/financas")}
-                    >
-                      💰 Ver Finanças
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="w-full justify-start"
-                      onClick={() => navigate("/profissional/perfil")}
-                    >
-                      👤 Editar Perfil
-                    </Button>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Status da Conta</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span>Status:</span>
-                      <Badge variant="default" className="bg-green-600">
-                        Aprovado
-                      </Badge>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span>Categoria:</span>
-                      <Badge variant="outline" className="capitalize">
-                        {professionalData?.category}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span>Serviços Ativos:</span>
-                      <Badge variant="secondary">
-                        {services.length}
-                      </Badge>
-                    </div>
-                  </CardContent>
-                </Card>
+              <div className="flex flex-col items-end gap-2">
+                <div className="flex items-center gap-1">
+                  {[...Array(5)].map((_, i) => (
+                    <Star
+                      key={i}
+                      className={`h-4 w-4 ${
+                        i < Math.floor(averageRating)
+                          ? 'text-yellow-400 fill-current'
+                          : 'text-gray-300'
+                      }`}
+                    />
+                  ))}
+                  <span className="ml-2 text-sm text-muted-foreground">
+                    {averageRating.toFixed(1)} ({reviewCount} avaliações)
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <DollarSign className="h-4 w-4 text-green-600" />
+                  <span className="font-semibold">
+                    R$ {totalEarnings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
               </div>
+            </div>
+          </CardHeader>
+        </Card>
 
-              {/* Recent Transactions */}
-              {transactions.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Transações Recentes</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {transactions.slice(0, 5).map((transaction) => (
-                        <div key={transaction.id} className="flex items-center justify-between p-3 border rounded">
+        {/* Notifications */}
+        {notifications.length > 0 && (
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Bell className="h-5 w-5" />
+                Notificações ({notifications.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {notifications.map((notification) => (
+                  <div
+                    key={notification.id}
+                    className="flex items-center justify-between p-3 bg-primary/10 rounded-lg"
+                  >
+                    <div>
+                      <p className="font-medium">{notification.message}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(notification.created_at).toLocaleDateString('pt-BR')}
+                      </p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => markNotificationAsRead(notification.id)}
+                    >
+                      Marcar como lida
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Main Content Tabs */}
+        <Tabs defaultValue="contemplations" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-3">
+            <TabsTrigger value="contemplations">Contemplações</TabsTrigger>
+            <TabsTrigger value="history">Histórico</TabsTrigger>
+            <TabsTrigger value="reviews">Avaliações</TabsTrigger>
+          </TabsList>
+
+          {/* Contemplations Tab */}
+          <TabsContent value="contemplations" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Clientes Contemplados</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {contemplations.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">
+                    Nenhuma contemplação ainda.
+                  </p>
+                ) : (
+                  <div className="space-y-4">
+                    {contemplations.map((contemplation) => (
+                      <div
+                        key={contemplation.id}
+                        className="border rounded-lg p-4 space-y-3"
+                      >
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                           <div>
-                            <p className="font-medium">{transaction.description}</p>
-                            <p className="text-sm text-gray-600">
-                              {new Date(transaction.created_at).toLocaleDateString('pt-BR')}
+                            <h3 className="font-semibold">{contemplation.user_name}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              Contemplado em: {new Date(contemplation.entry_date).toLocaleDateString('pt-BR')}
                             </p>
+                            <div className="flex items-center gap-2 mt-2">
+                              <Badge variant="secondary">
+                                9/9 Indicações Completas
+                              </Badge>
+                              <Badge
+                                variant={
+                                  contemplation.service_confirmed
+                                    ? 'default'
+                                    : contemplation.payment_status === 'released'
+                                    ? 'secondary'
+                                    : 'outline'
+                                }
+                              >
+                                {contemplation.service_confirmed
+                                  ? 'Serviço Confirmado'
+                                  : contemplation.payment_status === 'released'
+                                  ? 'Liberado para Atendimento'
+                                  : 'Aguardando Liberação'}
+                              </Badge>
+                            </div>
                           </div>
-                          <div className="text-right">
-                            <p className="font-bold text-green-600">
-                              R$ {transaction.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                            </p>
-                            <Badge variant={transaction.status === 'completed' ? 'default' : 'secondary'}>
-                              {transaction.status === 'completed' ? 'Pago' : 'Pendente'}
-                            </Badge>
-                          </div>
+
+                          {!contemplation.service_confirmed && contemplation.payment_status === 'released' && (
+                            <Button
+                              onClick={() => setSelectedContemplation(contemplation.id)}
+                              className="flex items-center gap-2"
+                            >
+                              <Camera className="h-4 w-4" />
+                              Confirmar Serviço
+                            </Button>
+                          )}
                         </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
 
-            {/* PRODUTOS */}
-            <TabsContent value="products" className="space-y-6">
-              <ProductForm />
-              <ProProducts />
-            </TabsContent>
-
-            {/* SERVIÇOS */}
-            <TabsContent value="services" className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Service Form */}
-                <Card className="lg:col-span-1">
-                  <CardHeader>
-                    <CardTitle>Adicionar Novo Serviço</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <form onSubmit={handleCreateService} className="space-y-4">
-                      <div>
-                        <Label htmlFor="name">Nome do Serviço *</Label>
-                        <Input
-                          id="name"
-                          name="name"
-                          value={serviceForm.name}
-                          onChange={handleServiceFormChange}
-                          placeholder="Ex: Tatuagem Blackwork"
-                          required
-                        />
-                      </div>
-
-                      <div>
-                        <Label htmlFor="price">Preço (R$) *</Label>
-                        <Input
-                          id="price"
-                          name="price"
-                          type="number"
-                          step="0.01"
-                          value={serviceForm.price}
-                          onChange={handleServiceFormChange}
-                          placeholder="0.00"
-                          required
-                        />
-                      </div>
-
-                      <div>
-                        <Label htmlFor="duration">Duração *</Label>
-                        <Input
-                          id="duration"
-                          name="duration"
-                          value={serviceForm.duration}
-                          onChange={handleServiceFormChange}
-                          placeholder="Ex: 2 horas, 30 min"
-                          required
-                        />
-                      </div>
-
-                      <div>
-                        <Label htmlFor="category">Categoria *</Label>
-                        <Select onValueChange={handleServiceCategoryChange}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione a categoria" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="tatuagem">Tatuagem</SelectItem>
-                            <SelectItem value="dentista">Odontologia</SelectItem>
-                            <SelectItem value="estetica">Estética</SelectItem>
-                            <SelectItem value="outros">Outros</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div>
-                        <Label htmlFor="description">Descrição *</Label>
-                        <Textarea
-                          id="description"
-                          name="description"
-                          value={serviceForm.description}
-                          onChange={handleServiceFormChange}
-                          placeholder="Descreva seu serviço em detalhes..."
-                          rows={3}
-                          required
-                        />
-                      </div>
-
-                      <Button type="submit" className="w-full bg-ap-orange hover:bg-ap-orange/90">
-                        Adicionar Serviço
-                      </Button>
-                    </form>
-                  </CardContent>
-                </Card>
-
-                {/* Services List */}
-                <div className="lg:col-span-2 space-y-4">
-                  <h3 className="text-xl font-semibold">Meus Serviços ({services.length})</h3>
-                  
-                  {services.length === 0 ? (
-                    <Card>
-                      <CardContent className="text-center py-8">
-                        <p className="text-gray-600">Você ainda não tem serviços cadastrados.</p>
-                        <p className="text-sm text-gray-500">Adicione seu primeiro serviço ao lado.</p>
-                      </CardContent>
-                    </Card>
-                  ) : (
-                    <div className="space-y-4">
-                      {services.map((service) => (
-                        <Card key={service.id}>
-                          <CardHeader>
-                            <div className="flex justify-between items-start">
+                        {/* Service confirmation form */}
+                        {selectedContemplation === contemplation.id && (
+                          <div className="border-t pt-4 space-y-4">
+                            <div className="grid md:grid-cols-2 gap-4">
                               <div>
-                                <CardTitle className="text-lg">{service.name}</CardTitle>
-                                <div className="flex gap-2 mt-2">
-                                  <Badge variant="outline" className="capitalize">
-                                    {service.category}
-                                  </Badge>
-                                  <Badge variant="secondary">
-                                    {service.duration}
-                                  </Badge>
-                                </div>
+                                <h4 className="font-medium mb-2">Fotos do Antes</h4>
+                                <SimpleImageUpload
+                                  onUpload={(url) => setBeforePhotos([...beforePhotos, url])}
+                                  accept="image/*"
+                                  maxFiles={3}
+                                  label="Adicionar fotos do antes"
+                                />
+                                {beforePhotos.length > 0 && (
+                                  <div className="grid grid-cols-3 gap-2 mt-2">
+                                    {beforePhotos.map((photo, index) => (
+                                      <img
+                                        key={index}
+                                        src={photo}
+                                        alt={`Antes ${index + 1}`}
+                                        className="w-full h-20 object-cover rounded"
+                                      />
+                                    ))}
+                                  </div>
+                                )}
                               </div>
-                              <div className="text-right">
-                                <p className="text-2xl font-bold text-green-600">
-                                  R$ {service.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                </p>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => deleteService(service.id)}
-                                  className="mt-2 text-red-600 border-red-200 hover:bg-red-50"
-                                >
-                                  Remover
-                                </Button>
+
+                              <div>
+                                <h4 className="font-medium mb-2">Fotos do Depois</h4>
+                                <SimpleImageUpload
+                                  onUpload={(url) => setAfterPhotos([...afterPhotos, url])}
+                                  accept="image/*"
+                                  maxFiles={3}
+                                  label="Adicionar fotos do depois"
+                                />
+                                {afterPhotos.length > 0 && (
+                                  <div className="grid grid-cols-3 gap-2 mt-2">
+                                    {afterPhotos.map((photo, index) => (
+                                      <img
+                                        key={index}
+                                        src={photo}
+                                        alt={`Depois ${index + 1}`}
+                                        className="w-full h-20 object-cover rounded"
+                                      />
+                                    ))}
+                                  </div>
+                                )}
                               </div>
                             </div>
-                          </CardHeader>
-                          <CardContent>
-                            <p className="text-gray-600">{service.description}</p>
-                            <p className="text-xs text-gray-500 mt-2">
-                              Criado em {new Date(service.created_at).toLocaleDateString('pt-BR')}
-                            </p>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </TabsContent>
 
-            {/* FINANCEIRO */}
-            <TabsContent value="transactions" className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="text-center">
-                      <p className="text-sm text-gray-600">Saldo Disponível</p>
-                      <p className="text-2xl font-bold text-green-600">
-                        R$ {totalEarnings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="text-center">
-                      <p className="text-sm text-gray-600">Pendente</p>
-                      <p className="text-2xl font-bold text-yellow-600">
-                        R$ {pendingEarnings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="text-center">
-                      <Button className="w-full bg-ap-orange hover:bg-ap-orange/90">
-                        Solicitar Saque
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Histórico de Transações</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {transactions.length === 0 ? (
-                    <div className="text-center py-8">
-                      <p className="text-gray-600">Nenhuma transação encontrada.</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {transactions.map((transaction) => (
-                        <div key={transaction.id} className="flex items-center justify-between p-4 border rounded-lg">
-                          <div>
-                            <p className="font-medium">{transaction.description}</p>
-                            <p className="text-sm text-gray-600 capitalize">
-                              {transaction.type} • {new Date(transaction.created_at).toLocaleDateString('pt-BR')}
-                            </p>
+                            <div className="flex gap-2">
+                              <Button
+                                onClick={() => handleConfirmService(contemplation.id)}
+                                disabled={beforePhotos.length === 0 || afterPhotos.length === 0}
+                              >
+                                Confirmar Realização
+                              </Button>
+                              <Button
+                                variant="outline"
+                                onClick={() => {
+                                  setSelectedContemplation(null);
+                                  setBeforePhotos([]);
+                                  setAfterPhotos([]);
+                                }}
+                              >
+                                Cancelar
+                              </Button>
+                            </div>
                           </div>
-                          <div className="text-right">
-                            <p className="font-bold text-green-600">
-                              + R$ {transaction.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                            </p>
-                            <Badge variant={transaction.status === 'completed' ? 'default' : 'secondary'}>
-                              {transaction.status === 'completed' ? 'Concluído' : 'Pendente'}
-                            </Badge>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Service History Tab */}
+          <TabsContent value="history" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Histórico de Atendimentos</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {serviceHistory.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">
+                    Nenhum atendimento realizado ainda.
+                  </p>
+                ) : (
+                  <div className="space-y-4">
+                    {serviceHistory.map((service) => (
+                      <div
+                        key={service.id}
+                        className="border rounded-lg p-4 flex flex-col md:flex-row md:items-center justify-between gap-4"
+                      >
+                        <div>
+                          <h3 className="font-semibold">{service.client_name}</h3>
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-1">
+                              <Calendar className="h-4 w-4" />
+                              {new Date(service.service_date).toLocaleDateString('pt-BR')}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <DollarSign className="h-4 w-4" />
+                              R$ {service.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </div>
                           </div>
+                          {service.rating && (
+                            <div className="flex items-center gap-1 mt-2">
+                              {[...Array(5)].map((_, i) => (
+                                <Star
+                                  key={i}
+                                  className={`h-4 w-4 ${
+                                    i < service.rating!
+                                      ? 'text-yellow-400 fill-current'
+                                      : 'text-gray-300'
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                          )}
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
 
-            {/* ANALYTICS */}
-            <TabsContent value="analytics" className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Resumo do Mês</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex justify-between">
-                      <span>Serviços Realizados:</span>
-                      <span className="font-bold">{completedServices}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Receita Gerada:</span>
-                      <span className="font-bold text-green-600">
-                        R$ {totalEarnings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Ticket Médio:</span>
-                      <span className="font-bold">
-                        R$ {completedServices > 0 ? (totalEarnings / completedServices).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0,00'}
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
+                        <Badge
+                          variant={
+                            service.payment_status === 'paid'
+                              ? 'default'
+                              : service.payment_status === 'released'
+                              ? 'secondary'
+                              : 'outline'
+                          }
+                        >
+                          {service.payment_status === 'paid'
+                            ? 'Pago'
+                            : service.payment_status === 'released'
+                            ? 'Liberado'
+                            : 'Aguardando'}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Performance</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex justify-between">
-                      <span>Taxa de Conversão:</span>
-                      <span className="font-bold text-green-600">85%</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Avaliação Média:</span>
-                      <span className="font-bold text-yellow-600">4.8 ⭐</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Clientes Recorrentes:</span>
-                      <span className="font-bold">60%</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-
-            {/* PAGAMENTOS */}
-            <TabsContent value="payments" className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-2xl font-bold">Configuração de Pagamentos</h2>
-                  <p className="text-muted-foreground">
-                    Configure sua conta para receber pagamentos pelos seus serviços
+          {/* Reviews Tab */}
+          <TabsContent value="reviews" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Avaliações Recebidas</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center mb-6">
+                  <div className="text-4xl font-bold text-primary">
+                    {averageRating.toFixed(1)}
+                  </div>
+                  <div className="flex items-center justify-center gap-1 mt-2">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`h-6 w-6 ${
+                          i < Math.floor(averageRating)
+                            ? 'text-yellow-400 fill-current'
+                            : 'text-gray-300'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <p className="text-muted-foreground mt-2">
+                    Baseado em {reviewCount} avaliações
                   </p>
                 </div>
-                {stripeConfigured && (
-                  <Badge variant="default" className="bg-green-500">
-                    <CheckCircle className="w-4 h-4 mr-1" />
-                    Configurado
-                  </Badge>
+
+                <div className="space-y-4">
+                  {serviceHistory
+                    .filter(service => service.review)
+                    .map((service) => (
+                      <div key={service.id} className="border rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <div>
+                            <h4 className="font-medium">{service.client_name}</h4>
+                            <p className="text-sm text-muted-foreground">
+                              {new Date(service.service_date).toLocaleDateString('pt-BR')}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                className={`h-4 w-4 ${
+                                  i < service.rating!
+                                    ? 'text-yellow-400 fill-current'
+                                    : 'text-gray-300'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                        <p className="text-muted-foreground">{service.review}</p>
+                      </div>
+                    ))}
+                </div>
+
+                {serviceHistory.filter(s => s.review).length === 0 && (
+                  <p className="text-center text-muted-foreground py-8">
+                    Nenhuma avaliação ainda.
+                  </p>
                 )}
-              </div>
-
-              <StripeOnboarding />
-
-              {stripeConfigured && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <CreditCard className="h-5 w-5" />
-                      Status dos Pagamentos
-                    </CardTitle>
-                    <CardDescription>
-                      Sua conta está configurada e pronta para receber pagamentos
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="text-center p-4 border rounded-lg">
-                        <div className="text-2xl font-bold text-green-600">50%</div>
-                        <div className="text-sm text-muted-foreground">Você recebe</div>
-                      </div>
-                      <div className="text-center p-4 border rounded-lg">
-                        <div className="text-2xl font-bold text-blue-600">25%</div>
-                        <div className="text-sm text-muted-foreground">Influenciador (se houver)</div>
-                      </div>
-                      <div className="text-center p-4 border rounded-lg">
-                        <div className="text-2xl font-bold text-purple-600">25%</div>
-                        <div className="text-sm text-muted-foreground">Plataforma</div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
-          </Tabs>
-        </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </main>
 
       <Footer />
