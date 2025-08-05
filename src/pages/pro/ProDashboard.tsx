@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,6 +14,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "../../contexts/AuthContext";
 import { supabase } from "../../lib/supabase";
+import { StripeOnboarding } from "@/components/stripe/StripeOnboarding";
+import { useStripeAccount } from "@/hooks/useStripeAccount";
+import { CheckCircle, CreditCard } from "lucide-react";
 
 interface Service {
   id: string;
@@ -50,6 +53,7 @@ const ProDashboard = () => {
   const { user, logout } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { account: stripeAccount, isConfigured: stripeConfigured } = useStripeAccount();
   
   const [professionalData, setProfessionalData] = useState<Professional | null>(null);
   const [services, setServices] = useState<Service[]>([]);
@@ -275,10 +279,11 @@ const ProDashboard = () => {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="overview">Visão Geral</TabsTrigger>
               <TabsTrigger value="services">Serviços</TabsTrigger>
               <TabsTrigger value="transactions">Financeiro</TabsTrigger>
+              <TabsTrigger value="payments">Pagamentos</TabsTrigger>
               <TabsTrigger value="analytics">Analytics</TabsTrigger>
             </TabsList>
 
@@ -670,6 +675,56 @@ const ProDashboard = () => {
                   </CardContent>
                 </Card>
               </div>
+            </TabsContent>
+
+            {/* PAGAMENTOS */}
+            <TabsContent value="payments" className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold">Configuração de Pagamentos</h2>
+                  <p className="text-muted-foreground">
+                    Configure sua conta para receber pagamentos pelos seus serviços
+                  </p>
+                </div>
+                {stripeConfigured && (
+                  <Badge variant="default" className="bg-green-500">
+                    <CheckCircle className="w-4 h-4 mr-1" />
+                    Configurado
+                  </Badge>
+                )}
+              </div>
+
+              <StripeOnboarding />
+
+              {stripeConfigured && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <CreditCard className="h-5 w-5" />
+                      Status dos Pagamentos
+                    </CardTitle>
+                    <CardDescription>
+                      Sua conta está configurada e pronta para receber pagamentos
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="text-center p-4 border rounded-lg">
+                        <div className="text-2xl font-bold text-green-600">85%</div>
+                        <div className="text-sm text-muted-foreground">Você recebe</div>
+                      </div>
+                      <div className="text-center p-4 border rounded-lg">
+                        <div className="text-2xl font-bold text-blue-600">5%</div>
+                        <div className="text-sm text-muted-foreground">Influenciador (se houver)</div>
+                      </div>
+                      <div className="text-center p-4 border rounded-lg">
+                        <div className="text-2xl font-bold text-purple-600">10%</div>
+                        <div className="text-sm text-muted-foreground">Plataforma</div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
           </Tabs>
         </div>
