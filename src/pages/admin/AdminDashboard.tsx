@@ -44,6 +44,8 @@ import Footer from "../../components/Footer";
 import { supabase } from "../../lib/supabase";
 import { NotificationTriggersManager } from "@/components/admin/NotificationTriggersManager";
 import { MaterialUploadPanel } from "@/components/admin/MaterialUploadPanel";
+import { PaymentManagement } from "@/components/admin/PaymentManagement";
+import { ContemplationValidation } from "@/components/admin/ContemplationValidation";
 
 interface Professional {
   id: string;
@@ -649,6 +651,14 @@ const AdminDashboard = () => {
                 <TabsTrigger value="reports" className="text-sm py-3">
                   <FileText className="h-4 w-4 mr-2" />
                   Relatórios
+                </TabsTrigger>
+                <TabsTrigger value="payments" className="text-sm py-3">
+                  <DollarSign className="h-4 w-4 mr-2" />
+                  Pagamentos
+                </TabsTrigger>
+                <TabsTrigger value="contemplations" className="text-sm py-3">
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Contemplações
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -1290,6 +1300,16 @@ const AdminDashboard = () => {
             {/* UPLOAD DE MATERIAIS */}
             <TabsContent value="materials" className="space-y-6">
               <MaterialUploadPanel />
+            </TabsContent>
+
+            {/* GESTÃO DE PAGAMENTOS */}
+            <TabsContent value="payments" className="space-y-6">
+              <PaymentManagement />
+            </TabsContent>
+
+            {/* VALIDAÇÃO DE CONTEMPLAÇÕES */}
+            <TabsContent value="contemplations" className="space-y-6">
+              <ContemplationValidation />
             </TabsContent>
           </Tabs>
         </div>
