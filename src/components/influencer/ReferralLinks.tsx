@@ -20,7 +20,7 @@ const mockLinks: ReferralLink[] = [
   {
     id: "1",
     name: "Instagram Bio",
-    url: "https://amigodopeito.com/ref/amanda-insta",
+    url: `${window.location.origin}/register?ref=AMANDA-INSTA`,
     clicks: 247,
     conversions: 12,
     earnings: 2400,
@@ -29,7 +29,7 @@ const mockLinks: ReferralLink[] = [
   {
     id: "2", 
     name: "YouTube Descrição",
-    url: "https://amigodopeito.com/ref/amanda-youtube",
+    url: `${window.location.origin}/register?ref=AMANDA-YOUTUBE`,
     clicks: 156,
     conversions: 8,
     earnings: 1600,
@@ -56,7 +56,7 @@ export const ReferralLinks = () => {
     const newLink: ReferralLink = {
       id: Date.now().toString(),
       name: newLinkName,
-      url: `https://amigodopeito.com/ref/amanda-${newLinkName.toLowerCase().replace(/\s+/g, '-')}`,
+      url: `${window.location.origin}/register?ref=AMANDA-${newLinkName.toLowerCase().replace(/\s+/g, '-').substring(0, 10).toUpperCase()}`,
       clicks: 0,
       conversions: 0,
       earnings: 0,
