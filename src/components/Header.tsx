@@ -29,6 +29,9 @@ const Header = () => {
           <Link to="/sobre" className="text-gray-800 hover:text-ap-orange transition-colors">
             Sobre
           </Link>
+          <Link to="/todos" className="text-gray-800 hover:text-ap-orange transition-colors">
+            Tarefas
+          </Link>
           {!user && (
             <Button 
               onClick={() => navigate("/cadastro")}
@@ -90,6 +93,12 @@ const Header = () => {
               onClick={() => setMobileMenuOpen(false)}
             >
               Sobre
+            </Link>
+            <Link to="/todos" 
+              className="text-gray-800 hover:text-ap-orange transition-colors"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Tarefas
             </Link>
             {!user && (
               <Link to="/cadastro" 

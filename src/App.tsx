@@ -24,6 +24,7 @@ import InfluencerDashboard from "./pages/influencer/InfluencerDashboard";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import About from "./pages/About";
+import Todos from "./pages/Todos";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,7 @@ const App = () => (
             {/* Public Routes */}
             <Route path="/" element={<Index />} />
             <Route path="/sobre" element={<About />} />
+            <Route path="/todos" element={<Todos />} />
             <Route path="/cadastro" element={<Register />} />
             <Route path="/confirmacao" element={<Confirmation />} />
             <Route path="/admin-login" element={<AdminLogin />} />
