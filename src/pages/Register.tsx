@@ -11,6 +11,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import FileUpload from "../components/FileUpload";
+import { UploadResult } from "../lib/storage";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -29,6 +31,11 @@ const Register = () => {
     idDocument: null as File | null,
     presentationVideo: null as File | null,
     termsAccepted: false,
+  });
+
+  const [uploadedDocuments, setUploadedDocuments] = useState({
+    idDocument: null as UploadResult | null,
+    video: null as UploadResult | null,
   });
 
   const [loading, setLoading] = useState(false);
@@ -89,7 +96,7 @@ const Register = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.idDocument) {
+    if (!formData.idDocument && !uploadedDocuments.idDocument) {
       toast({
         title: "Documento obrigatório",
         description: "Por favor, faça o upload do seu documento de identificação.",
@@ -121,7 +128,9 @@ const Register = () => {
         cpf: "", // Not collected in this form
         description: "",
         experience: "",
-        approved: false
+        approved: false,
+        id_document_url: uploadedDocuments.idDocument?.url || null,
+        video_url: uploadedDocuments.video?.url || null
       };
 
       await register(formData.email, formData.password, userData, "professional");
@@ -293,34 +302,25 @@ const Register = () => {
         return (
           <div className="space-y-6">
             <div>
-              <Label htmlFor="idDocument">Documento de identificação (RG ou CNH) *</Label>
-              <Input
-                id="idDocument"
-                name="idDocument"
-                type="file"
-                onChange={handleFileChange}
-                className="mt-1"
-                accept="image/*, application/pdf"
-                required
+              <FileUpload
+                type="document"
+                label="Documento de identificação (RG ou CNH) *"
+                description="Formatos aceitos: JPG, PNG, PDF. Tamanho máximo: 5MB"
+                onUploadComplete={(result) => {
+                  setUploadedDocuments(prev => ({ ...prev, idDocument: result }));
+                }}
               />
-              <p className="text-sm text-gray-500 mt-1">
-                Formatos aceitos: JPG, PNG, PDF. Tamanho máximo: 5MB
-              </p>
             </div>
             
             <div>
-              <Label htmlFor="presentationVideo">Vídeo de apresentação (opcional)</Label>
-              <Input
-                id="presentationVideo"
-                name="presentationVideo"
-                type="file"
-                onChange={handleFileChange}
-                className="mt-1"
-                accept="video/*"
+              <FileUpload
+                type="video"
+                label="Vídeo de apresentação (opcional)"
+                description="Formatos aceitos: MP4, MOV, AVI. Tamanho máximo: 50MB"
+                onUploadComplete={(result) => {
+                  setUploadedDocuments(prev => ({ ...prev, video: result }));
+                }}
               />
-              <p className="text-sm text-gray-500 mt-1">
-                Formatos aceitos: MP4, MOV, AVI. Tamanho máximo: 50MB
-              </p>
             </div>
             
             <div className="flex items-start space-x-2">
