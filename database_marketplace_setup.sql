@@ -10,6 +10,8 @@ CREATE TABLE public.products (
   full_price DECIMAL(10,2) NOT NULL,
   down_payment DECIMAL(10,2) NOT NULL, -- 10% of full_price
   image_url TEXT,
+  external_link TEXT, -- For dropshipping products
+  visibility TEXT NOT NULL DEFAULT 'both' CHECK (visibility IN ('client', 'professional', 'both')),
   professional_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -69,6 +71,8 @@ CREATE TABLE public.product_categories (
 
 -- Insert default categories
 INSERT INTO public.product_categories (name, description) VALUES
+('Produtos Gerais', 'Produtos para consumidores finais'),
+('Insumos Técnicos', 'Materiais e equipamentos para profissionais'),
 ('Serviços Profissionais', 'Consultorias, cursos e serviços especializados'),
 ('Produtos Digitais', 'E-books, softwares e recursos digitais'),
 ('Cursos Online', 'Treinamentos e capacitações online'),

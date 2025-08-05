@@ -12,10 +12,14 @@ import {
   Grid3X3,
   List,
   Eye,
-  User
+  User,
+  CreditCard,
+  ExternalLink
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
+import { useCredits } from "@/hooks/useCredits";
 
 interface Product {
   id: string;
@@ -25,6 +29,8 @@ interface Product {
   full_price: number;
   down_payment: number;
   image_url: string;
+  external_link?: string;
+  visibility: 'client' | 'professional' | 'both';
   professional_id: string;
   professional_name?: string;
   professional_avatar?: string;
@@ -36,6 +42,8 @@ interface Product {
 
 const CATEGORIES = [
   { value: "all", label: "Todos" },
+  { value: "produtos-gerais", label: "Produtos Gerais" },
+  { value: "insumos-tecnicos", label: "Insumos Técnicos" },
   { value: "servicos-profissionais", label: "Serviços Profissionais" },
   { value: "produtos-digitais", label: "Produtos Digitais" },
   { value: "cursos-online", label: "Cursos Online" },
@@ -51,7 +59,11 @@ export const Marketplace = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [sortBy, setSortBy] = useState<"newest" | "popular" | "price_low" | "price_high">("newest");
+  const [showCreditPayment, setShowCreditPayment] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { balance, useCredits: useUserCredits } = useCredits();
 
   useEffect(() => {
     loadProducts();
@@ -97,12 +109,53 @@ export const Marketplace = () => {
   };
 
   const handlePurchase = (product: Product) => {
-    // For now, just show a toast - later we'll implement Stripe checkout
+    // Se é produto dropshipping, redireciona para link externo
+    if (product.external_link) {
+      window.open(product.external_link, '_blank');
+      return;
+    }
+
+    // Abre modal para escolher forma de pagamento
+    setSelectedProduct(product);
+    setShowCreditPayment(true);
+  };
+
+  const handleCreditPayment = async () => {
+    if (!selectedProduct || !user) return;
+
+    const success = await useUserCredits(
+      selectedProduct.down_payment,
+      'marketplace_purchase',
+      `Compra: ${selectedProduct.title}`,
+      selectedProduct.id
+    );
+
+    if (success) {
+      toast({
+        title: "Compra realizada!",
+        description: `Produto "${selectedProduct.title}" adquirido com créditos.`,
+      });
+      setShowCreditPayment(false);
+      setSelectedProduct(null);
+    }
+  };
+
+  const handleCardPayment = () => {
     toast({
       title: "Funcionalidade em desenvolvimento",
-      description: `Compra do produto "${product.title}" será implementada em breve.`,
+      description: "Pagamento com cartão será implementado em breve.",
     });
   };
+
+  // Determinar tipo de usuário baseado no contexto
+  const getUserType = (): 'client' | 'professional' => {
+    if (user?.role === 'professional') {
+      return 'professional';
+    }
+    return 'client'; // Por padrão, assumir cliente
+  };
+
+  const userType = getUserType();
 
   const filteredAndSortedProducts = products
     .filter(product => {
@@ -110,7 +163,16 @@ export const Marketplace = () => {
                            product.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
                            (product.professional_name || '').toLowerCase().includes(searchQuery.toLowerCase());
       const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
-      return matchesSearch && matchesCategory;
+      
+      // Filtro de visibilidade baseado no tipo de usuário
+      const matchesVisibility = product.visibility === 'both' || 
+                               product.visibility === userType ||
+                               (userType === 'professional'); // Profissionais veem tudo
+      
+      // Esconder insumos técnicos para clientes
+      const hideForClients = userType === 'client' && product.category === 'insumos-tecnicos';
+      
+      return matchesSearch && matchesCategory && matchesVisibility && !hideForClients;
     })
     .sort((a, b) => {
       switch (sortBy) {
@@ -321,19 +383,91 @@ export const Marketplace = () => {
                     <Button 
                       onClick={() => handlePurchase(product)}
                       className="w-full"
+                      variant={product.external_link ? "outline" : "default"}
                     >
-                      <ShoppingCart className="h-4 w-4 mr-2" />
-                      Começar Agora
+                      {product.external_link ? (
+                        <>
+                          <ExternalLink className="h-4 w-4 mr-2" />
+                          Ver Produto
+                        </>
+                      ) : (
+                        <>
+                          <ShoppingCart className="h-4 w-4 mr-2" />
+                          Começar Agora
+                        </>
+                      )}
                     </Button>
 
                     <p className="text-xs text-muted-foreground text-center mt-2">
-                      Adquira apenas com {formatCurrency(product.down_payment)} de entrada
+                      {product.external_link 
+                        ? "Link externo - Redirecionamento" 
+                        : `Adquira apenas com ${formatCurrency(product.down_payment)} de entrada`
+                      }
                     </p>
                   </CardContent>
                 </div>
               </div>
             </Card>
           ))}
+        </div>
+      )}
+
+      {/* Modal de Pagamento com Créditos */}
+      {showCreditPayment && selectedProduct && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md mx-4">
+            <CardHeader>
+              <CardTitle>Finalizar Compra</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                {selectedProduct.title}
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <p className="text-lg font-semibold">
+                  Valor: {formatCurrency(selectedProduct.down_payment)}
+                </p>
+                {balance && (
+                  <p className="text-sm text-muted-foreground">
+                    Seus créditos: {formatCurrency(balance.availableCredits)}
+                  </p>
+                )}
+              </div>
+              
+              <div className="flex flex-col gap-2">
+                <Button 
+                  onClick={handleCreditPayment}
+                  disabled={!balance || balance.availableCredits < selectedProduct.down_payment}
+                  className="w-full"
+                >
+                  <DollarSign className="h-4 w-4 mr-2" />
+                  Pagar com Créditos
+                </Button>
+                
+                <Button 
+                  onClick={handleCardPayment}
+                  variant="outline"
+                  className="w-full"
+                >
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  Pagar com Cartão
+                </Button>
+              </div>
+              
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => {
+                    setShowCreditPayment(false);
+                    setSelectedProduct(null);
+                  }}
+                  variant="ghost"
+                  className="w-full"
+                >
+                  Cancelar
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>
