@@ -46,6 +46,7 @@ import { NotificationTriggersManager } from "@/components/admin/NotificationTrig
 import { MaterialUploadPanel } from "@/components/admin/MaterialUploadPanel";
 import { PaymentManagement } from "@/components/admin/PaymentManagement";
 import { CustomPlansManager } from "@/components/admin/CustomPlansManager";
+import { AdminManagementPanel } from "@/components/admin/AdminManagementPanel";
 import { ContemplationValidation } from "@/components/admin/ContemplationValidation";
 
 interface Professional {
