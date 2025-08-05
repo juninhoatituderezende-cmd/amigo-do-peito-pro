@@ -36,12 +36,14 @@ import {
   BarChart3,
   PieChart as PieChartIcon,
   Target,
-  Zap
+  Zap,
+  Upload
 } from "lucide-react";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import { supabase } from "../../lib/supabase";
-import { NotificationTriggersPanel } from "@/components/admin/NotificationTriggersPanel";
+import { NotificationTriggersManager } from "@/components/admin/NotificationTriggersManager";
+import { MaterialUploadPanel } from "@/components/admin/MaterialUploadPanel";
 
 interface Professional {
   id: string;
@@ -611,7 +613,7 @@ const AdminDashboard = () => {
 
           <Tabs defaultValue="overview" onValueChange={setActiveTab} className="space-y-6">
             <div className="border-b">
-              <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 h-auto p-1 bg-gray-100">
+              <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-9 h-auto p-1 bg-gray-100">
                 <TabsTrigger value="overview" className="text-sm py-3">
                   <BarChart3 className="h-4 w-4 mr-2" />
                   Visão Geral
@@ -639,6 +641,10 @@ const AdminDashboard = () => {
                 <TabsTrigger value="triggers" className="text-sm py-3">
                   <Zap className="h-4 w-4 mr-2" />
                   Gatilhos
+                </TabsTrigger>
+                <TabsTrigger value="materials" className="text-sm py-3">
+                  <Upload className="h-4 w-4 mr-2" />
+                  Materiais
                 </TabsTrigger>
                 <TabsTrigger value="reports" className="text-sm py-3">
                   <FileText className="h-4 w-4 mr-2" />
@@ -1278,7 +1284,12 @@ const AdminDashboard = () => {
 
             {/* GATILHOS TEMPORAIS */}
             <TabsContent value="triggers" className="space-y-6">
-              <NotificationTriggersPanel />
+              <NotificationTriggersManager />
+            </TabsContent>
+
+            {/* UPLOAD DE MATERIAIS */}
+            <TabsContent value="materials" className="space-y-6">
+              <MaterialUploadPanel />
             </TabsContent>
           </Tabs>
         </div>
