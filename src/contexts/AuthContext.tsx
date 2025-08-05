@@ -182,6 +182,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             throw new Error(insertError.message);
           }
         } else {
+          // Regular user
           const { error: insertError } = await supabase
             .from('users')
             .insert({
@@ -192,6 +193,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (insertError) {
             throw new Error(insertError.message);
           }
+        }
+
+        // For users, don't auto-login, redirect to login page
+        if (role === null) {
+          return; // Don't set user state, let them login manually
         }
 
         setSupabaseUser(data.user);

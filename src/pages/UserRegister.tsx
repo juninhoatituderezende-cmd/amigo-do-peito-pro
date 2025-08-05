@@ -1,34 +1,48 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "../contexts/AuthContext";
 
 const UserRegister = () => {
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const [loading, setLoading] = useState(false);
-  
   const [formData, setFormData] = useState({
-    name: "",
+    fullName: "",
     email: "",
     password: "",
+    confirmPassword: "",
     phone: "",
-    city: "",
-    interests: "",
+    referralCode: "",
+    termsAccepted: false,
   });
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { register } = useAuth();
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  const generateReferralCode = (name: string) => {
+    const cleanName = name.replace(/\s+/g, '').toUpperCase();
+    const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+    return `${cleanName.slice(0, 4)}${randomSuffix}`;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validation
-    if (!formData.name || !formData.email || !formData.password || 
-        !formData.phone || !formData.city) {
+    // Validações
+    if (!formData.fullName || !formData.email || !formData.password || !formData.phone) {
       toast({
         title: "Campos obrigatórios",
         description: "Por favor, preencha todos os campos obrigatórios.",
@@ -37,38 +51,62 @@ const UserRegister = () => {
       return;
     }
 
+    if (formData.password !== formData.confirmPassword) {
+      toast({
+        title: "Senhas não coincidem",
+        description: "As senhas digitadas não são iguais.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      toast({
+        title: "Senha muito curta",
+        description: "A senha deve ter pelo menos 6 caracteres.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.termsAccepted) {
+      toast({
+        title: "Termos não aceitos",
+        description: "Você precisa aceitar os termos e condições para continuar.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     
     try {
-      // Simulação de cadastro - no futuro será integrado com Supabase
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      console.log("Cadastro de usuário:", formData);
+      const userData = {
+        full_name: formData.fullName,
+        email: formData.email,
+        phone: formData.phone,
+        referral_code: generateReferralCode(formData.fullName),
+        referred_by: formData.referralCode || null
+      };
+
+      await register(formData.email, formData.password, userData, null);
       
       toast({
         title: "Cadastro realizado com sucesso!",
-        description: "Você será redirecionado para o login.",
+        description: "Bem-vindo à Amigo do Peito! Você pode fazer login agora.",
       });
-      
-      // Redirect to login after successful registration
-      setTimeout(() => {
-        navigate("/usuario/login");
-      }, 2000);
-    } catch (error) {
+
+      navigate("/usuario/login");
+    } catch (error: any) {
+      console.error("Registration error:", error);
       toast({
         title: "Erro no cadastro",
-        description: "Ocorreu um erro ao processar seu cadastro. Por favor, tente novamente.",
+        description: error.message || "Erro ao realizar cadastro. Tente novamente.",
         variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }));
   };
 
   return (
@@ -81,82 +119,110 @@ const UserRegister = () => {
             <Card>
               <CardHeader>
                 <CardTitle className="text-2xl text-center">Cadastro de Usuário</CardTitle>
-                <p className="text-center text-gray-600">
-                  Junte-se à nossa comunidade e acesse serviços com desconto
-                </p>
+                <CardDescription className="text-center">
+                  Junte-se à nossa plataforma e participe de grupos exclusivos
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
-                    <Label htmlFor="name">Nome Completo</Label>
+                    <Label htmlFor="fullName">Nome Completo *</Label>
                     <Input
-                      id="name"
-                      name="name"
-                      type="text"
-                      required
-                      value={formData.name}
+                      id="fullName"
+                      name="fullName"
+                      value={formData.fullName}
                       onChange={handleChange}
+                      placeholder="Seu nome completo"
+                      required
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="email">E-mail</Label>
+                    <Label htmlFor="email">E-mail *</Label>
                     <Input
                       id="email"
                       name="email"
                       type="email"
-                      required
                       value={formData.email}
                       onChange={handleChange}
+                      placeholder="seu@email.com"
+                      required
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="password">Senha</Label>
+                    <Label htmlFor="password">Senha *</Label>
                     <Input
                       id="password"
                       name="password"
                       type="password"
-                      required
                       value={formData.password}
                       onChange={handleChange}
+                      placeholder="Mínimo 6 caracteres"
+                      required
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="phone">Telefone</Label>
+                    <Label htmlFor="confirmPassword">Confirmar Senha *</Label>
+                    <Input
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      type="password"
+                      value={formData.confirmPassword}
+                      onChange={handleChange}
+                      placeholder="Digite a senha novamente"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="phone">Telefone *</Label>
                     <Input
                       id="phone"
                       name="phone"
-                      type="tel"
-                      required
                       value={formData.phone}
                       onChange={handleChange}
-                      placeholder="(11) 99999-9999"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="city">Cidade</Label>
-                    <Input
-                      id="city"
-                      name="city"
-                      type="text"
+                      placeholder="(XX) XXXXX-XXXX"
                       required
-                      value={formData.city}
-                      onChange={handleChange}
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="interests">Interesses em Serviços</Label>
-                    <Textarea
-                      id="interests"
-                      name="interests"
-                      value={formData.interests}
+                    <Label htmlFor="referralCode">Código de Indicação (opcional)</Label>
+                    <Input
+                      id="referralCode"
+                      name="referralCode"
+                      value={formData.referralCode}
                       onChange={handleChange}
-                      placeholder="Ex: Tatuagens, Lentes de contato dental..."
+                      placeholder="Ex: MARIA2024"
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Se você foi indicado por alguém, digite o código aqui
+                    </p>
+                  </div>
+
+                  <div className="flex items-start space-x-2">
+                    <input
+                      type="checkbox"
+                      id="termsAccepted"
+                      name="termsAccepted"
+                      checked={formData.termsAccepted}
+                      onChange={handleChange}
+                      className="mt-1"
+                      required
+                    />
+                    <Label htmlFor="termsAccepted" className="text-sm leading-relaxed">
+                      Eu aceito os{" "}
+                      <Link to="/termos" className="text-ap-orange hover:underline">
+                        termos e condições
+                      </Link>{" "}
+                      e a{" "}
+                      <Link to="/privacidade" className="text-ap-orange hover:underline">
+                        política de privacidade
+                      </Link>
+                      . *
+                    </Label>
                   </div>
 
                   <Button 
@@ -164,7 +230,7 @@ const UserRegister = () => {
                     className="w-full bg-ap-orange hover:bg-ap-orange/90"
                     disabled={loading}
                   >
-                    {loading ? "Cadastrando..." : "Cadastrar"}
+                    {loading ? "Criando conta..." : "Criar Conta"}
                   </Button>
                 </form>
 
