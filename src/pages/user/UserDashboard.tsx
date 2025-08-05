@@ -9,6 +9,7 @@ import { UserProfile } from "@/components/user/UserProfile";
 import { NotificationCenter } from "@/components/shared/NotificationCenter";
 import { ReferralSystem } from "@/components/user/ReferralSystem";
 import { PlansSelection } from "@/components/plans/PlansSelection";
+import { PlanProgress } from "@/components/user/PlanProgress";
 import { User, Users, Bell, ShoppingCart, Settings, Share } from "lucide-react";
 
 const UserDashboard = () => {
@@ -65,9 +66,13 @@ const UserDashboard = () => {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="groups">
-            <UserGroupsHistory />
-          </TabsContent>
+        <TabsContent value="groups">
+          <UserGroupsHistory />
+        </TabsContent>
+
+        <TabsContent value="plans">
+          <PlanProgress />
+        </TabsContent>
 
           <TabsContent value="referrals">
             <ReferralSystem />

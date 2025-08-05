@@ -45,6 +45,7 @@ import { supabase } from "../../lib/supabase";
 import { NotificationTriggersManager } from "@/components/admin/NotificationTriggersManager";
 import { MaterialUploadPanel } from "@/components/admin/MaterialUploadPanel";
 import { PaymentManagement } from "@/components/admin/PaymentManagement";
+import { CustomPlansManager } from "@/components/admin/CustomPlansManager";
 import { ContemplationValidation } from "@/components/admin/ContemplationValidation";
 
 interface Professional {
