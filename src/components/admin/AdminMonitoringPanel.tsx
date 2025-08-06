@@ -81,18 +81,22 @@ export function AdminMonitoringPanel() {
   const loadActivities = async () => {
     const { data, error } = await supabase
       .from("issues")
-      .select(`
-        *,
-        profiles:user_id(email)
-      `)
+      .select("*")
       .order("created_at", { ascending: false })
       .limit(50);
 
     if (error) throw error;
     
-    const activitiesWithEmail = data.map(activity => ({
-      ...activity,
-      user_email: activity.profiles?.email || "Sistema",
+    // Transform issues into activity format since we don't have a dedicated activity table
+    const activitiesWithEmail = data.map(issue => ({
+      id: issue.id,
+      user_id: issue.user_id,
+      action: issue.title,
+      resource_type: 'issue',
+      resource_id: issue.id,
+      details: { description: issue.description, priority: issue.priority },
+      created_at: issue.created_at,
+      user_email: "Sistema",
     }));
     
     setActivities(activitiesWithEmail);
@@ -102,11 +106,23 @@ export function AdminMonitoringPanel() {
     const { data, error } = await supabase
       .from("issues")
       .select("*")
+      .eq("priority", "high")
       .order("created_at", { ascending: false })
       .limit(20);
 
     if (error) throw error;
-    setErrors(data);
+    
+    // Transform issues into error log format
+    const errorLogs = data.map(issue => ({
+      id: issue.id,
+      error_id: issue.id,
+      message: issue.title,
+      url: issue.description || "N/A",
+      created_at: issue.created_at,
+      resolved: issue.resolved
+    }));
+    
+    setErrors(errorLogs);
   };
 
   const loadMetrics = async () => {

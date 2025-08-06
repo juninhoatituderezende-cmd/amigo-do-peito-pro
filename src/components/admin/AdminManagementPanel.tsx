@@ -89,7 +89,7 @@ export function AdminManagementPanel() {
   const loadAdminData = async () => {
     setLoading(true);
     try {
-      // Carregar usuários (simulando com dados das tabelas existentes)
+      // Carregar usuários dos participantes de planos
       const { data: clientesData } = await supabase
         .from('plan_participants')
         .select(`
@@ -101,17 +101,7 @@ export function AdminManagementPanel() {
           contemplacao_status,
           contemplacao_data,
           service_type,
-          plan_participations (
-            entry_amount,
-            payment_status,
-            plan_groups (
-              assigned_professional_id,
-              profissionais (
-                nome,
-                local_atendimento
-              )
-            )
-          )
+          payment_status
         `)
         .order('created_at', { ascending: false });
 
@@ -122,14 +112,14 @@ export function AdminManagementPanel() {
           email: client.email || 'N/A',
           phone: client.telefone || 'N/A',
           service_type: client.service_type || 'Não definido',
-          entry_amount: client.plan_participations?.[0]?.entry_amount || 0,
+          entry_amount: 1000, // Valor fixo por enquanto
           referral_count: 0, // Seria calculado com base em indicações
-          payment_status: client.plan_participations?.[0]?.payment_status || 'pending',
+          payment_status: client.payment_status || 'pending',
           contemplation_status: client.contemplacao_status || 'pending',
           voucher_sent: false, // Campo a ser implementado
           created_at: client.created_at,
           contemplation_date: client.contemplacao_data,
-          professional_assigned: (client.plan_participations?.[0]?.plan_groups as any)?.profissionais?.nome
+          professional_assigned: 'Profissional não definido'
         }));
         
         setUsers(formattedUsers);
@@ -233,7 +223,7 @@ export function AdminManagementPanel() {
       const { error } = await supabase
         .from('plan_participants')
         .update({ payment_status: 'paid' })
-        .eq('participant_id', userId);
+        .eq('id', userId);
 
       if (error) throw error;
 
