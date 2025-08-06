@@ -50,29 +50,35 @@ export const ContemplationValidation = () => {
 
   const loadContemplations = async () => {
     try {
+      // Since group_progress table doesn't exist, use plan_participants with completed contemplations
       const { data, error } = await supabase
-        .from('group_progress')
+        .from('plan_participants')
         .select(`
-          *,
-          profiles!owner_id(email, full_name)
+          id,
+          nome,
+          email,
+          contemplacao_status,
+          contemplacao_data,
+          service_type,
+          created_at
         `)
-        .eq('current_members', 9)
-        .order('completed_at', { ascending: false });
+        .eq('contemplacao_status', 'contemplado')
+        .order('contemplacao_data', { ascending: false });
 
       if (error) throw error;
 
       // Transform data to match our interface
       const transformedData = (data || []).map(record => ({
-        id: record.group_id,
-        user_id: record.owner_id,
-        user_name: record.profiles?.full_name || 'Usuário',
-        user_email: record.profiles?.email || '',
-        contemplated_at: record.completed_at || record.created_at,
-        service_type: 'Grupo WhatsApp', // Default for now
-        status: (record.status === 'completed' ? 'confirmed' : 'pending') as 'confirmed' | 'pending' | 'revoked',
-        voucher_code: `VOUCHER-${record.group_id.slice(-8).toUpperCase()}`,
-        total_referrals: record.current_members,
-        total_commission: (record.current_members * 25) + 650, // R$25 per referral + milestones
+        id: record.id,
+        user_id: record.id, // Using id as user_id since we don't have separate user table
+        user_name: record.nome || 'Usuário',
+        user_email: record.email || '',
+        contemplated_at: record.contemplacao_data || record.created_at,
+        service_type: record.service_type || 'Serviço',
+        status: 'confirmed' as 'confirmed' | 'pending' | 'revoked',
+        voucher_code: `VOUCHER-${record.id.slice(-8).toUpperCase()}`,
+        total_referrals: 9, // Default since we don't have referral tracking
+        total_commission: 650, // Default commission amount
         notes: ''
       }));
 

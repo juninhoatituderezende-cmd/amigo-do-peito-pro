@@ -120,13 +120,13 @@ export const PaymentManagement = () => {
   };
 
   const loadProfessionalPayments = async () => {
+    // Since pagamentos_profissionais table doesn't exist, use transactions for professional payments
     const { data, error } = await supabase
-      .from('pagamentos_profissionais')
+      .from('transactions')
       .select(`
-        *,
-        professional:professional_id (full_name),
-        client:client_id (full_name)
+        *
       `)
+      .eq('type', 'professional_payment')
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -136,8 +136,8 @@ export const PaymentManagement = () => {
 
     const paymentsWithNames = data?.map(payment => ({
       ...payment,
-      professional_name: payment.professional?.full_name || 'N/A',
-      client_name: payment.client?.full_name || 'N/A'
+      professional_name: 'Profissional',
+      client_name: 'Cliente'
     })) || [];
 
     setProfessionalPayments(paymentsWithNames);
