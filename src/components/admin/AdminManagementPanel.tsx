@@ -23,7 +23,7 @@ import {
   Gift
 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { VoucherGenerator } from "@/components/voucher/VoucherGenerator";
 
 interface UserRecord {

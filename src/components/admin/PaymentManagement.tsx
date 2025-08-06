@@ -22,7 +22,7 @@ import {
   Download,
   Eye
 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import SimpleImageUpload from "@/components/SimpleImageUpload";
 
 interface ProfessionalPayment {

@@ -8,7 +8,7 @@ import { Download, Mail, Check, Calendar, User, Package } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 
 interface VoucherData {
   id: string;
