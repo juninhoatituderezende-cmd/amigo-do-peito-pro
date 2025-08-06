@@ -80,7 +80,7 @@ export function AdminMonitoringPanel() {
 
   const loadActivities = async () => {
     const { data, error } = await supabase
-      .from("activity_logs")
+      .from("issues")
       .select(`
         *,
         profiles:user_id(email)
@@ -100,7 +100,7 @@ export function AdminMonitoringPanel() {
 
   const loadErrors = async () => {
     const { data, error } = await supabase
-      .from("error_logs")
+      .from("issues")
       .select("*")
       .order("created_at", { ascending: false })
       .limit(20);
@@ -112,14 +112,14 @@ export function AdminMonitoringPanel() {
   const loadMetrics = async () => {
     const [usersCount, plansCount, paymentsCount, professionalsCount, influencersCount] = await Promise.all([
       supabase.from("profiles").select("id", { count: "exact" }),
-      supabase.from("custom_plans").select("id", { count: "exact" }),
-      supabase.from("payments").select("id", { count: "exact" }),
-      supabase.from("profiles").select("id", { count: "exact" }).eq("role", "professional"),
-      supabase.from("profiles").select("id", { count: "exact" }).eq("role", "influencer"),
+      supabase.from("services").select("id", { count: "exact" }),
+      supabase.from("transactions").select("id", { count: "exact" }),
+      supabase.from("professionals").select("id", { count: "exact" }),
+      supabase.from("influencers").select("id", { count: "exact" }),
     ]);
 
     const { data: pendingPayments } = await supabase
-      .from("payments")
+      .from("transactions")
       .select("id", { count: "exact" })
       .eq("status", "pending");
 
@@ -136,7 +136,7 @@ export function AdminMonitoringPanel() {
   const resolveError = async (errorId: string) => {
     try {
       const { error } = await supabase
-        .from("error_logs")
+        .from("issues")
         .update({ resolved: true })
         .eq("id", errorId);
 

@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "../lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 
 const InfluencerRegister = () => {
   const [formData, setFormData] = useState({

@@ -91,7 +91,7 @@ export function AdminManagementPanel() {
     try {
       // Carregar usuários (simulando com dados das tabelas existentes)
       const { data: clientesData } = await supabase
-        .from('clientes')
+        .from('plan_participants')
         .select(`
           id,
           nome,
@@ -202,7 +202,7 @@ export function AdminManagementPanel() {
   const approveContemplation = async (userId: string) => {
     try {
       const { error } = await supabase
-        .from('clientes')
+        .from('plan_participants')
         .update({ 
           contemplacao_status: 'contemplado',
           contemplacao_data: new Date().toISOString()
@@ -231,7 +231,7 @@ export function AdminManagementPanel() {
     try {
       // Atualizar status de pagamento
       const { error } = await supabase
-        .from('plan_participations')
+        .from('plan_participants')
         .update({ payment_status: 'paid' })
         .eq('participant_id', userId);
 
