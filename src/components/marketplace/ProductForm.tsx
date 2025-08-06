@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { SimpleFileUpload } from "@/components/ui/simple-file-upload";
 import { Upload, Package, DollarSign, Tag, Image, Save, ExternalLink, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface ProductFormData {
