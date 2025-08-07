@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -157,14 +157,19 @@ export const MaterialUploadPanel = () => {
         updated_at: new Date().toISOString()
       };
 
-      // Since 'materials' table doesn't exist, save to notifications table as a workaround
+      // Save to materials table
       if (editingId) {
         const { error } = await supabase
-          .from('notifications')
+          .from('materials')
           .update({
             title: materialData.title,
-            message: materialData.description,
-            type: 'info'
+            description: materialData.description,
+            category: materialData.category,
+            type: materialData.type,
+            url: materialData.url,
+            qr_code_url: materialData.qrCodeUrl,
+            is_active: materialData.is_active,
+            updated_at: new Date().toISOString()
           })
           .eq('id', editingId);
         
@@ -172,18 +177,28 @@ export const MaterialUploadPanel = () => {
         
         setMaterials(prev => prev.map(m => m.id === editingId ? materialData : m));
       } else {
-        const { error } = await supabase
-          .from('notifications')
+        const { data, error } = await supabase
+          .from('materials')
           .insert([{
             title: materialData.title,
-            message: materialData.description,
-            type: 'info',
-            user_id: 'admin-material'
-          }]);
+            description: materialData.description,
+            category: materialData.category,
+            type: materialData.type,
+            url: materialData.url,
+            qr_code_url: materialData.qrCodeUrl,
+            is_active: materialData.is_active
+          }])
+          .select()
+          .single();
         
         if (error) throw error;
         
-        setMaterials(prev => [...prev, materialData]);
+        const newMaterial = {
+          ...materialData,
+          id: data.id,
+          created_at: data.created_at
+        };
+        setMaterials(prev => [...prev, newMaterial]);
       }
 
       // Reset form
@@ -216,26 +231,41 @@ export const MaterialUploadPanel = () => {
 
   const loadMaterials = async () => {
     try {
-      // Since 'materials' table doesn't exist, create mock data
-      const mockMaterials: MaterialUpload[] = [
-        {
-          id: '1',
-          title: 'Material Exemplo',
-          description: 'Descrição do material exemplo',
-          type: 'image',
-          category: 'geral',
-          url: 'https://exemplo.com/imagem.jpg',
-          qrCodeUrl: 'https://exemplo.com/qr.png',
-          is_active: true,
-          downloadCount: 0,
-          created_at: new Date().toISOString()
-        }
-      ];
-      setMaterials(mockMaterials);
+      const { data, error } = await supabase
+        .from('materials')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const transformedMaterials = (data || []).map(material => ({
+        id: material.id,
+        title: material.title,
+        description: material.description || '',
+        category: material.category,
+        type: material.type as 'image' | 'video' | 'pdf' | 'document',
+        url: material.url,
+        qrCodeUrl: material.qr_code_url || '',
+        is_active: material.is_active,
+        downloadCount: material.download_count,
+        created_at: material.created_at,
+        updated_at: material.updated_at
+      }));
+
+      setMaterials(transformedMaterials);
     } catch (error) {
       console.error('Erro ao carregar materiais:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar materiais.",
+        variant: "destructive",
+      });
     }
   };
+
+  useEffect(() => {
+    loadMaterials();
+  }, []);
 
   // Editar material
   const handleEdit = (material: MaterialUpload) => {
@@ -247,7 +277,13 @@ export const MaterialUploadPanel = () => {
   // Deletar material
   const handleDelete = async (id: string) => {
     try {
-      // Since 'materials' table doesn't exist, just update local state
+      const { error } = await supabase
+        .from('materials')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
       setMaterials(prev => prev.filter(m => m.id !== id));
 
       toast({
@@ -267,8 +303,15 @@ export const MaterialUploadPanel = () => {
   // Toggle ativo/inativo
   const toggleMaterialStatus = async (id: string, currentStatus: boolean) => {
     try {
-      // Since 'materials' table doesn't exist, just update local state
       const newStatus = !currentStatus;
+      
+      const { error } = await supabase
+        .from('materials')
+        .update({ is_active: newStatus })
+        .eq('id', id);
+
+      if (error) throw error;
+
       setMaterials(prev => prev.map(m => 
         m.id === id ? { ...m, is_active: newStatus } : m
       ));
@@ -279,6 +322,11 @@ export const MaterialUploadPanel = () => {
       });
     } catch (error) {
       console.error('Erro ao alterar status:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao alterar status do material.",
+        variant: "destructive",
+      });
     }
   };
 

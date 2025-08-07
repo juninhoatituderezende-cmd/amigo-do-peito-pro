@@ -71,6 +71,68 @@ export type Database = {
         }
         Relationships: []
       }
+      contemplations: {
+        Row: {
+          contemplated_at: string
+          created_at: string
+          id: string
+          notes: string | null
+          professional_id: string | null
+          professional_name: string | null
+          service_type: string
+          status: string
+          total_commission: number
+          total_referrals: number
+          updated_at: string
+          user_email: string
+          user_id: string
+          user_name: string
+          voucher_code: string
+        }
+        Insert: {
+          contemplated_at?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          professional_id?: string | null
+          professional_name?: string | null
+          service_type: string
+          status?: string
+          total_commission?: number
+          total_referrals?: number
+          updated_at?: string
+          user_email: string
+          user_id: string
+          user_name: string
+          voucher_code: string
+        }
+        Update: {
+          contemplated_at?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          professional_id?: string | null
+          professional_name?: string | null
+          service_type?: string
+          status?: string
+          total_commission?: number
+          total_referrals?: number
+          updated_at?: string
+          user_email?: string
+          user_id?: string
+          user_name?: string
+          voucher_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contemplations_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       credit_transactions: {
         Row: {
           amount: number
@@ -103,6 +165,74 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      custom_plans: {
+        Row: {
+          active: boolean
+          allow_professional_choice: boolean
+          benefits: Json | null
+          category_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          entry_price: number
+          id: string
+          image_url: string | null
+          max_participants: number
+          name: string
+          plan_code: string
+          professional_id: string | null
+          public_enrollment: boolean
+          total_price: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          allow_professional_choice?: boolean
+          benefits?: Json | null
+          category_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          entry_price: number
+          id?: string
+          image_url?: string | null
+          max_participants?: number
+          name: string
+          plan_code: string
+          professional_id?: string | null
+          public_enrollment?: boolean
+          total_price: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          allow_professional_choice?: boolean
+          benefits?: Json | null
+          category_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          entry_price?: number
+          id?: string
+          image_url?: string | null
+          max_participants?: number
+          name?: string
+          plan_code?: string
+          professional_id?: string | null
+          public_enrollment?: boolean
+          total_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_plans_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       error_logs: {
         Row: {
@@ -301,6 +431,51 @@ export type Database = {
         }
         Relationships: []
       }
+      materials: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          download_count: number
+          id: string
+          is_active: boolean
+          qr_code_url: string | null
+          title: string
+          type: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          download_count?: number
+          id?: string
+          is_active?: boolean
+          qr_code_url?: string | null
+          title: string
+          type: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          download_count?: number
+          id?: string
+          is_active?: boolean
+          qr_code_url?: string | null
+          title?: string
+          type?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
       notification_triggers: {
         Row: {
           created_at: string
@@ -422,6 +597,48 @@ export type Database = {
           },
         ]
       }
+      payment_logs: {
+        Row: {
+          action: string
+          admin_id: string | null
+          amount: number | null
+          created_at: string
+          id: string
+          new_status: string | null
+          notes: string | null
+          old_status: string | null
+          payment_id: string
+          payment_type: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          admin_id?: string | null
+          amount?: number | null
+          created_at?: string
+          id?: string
+          new_status?: string | null
+          notes?: string | null
+          old_status?: string | null
+          payment_id: string
+          payment_type: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          admin_id?: string | null
+          amount?: number | null
+          created_at?: string
+          id?: string
+          new_status?: string | null
+          notes?: string | null
+          old_status?: string | null
+          payment_id?: string
+          payment_type?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       performance_metrics: {
         Row: {
           created_at: string
@@ -445,6 +662,104 @@ export type Database = {
           metric_value?: number
         }
         Relationships: []
+      }
+      plan_groups: {
+        Row: {
+          created_at: string
+          current_participants: number
+          end_date: string | null
+          group_number: number
+          id: string
+          plan_id: string
+          start_date: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_participants?: number
+          end_date?: string | null
+          group_number: number
+          id?: string
+          plan_id: string
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_participants?: number
+          end_date?: string | null
+          group_number?: number
+          id?: string
+          plan_id?: string
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_groups_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "custom_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plan_participants: {
+        Row: {
+          contemplation_date: string | null
+          contemplation_status: string
+          created_at: string
+          group_id: string
+          id: string
+          joined_at: string
+          payment_status: string
+          plan_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          contemplation_date?: string | null
+          contemplation_status?: string
+          created_at?: string
+          group_id: string
+          id?: string
+          joined_at?: string
+          payment_status?: string
+          plan_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          contemplation_date?: string | null
+          contemplation_status?: string
+          created_at?: string
+          group_id?: string
+          id?: string
+          joined_at?: string
+          payment_status?: string
+          plan_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_participants_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "plan_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_participants_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "custom_plans"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       professionals: {
         Row: {
@@ -710,6 +1025,10 @@ export type Database = {
       clean_old_logs: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      generate_plan_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
       is_admin: {
         Args: Record<PropertyKey, never>

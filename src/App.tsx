@@ -11,6 +11,11 @@ import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import MLMAdmin from "./pages/admin/MLMAdmin";
+import AdminUsuarios from "./pages/admin/AdminUsuarios";
+import AdminPlanos from "./pages/admin/AdminPlanos";
+import AdminPagamentos from "./pages/admin/AdminPagamentos";
+import AdminRelatorios from "./pages/admin/AdminRelatorios";
+import AdminNotificacoes from "./pages/admin/AdminNotificacoes";
 import Register from "./pages/Register";
 import Confirmation from "./pages/Confirmation";
 import ProDashboard from "./pages/pro/ProDashboard";
@@ -100,6 +105,31 @@ const App = () => (
             <Route path="/admin/mlm" element={
               <ProtectedRoute role="admin">
                 <MLMAdmin />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/usuarios" element={
+              <ProtectedRoute role="admin">
+                <AdminUsuarios />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/planos" element={
+              <ProtectedRoute role="admin">
+                <AdminPlanos />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/pagamentos" element={
+              <ProtectedRoute role="admin">
+                <AdminPagamentos />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/relatorios" element={
+              <ProtectedRoute role="admin">
+                <AdminRelatorios />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/notificacoes" element={
+              <ProtectedRoute role="admin">
+                <AdminNotificacoes />
               </ProtectedRoute>
             } />
             
