@@ -30,6 +30,7 @@ import MLMDashboard from "./pages/MLMDashboard";
 import MLMSuccess from "./pages/MLMSuccess";
 import MLMCancel from "./pages/MLMCancel";
 import { AuthProvider } from "./contexts/AuthContext";
+import { AuthRedirect } from "./components/AuthRedirect";
 import ProtectedRoute from "./components/ProtectedRoute";
 import About from "./pages/About";
 import Todos from "./pages/Todos";
@@ -51,6 +52,7 @@ const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
+        <AuthRedirect />
         <TooltipProvider>
           <Toaster />
           <Sonner />
