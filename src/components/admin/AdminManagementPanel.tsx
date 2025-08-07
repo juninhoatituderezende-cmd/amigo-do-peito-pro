@@ -91,7 +91,7 @@ export function AdminManagementPanel() {
     try {
       // Carregar usuários dos participantes de planos
       const { data: clientesData } = await supabase
-        .from('plan_participants')
+        .from('participacoes')
         .select(`
           id,
           nome,
