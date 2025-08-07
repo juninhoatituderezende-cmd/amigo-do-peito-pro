@@ -1159,9 +1159,27 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      mlm_statistics: {
+        Row: {
+          active_users: number | null
+          confirmed_referrals: number | null
+          level_1_users: number | null
+          paid_commissions_total: number | null
+          pending_commissions_total: number | null
+          pending_referrals: number | null
+          total_network_earnings: number | null
+          total_referrals_network: number | null
+          total_referrals_processed: number | null
+          total_users_in_network: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      admin_update_referral_status: {
+        Args: { referral_id: string; new_status: string; admin_notes?: string }
+        Returns: boolean
+      }
       calculate_mlm_level: {
         Args: { referred_by: string }
         Returns: number
@@ -1177,6 +1195,50 @@ export type Database = {
       generate_referral_code: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_referrals_by_status: {
+        Args: { filter_status?: string }
+        Returns: {
+          referral_id: string
+          referrer_name: string
+          referrer_email: string
+          referred_name: string
+          referred_email: string
+          referral_code_used: string
+          commission_earned: number
+          commission_percentage: number
+          status: string
+          created_at: string
+          confirmed_at: string
+          paid_at: string
+        }[]
+      }
+      get_user_commissions: {
+        Args: { target_user_id: string }
+        Returns: {
+          total_commissions: number
+          pending_commissions: number
+          paid_commissions: number
+          referral_commissions: number
+          bonus_commissions: number
+          override_commissions: number
+          commission_details: Json
+        }[]
+      }
+      get_user_network: {
+        Args: { target_user_id: string }
+        Returns: {
+          level: number
+          user_id: string
+          user_name: string
+          user_email: string
+          referral_code: string
+          total_referrals: number
+          active_referrals: number
+          total_earnings: number
+          status: string
+          joined_at: string
+        }[]
       }
       is_admin: {
         Args: Record<PropertyKey, never>
