@@ -94,10 +94,10 @@ export const useCredits = () => {
           id: t.id,
           userId: t.user_id,
           amount: t.amount,
-          type: t.type,
-          source: t.source,
+          type: (t.type as 'credit' | 'debit'),
+          source: (t.source as 'initial_payment' | 'referral_bonus' | 'marketplace_purchase' | 'withdrawal' | 'admin_adjustment'),
           description: t.description,
-          relatedOrderId: t.related_order_id,
+          relatedOrderId: t.related_order_id || '',
           createdAt: t.created_at
         }));
         setTransactions(formattedTransactions);

@@ -114,7 +114,7 @@ const InfluencerRegister = () => {
         const { error: insertError } = await supabase
           .from('influencers')
           .insert({
-            id: data.user.id,
+            user_id: data.user.id,
             full_name: formData.fullName,
             email: formData.email,
             phone: formData.phone,

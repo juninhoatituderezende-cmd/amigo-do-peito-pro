@@ -93,18 +93,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
 
-      // Check users table
-      const { data: regularUser } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', id)
-        .single();
+      // Usar dados básicos do auth
+      const authUser = (await supabase.auth.getUser()).data.user;
 
-      if (regularUser) {
+      if (authUser) {
         setUser({
-          id: regularUser.id,
-          name: regularUser.full_name,
-          email: regularUser.email,
+          id: authUser.id,
+          name: authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || 'Usuário',
+          email: authUser.email || '',
           role: null
         });
         return;
@@ -182,17 +178,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             throw new Error(insertError.message);
           }
         } else {
-          // Regular user
-          const { error: insertError } = await supabase
-            .from('users')
-            .insert({
-              id: data.user.id,
-              ...userData
-            });
+          // Não precisa inserir em tabela users, usar auth diretamente
 
-          if (insertError) {
-            throw new Error(insertError.message);
-          }
         }
 
         // For users, don't auto-login, redirect to login page

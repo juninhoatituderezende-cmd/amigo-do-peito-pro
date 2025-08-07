@@ -43,27 +43,25 @@ export const DigitalVoucher = () => {
 
   const loadUserVouchers = async () => {
     try {
-      // Simulate loading vouchers for contemplated users
-      // In real implementation, this would check if user has completed groups
+      // Buscar grupos completados do usuário
       const { data: groupsData, error } = await supabase
-        .from('group_progress')
+        .from('groups')
         .select('*')
-        .eq('owner_id', user?.id)
-        .eq('current_members', 9)
+        .eq('user_id', user?.id)
         .eq('status', 'completed');
 
       if (error) throw error;
 
       // Transform groups into vouchers
       const voucherData = (groupsData || []).map(group => ({
-        id: group.group_id,
-        voucher_code: `VOUCHER-${group.group_id.slice(-8).toUpperCase()}`,
+        id: group.id,
+        voucher_code: `VOUCHER-${group.id.slice(-8).toUpperCase()}`,
         status: 'confirmed' as const,
-        created_at: group.completed_at || group.created_at,
+        created_at: group.created_at,
         expires_at: new Date(Date.now() + (365 * 24 * 60 * 60 * 1000)).toISOString(), // 1 year from now
-        service_type: 'Grupo WhatsApp Contemplado',
-        total_commission: (group.current_members * 25) + 650, // Calculate total earned
-        qr_code_url: `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=VOUCHER-${group.group_id.slice(-8).toUpperCase()}`
+        service_type: 'Grupo Contemplado',
+        total_commission: group.discount_percentage * 10, // Calculate total earned
+        qr_code_url: `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=VOUCHER-${group.id.slice(-8).toUpperCase()}`
       }));
 
       setVouchers(voucherData);

@@ -39,13 +39,13 @@ export const useNotifications = () => {
         id: n.id,
         title: n.title,
         message: n.message,
-        type: n.type,
+        type: (n.type as 'error' | 'info' | 'success' | 'warning'),
         read: n.read,
         createdAt: n.created_at,
-        actionUrl: n.action_url,
+        actionUrl: n.action_url || '',
         actionText: n.action_text,
         userId: n.user_id,
-        category: n.category
+        category: (n.category as 'group' | 'referral' | 'payment' | 'system' | 'achievement')
       })) || [];
 
       setNotifications(formattedNotifications);
@@ -82,13 +82,13 @@ export const useNotifications = () => {
         id: data.id,
         title: data.title,
         message: data.message,
-        type: data.type,
+        type: (data.type as 'error' | 'info' | 'success' | 'warning'),
         read: data.read,
         createdAt: data.created_at,
         actionUrl: data.action_url,
         actionText: data.action_text,
         userId: data.user_id,
-        category: data.category
+        category: (data.category as 'group' | 'referral' | 'payment' | 'system' | 'achievement')
       };
 
       setNotifications(prev => [newNotification, ...prev]);

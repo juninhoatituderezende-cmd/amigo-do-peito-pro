@@ -82,11 +82,11 @@ export const useNotificationTriggers = () => {
       } else {
         const formattedTriggers: AutomatedTrigger[] = data?.map(t => ({
           userId: t.user_id,
-          triggerType: t.trigger_type,
+          triggerType: (t.trigger_type as '15_days' | '30_days' | '60_days' | '90_days' | '180_days'),
           executed: t.executed,
-          executedAt: t.executed_at,
+          executedAt: t.executed_at || '',
           scheduledFor: t.scheduled_for,
-          groupId: t.group_id
+          groupId: t.group_id || ''
         })) || [];
         
         setTriggers(formattedTriggers);
