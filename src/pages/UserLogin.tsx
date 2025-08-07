@@ -20,13 +20,19 @@ const UserLogin = () => {
   const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
+    console.log('🔄 Login form submitted');
     e.preventDefault();
     setLoading(true);
     
+    console.log('📧 Attempting login with:', { email: formData.email, passwordLength: formData.password.length });
+    
     try {
+      console.log('🚀 Calling login function...');
       await login(formData.email, formData.password, null);
+      console.log('✅ Login successful');
       // Redirect will be handled by AuthRedirect component in the main app
     } catch (error: any) {
+      console.error('❌ Login failed:', error);
       toast({
         title: "Erro no login",
         description: error.message || "Credenciais inválidas",
@@ -34,6 +40,7 @@ const UserLogin = () => {
       });
     } finally {
       setLoading(false);
+      console.log('🔄 Login process completed');
     }
   };
 
