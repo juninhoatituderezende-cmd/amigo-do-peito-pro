@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Palette, Smile, Users, Crown, Zap } from "lucide-react";
+import { Palette, Smile, Users, Crown, Zap, QrCode, Copy, ArrowLeft } from "lucide-react";
 
 interface Product {
   id: string;
@@ -25,6 +25,7 @@ export default function MLMProducts() {
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState<string | null>(null);
   const [referralCode, setReferralCode] = useState("");
+  const [pixPaymentData, setPixPaymentData] = useState<any>(null);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -87,10 +88,11 @@ export default function MLMProducts() {
         return;
       }
 
-      const { data, error } = await supabase.functions.invoke("process-mlm-purchase", {
+      const { data, error } = await supabase.functions.invoke("create-pix-payment", {
         body: {
           product_code: productCode,
-          referral_code: referralCode || undefined
+          referral_code: referralCode || undefined,
+          user_id: session.session.user.id
         },
         headers: {
           Authorization: `Bearer ${session.session.access_token}`,
@@ -99,9 +101,9 @@ export default function MLMProducts() {
 
       if (error) throw error;
 
-      if (data?.success && data?.checkout_url) {
-        // Redirecionar para o Stripe Checkout
-        window.location.href = data.checkout_url;
+      if (data?.success) {
+        // Mostrar dados do PIX
+        setPixPaymentData(data);
       } else {
         throw new Error(data?.error || "Erro ao processar compra");
       }
@@ -133,6 +135,16 @@ export default function MLMProducts() {
     return category === 'tattoo' ? 'bg-purple-500' : 'bg-blue-500';
   };
 
+  const copyPixCode = async () => {
+    if (pixPaymentData?.pix_copy_paste) {
+      await navigator.clipboard.writeText(pixPaymentData.pix_copy_paste);
+      toast({
+        title: "Código PIX copiado!",
+        description: "Cole no seu app bancário para pagar",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -140,6 +152,88 @@ export default function MLMProducts() {
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto"></div>
           <p className="mt-4 text-muted-foreground">Carregando produtos...</p>
         </div>
+      </div>
+    );
+  }
+
+  // Show PIX payment screen
+  if (pixPaymentData) {
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-2xl">
+        <Button 
+          variant="ghost" 
+          onClick={() => setPixPaymentData(null)}
+          className="mb-6"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Voltar aos produtos
+        </Button>
+
+        <Card>
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl text-green-600">PIX Gerado com Sucesso!</CardTitle>
+            <CardDescription>
+              Escaneie o QR Code ou copie o código para pagar
+            </CardDescription>
+          </CardHeader>
+          
+          <CardContent className="space-y-6">
+            <div className="text-center">
+              <Badge variant="outline" className="text-lg px-4 py-2 mb-4">
+                R$ {pixPaymentData.amount?.toFixed(2)}
+              </Badge>
+            </div>
+
+            {pixPaymentData.pix_qr_code && (
+              <div className="text-center">
+                <img 
+                  src={pixPaymentData.pix_qr_code} 
+                  alt="QR Code PIX" 
+                  className="mx-auto border rounded-lg shadow-lg max-w-xs"
+                />
+                <p className="text-sm text-muted-foreground mt-2">
+                  Abra seu app bancário e escaneie o QR Code
+                </p>
+              </div>
+            )}
+
+            {pixPaymentData.pix_copy_paste && (
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Código PIX (Copiar e Colar):</Label>
+                <div className="flex gap-2">
+                  <code className="flex-1 p-3 bg-muted rounded text-xs break-all border">
+                    {pixPaymentData.pix_copy_paste}
+                  </code>
+                  <Button 
+                    variant="outline" 
+                    size="icon"
+                    onClick={copyPixCode}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            <div className="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-400">
+              <h4 className="font-semibold text-blue-800 mb-2">Como pagar:</h4>
+              <ol className="text-sm text-blue-700 space-y-1">
+                <li>1. Abra o app do seu banco</li>
+                <li>2. Vá em PIX → Pagar</li>
+                <li>3. Escaneie o QR Code ou cole o código</li>
+                <li>4. Confirme o pagamento</li>
+                <li>5. Aguarde a confirmação automática</li>
+              </ol>
+            </div>
+
+            <div className="bg-green-50 p-4 rounded-lg border-l-4 border-green-400">
+              <p className="text-sm text-green-700">
+                <strong>✅ Confirmação automática:</strong> Assim que o pagamento for confirmado, 
+                você será automaticamente adicionado ao grupo e receberá seu link de indicação!
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }

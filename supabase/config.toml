@@ -1,1 +1,7 @@
 project_id = "rczygmsaybzcrmdxxyge"
+
+[functions.create-pix-payment]
+verify_jwt = false
+
+[functions.pix-webhook]
+verify_jwt = false
