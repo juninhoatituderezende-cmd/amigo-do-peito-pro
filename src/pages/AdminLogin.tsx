@@ -33,10 +33,20 @@ const AdminLogin = () => {
         throw new Error(error.message);
       }
 
-      // Verificar se o usuário tem permissões de admin (user_metadata.is_admin ou email específico)
-      if (data.user?.user_metadata?.is_admin !== true && 
-          data.user?.email !== "admin@amigodopeito.com" && 
-          !data.user?.email?.includes("admin")) {
+      // Verificar se o usuário tem permissões de admin
+      const isAdminByMetadata = data.user?.user_metadata?.is_admin === true;
+      const isAdminByEmail = data.user?.email === "admin@amigodopeito.com" || data.user?.email?.includes("admin");
+      
+      // Verificar na tabela admin_configs
+      const { data: adminConfig } = await supabase
+        .from('admin_configs')
+        .select('is_active')
+        .eq('admin_email', data.user?.email)
+        .single();
+      
+      const isAdminByConfig = adminConfig?.is_active === true;
+      
+      if (!isAdminByMetadata && !isAdminByEmail && !isAdminByConfig) {
         await supabase.auth.signOut();
         throw new Error("Usuário não possui permissões administrativas");
       }
