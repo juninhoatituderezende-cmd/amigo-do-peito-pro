@@ -50,6 +50,27 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_configs: {
+        Row: {
+          admin_email: string
+          created_at: string
+          id: string
+          is_active: boolean
+        }
+        Insert: {
+          admin_email: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+        }
+        Update: {
+          admin_email?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+        }
+        Relationships: []
+      }
       credit_transactions: {
         Row: {
           amount: number
