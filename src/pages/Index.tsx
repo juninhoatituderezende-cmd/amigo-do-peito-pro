@@ -189,23 +189,6 @@ const Index = () => {
             <p className="text-xl mb-8">
               Cadastre-se agora como profissional e comece a expandir seu negócio através do nosso sistema inovador.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/cadastro">
-                <Button className="bg-white text-ap-orange hover:bg-gray-100 px-8 py-6 text-lg">
-                  Sou Profissional
-                </Button>
-              </Link>
-              <Link to="/usuario/cadastro">
-                <Button className="bg-white text-ap-light-blue hover:bg-gray-100 px-8 py-6 text-lg">
-                  Sou Cliente
-                </Button>
-              </Link>
-              <Link to="/influenciador/cadastro">
-                <Button variant="outline" className="border-2 border-white text-white hover:bg-white hover:text-ap-orange px-8 py-6 text-lg">
-                  Sou Influenciador
-                </Button>
-              </Link>
-            </div>
           </div>
         </div>
       </section>
