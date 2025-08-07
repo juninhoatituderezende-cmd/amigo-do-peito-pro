@@ -50,47 +50,29 @@ export const ContemplationValidation = () => {
 
   const loadContemplations = async () => {
     try {
-      // Use mock data since table doesn't exist yet
-      const mockData = [
-        {
-          id: '1',
-          user_name: 'João Silva',
-          user_email: 'joao@email.com',
-          contemplated_at: new Date().toISOString(),
-          service_type: 'Consultoria',
-          status: 'confirmed' as const,
-          voucher_code: 'VOUCHER-ABC123',
-          total_referrals: 9,
-          total_commission: 650,
-          notes: ''
-        },
-        {
-          id: '2',
-          user_name: 'Maria Santos',
-          user_email: 'maria@email.com',
-          contemplated_at: new Date().toISOString(),
-          service_type: 'Terapia',
-          status: 'pending' as const,
-          voucher_code: 'VOUCHER-DEF456',
-          total_referrals: 8,
-          total_commission: 580,
-          notes: ''
-        }
-      ];
+      // Carregar contemplações do Supabase
+      const { data: contemplationsData, error } = await supabase
+        .from('contemplations')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-      // Transform data to match our interface
-      const transformedData = mockData.map(record => ({
+      if (error) throw error;
+
+      // Transformar dados para o formato da interface
+      const transformedData = (contemplationsData || []).map(record => ({
         id: record.id,
-        user_id: record.id,
+        user_id: record.user_id,
         user_name: record.user_name,
         user_email: record.user_email,
         contemplated_at: record.contemplated_at,
         service_type: record.service_type,
-        status: record.status,
+        professional_id: record.professional_id,
+        professional_name: record.professional_name,
+        status: record.status as 'confirmed' | 'pending' | 'revoked',
         voucher_code: record.voucher_code,
         total_referrals: record.total_referrals,
         total_commission: record.total_commission,
-        notes: record.notes
+        notes: record.notes || ''
       }));
 
       setContemplations(transformedData);
@@ -107,15 +89,25 @@ export const ContemplationValidation = () => {
 
   const updateContemplationStatus = async (contemplationId: string, newStatus: 'confirmed' | 'revoked') => {
     try {
-      // Here you would update the actual database
-      // For now, we'll update the local state
+      // Atualizar no Supabase
+      const { error } = await supabase
+        .from('contemplations')
+        .update({
+          status: newStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', contemplationId);
+
+      if (error) throw error;
+
+      // Atualizar estado local
       setContemplations(prev => prev.map(item => 
         item.id === contemplationId 
           ? { ...item, status: newStatus }
           : item
       ));
 
-      // Send notification email to user
+      // Enviar email de notificação ao usuário
       await sendStatusUpdateEmail(contemplationId, newStatus);
 
       toast({

@@ -39,35 +39,51 @@ export function AdminManagementPanel() {
   const loadParticipants = async () => {
     setLoading(true);
     try {
-      // Usando dados simulados já que as tabelas originais não existem
-      const mockData: Participant[] = [
-        {
-          id: '1',
-          nome: 'João Silva',
-          email: 'joao@email.com',
-          telefone: '(11) 99999-9999',
-          serviceType: 'Consultoria',
-          status: 'Ativo',
-          paymentStatus: 'paid',
-          contemplationStatus: 'aguardando',
-          joinDate: '2023-01-15',
-          contemplationDate: null
-        },
-        {
-          id: '2',
-          nome: 'Maria Santos',
-          email: 'maria@email.com',
-          telefone: '(11) 88888-8888',
-          serviceType: 'Terapia',
-          status: 'Ativo',
-          paymentStatus: 'paid',
-          contemplationStatus: 'contemplado',
-          joinDate: '2023-02-10',
-          contemplationDate: '2023-03-15'
-        }
-      ];
+      // Carregar participantes dos planos
+      const { data: participantsData, error } = await supabase
+        .from('plan_participants')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-      setParticipants(mockData);
+      if (error) throw error;
+
+      // Carregar dados de usuários separadamente
+      const userIds = participantsData?.map(p => p.user_id) || [];
+      const { data: usersData } = await supabase
+        .from('users')
+        .select('id, nome, email, telefone')
+        .in('id', userIds);
+
+      // Carregar dados de planos separadamente
+      const groupIds = participantsData?.map(p => p.group_id) || [];
+      const { data: groupsData } = await supabase
+        .from('plan_groups')
+        .select(`
+          id,
+          custom_plans!inner(name, category_id)
+        `)
+        .in('id', groupIds);
+
+      // Transformar dados para o formato esperado
+      const transformedParticipants = (participantsData || []).map(participant => {
+        const user = usersData?.find(u => u.id === participant.user_id);
+        const group = groupsData?.find(g => g.id === participant.group_id);
+        
+        return {
+          id: participant.id,
+          nome: user?.nome || 'N/A',
+          email: user?.email || 'N/A', 
+          telefone: user?.telefone || 'N/A',
+          serviceType: group?.custom_plans?.name || 'Plano personalizado',
+          status: participant.payment_status === 'paid' ? 'Ativo' : 'Pendente',
+          paymentStatus: participant.payment_status,
+          contemplationStatus: participant.contemplation_status,
+          joinDate: participant.joined_at?.split('T')[0] || participant.created_at?.split('T')[0],
+          contemplationDate: participant.contemplation_date?.split('T')[0] || null
+        };
+      });
+
+      setParticipants(transformedParticipants);
     } catch (error) {
       console.error('Erro ao carregar participantes:', error);
       toast({
@@ -82,12 +98,60 @@ export function AdminManagementPanel() {
 
   const handleUpdateContemplation = async (participantId: string, newStatus: string) => {
     try {
-      // Simulação de atualização
+      // Atualizar no Supabase
+      const { error } = await supabase
+        .from('plan_participants')
+        .update({
+          contemplation_status: newStatus,
+          contemplation_date: newStatus === 'contemplado' ? new Date().toISOString() : null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', participantId);
+
+      if (error) throw error;
+
+      // Atualizar estado local
       setParticipants(prev => prev.map(p => 
         p.id === participantId 
-          ? { ...p, contemplationStatus: newStatus, contemplationDate: newStatus === 'contemplado' ? new Date().toISOString() : null }
+          ? { 
+              ...p, 
+              contemplationStatus: newStatus, 
+              contemplationDate: newStatus === 'contemplado' ? new Date().toISOString().split('T')[0] : null 
+            }
           : p
       ));
+
+      // Se contemplado, criar registro na tabela contemplations
+      if (newStatus === 'contemplado') {
+        const participant = participants.find(p => p.id === participantId);
+        if (participant) {
+          // Buscar o user_id real do participante
+          const { data: participantData } = await supabase
+            .from('plan_participants')
+            .select('user_id')
+            .eq('id', participantId)
+            .single();
+
+          if (participantData) {
+            const { error: contemplationError } = await supabase
+              .from('contemplations')
+              .insert({
+                user_id: participantData.user_id,
+                user_name: participant.nome,
+                user_email: participant.email,
+                service_type: participant.serviceType,
+                voucher_code: `VOUCHER-${Date.now()}`,
+                status: 'confirmed',
+                total_referrals: 9, // Padrão MLM
+                total_commission: 0 // Será calculado
+              });
+
+            if (contemplationError) {
+              console.error('Erro ao criar contemplação:', contemplationError);
+            }
+          }
+        }
+      }
 
       toast({
         title: "Sucesso",
@@ -105,7 +169,15 @@ export function AdminManagementPanel() {
 
   const handleDeleteParticipant = async (participantId: string) => {
     try {
-      // Simulação de exclusão
+      // Remover do Supabase
+      const { error } = await supabase
+        .from('plan_participants')
+        .delete()
+        .eq('id', participantId);
+
+      if (error) throw error;
+
+      // Atualizar estado local
       setParticipants(prev => prev.filter(p => p.id !== participantId));
 
       toast({
