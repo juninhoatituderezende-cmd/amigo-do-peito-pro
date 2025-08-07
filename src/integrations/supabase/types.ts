@@ -779,6 +779,54 @@ export type Database = {
         }
         Relationships: []
       }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          influencer_code: string | null
+          paid_at: string | null
+          payment_method: string
+          pix_code: string | null
+          plan_id: string | null
+          status: string
+          stripe_session_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          id?: string
+          influencer_code?: string | null
+          paid_at?: string | null
+          payment_method?: string
+          pix_code?: string | null
+          plan_id?: string | null
+          status?: string
+          stripe_session_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          influencer_code?: string | null
+          paid_at?: string | null
+          payment_method?: string
+          pix_code?: string | null
+          plan_id?: string | null
+          status?: string
+          stripe_session_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       performance_metrics: {
         Row: {
           created_at: string
