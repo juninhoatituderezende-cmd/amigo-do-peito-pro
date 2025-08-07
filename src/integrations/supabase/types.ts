@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_logs: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json | null
+          id: string
+          ip_address: string | null
+          resource_id: string | null
+          resource_type: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          resource_id?: string | null
+          resource_type?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          resource_id?: string | null
+          resource_type?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       credit_transactions: {
         Row: {
           amount: number
@@ -44,6 +80,48 @@ export type Database = {
           source?: string
           type?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      error_logs: {
+        Row: {
+          client_ip: string | null
+          component_stack: string | null
+          created_at: string
+          error_id: string
+          id: string
+          message: string
+          stack: string | null
+          timestamp: string | null
+          url: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          client_ip?: string | null
+          component_stack?: string | null
+          created_at?: string
+          error_id: string
+          id?: string
+          message: string
+          stack?: string | null
+          timestamp?: string | null
+          url?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          client_ip?: string | null
+          component_stack?: string | null
+          created_at?: string
+          error_id?: string
+          id?: string
+          message?: string
+          stack?: string | null
+          timestamp?: string | null
+          url?: string | null
+          user_agent?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -87,6 +165,42 @@ export type Database = {
             columns: ["service_id"]
             isOneToOne: false
             referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      indicacoes: {
+        Row: {
+          created_at: string | null
+          id: string
+          indicado_id: string | null
+          indicado_por_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          indicado_id?: string | null
+          indicado_por_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          indicado_id?: string | null
+          indicado_por_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "indicacoes_indicado_id_fkey"
+            columns: ["indicado_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indicacoes_indicado_por_id_fkey"
+            columns: ["indicado_por_id"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -246,45 +360,68 @@ export type Database = {
         }
         Relationships: []
       }
-      plan_participants: {
+      participacoes: {
         Row: {
           contemplacao_data: string | null
           contemplacao_status: string | null
-          created_at: string
-          email: string
+          created_at: string | null
           id: string
-          nome: string
           payment_status: string | null
           service_type: string
-          telefone: string
-          updated_at: string
-          user_id: string
+          updated_at: string | null
+          user_id: string | null
         }
         Insert: {
           contemplacao_data?: string | null
           contemplacao_status?: string | null
-          created_at?: string
-          email: string
+          created_at?: string | null
           id?: string
-          nome: string
           payment_status?: string | null
           service_type: string
-          telefone: string
-          updated_at?: string
-          user_id: string
+          updated_at?: string | null
+          user_id?: string | null
         }
         Update: {
           contemplacao_data?: string | null
           contemplacao_status?: string | null
-          created_at?: string
-          email?: string
+          created_at?: string | null
           id?: string
-          nome?: string
           payment_status?: string | null
           service_type?: string
-          telefone?: string
-          updated_at?: string
-          user_id?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "participacoes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      performance_metrics: {
+        Row: {
+          created_at: string
+          details: Json | null
+          id: string
+          metric_name: string
+          metric_value: number
+        }
+        Insert: {
+          created_at?: string
+          details?: Json | null
+          id?: string
+          metric_name: string
+          metric_value: number
+        }
+        Update: {
+          created_at?: string
+          details?: Json | null
+          id?: string
+          metric_name?: string
+          metric_value?: number
         }
         Relationships: []
       }
@@ -345,36 +482,6 @@ export type Database = {
           updated_at?: string
           user_id?: string
           video_url?: string | null
-        }
-        Relationships: []
-      }
-      profiles: {
-        Row: {
-          created_at: string
-          email: string
-          full_name: string
-          id: string
-          phone: string | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          email: string
-          full_name: string
-          id?: string
-          phone?: string | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          email?: string
-          full_name?: string
-          id?: string
-          phone?: string | null
-          updated_at?: string
-          user_id?: string
         }
         Relationships: []
       }
@@ -506,6 +613,33 @@ export type Database = {
         }
         Relationships: []
       }
+      users: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          id: string
+          nome: string
+          telefone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          nome: string
+          telefone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          nome?: string
+          telefone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       withdrawals: {
         Row: {
           amount: number
@@ -552,7 +686,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      clean_old_logs: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

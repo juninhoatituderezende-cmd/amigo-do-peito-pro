@@ -4,7 +4,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import { diagnostics } from "@/lib/diagnostics";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/AdminLogin";
@@ -33,7 +34,18 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import About from "./pages/About";
 import Todos from "./pages/Todos";
 
-const queryClient = new QueryClient();
+// Initialize diagnostics
+console.log("🚀 APP STARTING - Initializing diagnostics...");
+diagnostics.enableDebugMode();
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const App = () => (
   <ErrorBoundary>
