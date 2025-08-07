@@ -11,14 +11,12 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
-interface ProductFormData {
-  title: string;
+interface ServiceFormData {
+  name: string;
   description: string;
   category: string;
-  full_price: number;
-  image_url: string;
-  external_link: string;
-  visibility: 'client' | 'professional' | 'both';
+  price: number;
+  duration: string;
 }
 
 const CATEGORIES = [
@@ -33,37 +31,19 @@ const CATEGORIES = [
 ];
 
 export const ProductForm = () => {
-  const [formData, setFormData] = useState<ProductFormData>({
-    title: '',
+  const [formData, setFormData] = useState<ServiceFormData>({
+    name: '',
     description: '',
     category: 'produtos-gerais',
-    full_price: 0,
-    image_url: '',
-    external_link: '',
-    visibility: 'both'
+    price: 0,
+    duration: ''
   });
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
 
-  const handleInputChange = (field: keyof ProductFormData, value: string | number) => {
+  const handleInputChange = (field: keyof ServiceFormData, value: string | number) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleImageUpload = (url: string) => {
-    setFormData(prev => ({ ...prev, image_url: url }));
-    toast({
-      title: "Imagem carregada!",
-      description: "A imagem foi carregada com sucesso.",
-    });
-  };
-
-  const calculateDownPayment = () => {
-    // Se é dropshipping, não há entrada
-    if (formData.external_link) {
-      return 0;
-    }
-    return formData.full_price * 0.1; // 10% de entrada para produtos internos
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -71,7 +51,7 @@ export const ProductForm = () => {
     if (!user) {
       toast({
         title: "Erro de autenticação",
-        description: "Você precisa estar logado para criar produtos.",
+        description: "Você precisa estar logado para criar serviços.",
         variant: "destructive"
       });
       return;
@@ -79,18 +59,31 @@ export const ProductForm = () => {
 
     setLoading(true);
     try {
+      // Get professional ID from professionals table
+      const { data: professional } = await supabase
+        .from('professionals')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!professional) {
+        toast({
+          title: "Erro",
+          description: "Você precisa ser um profissional cadastrado para criar serviços.",
+          variant: "destructive"
+        });
+        return;
+      }
+
       const { data, error } = await supabase
-        .from('products')
+        .from('services')
         .insert({
-          professional_id: user.id,
-          title: formData.title,
+          professional_id: professional.id,
+          name: formData.name,
           description: formData.description,
           category: formData.category,
-          full_price: formData.full_price,
-          down_payment: calculateDownPayment(),
-          image_url: formData.image_url,
-          external_link: formData.external_link || null,
-          visibility: formData.visibility
+          price: formData.price,
+          duration: formData.duration
         })
         .select()
         .single();
@@ -98,25 +91,23 @@ export const ProductForm = () => {
       if (error) throw error;
 
       toast({
-        title: "Produto criado!",
-        description: "Seu produto foi cadastrado com sucesso e já está disponível no marketplace.",
+        title: "Serviço criado!",
+        description: "Seu serviço foi cadastrado com sucesso e já está disponível no marketplace.",
       });
 
       // Reset form
       setFormData({
-        title: '',
+        name: '',
         description: '',
         category: 'produtos-gerais',
-        full_price: 0,
-        image_url: '',
-        external_link: '',
-        visibility: 'both'
+        price: 0,
+        duration: ''
       });
 
     } catch (error: any) {
       toast({
-        title: "Erro ao criar produto",
-        description: error.message || "Erro inesperado ao cadastrar o produto.",
+        title: "Erro ao criar serviço",
+        description: error.message || "Erro inesperado ao cadastrar o serviço.",
         variant: "destructive"
       });
     } finally {
@@ -124,30 +115,29 @@ export const ProductForm = () => {
     }
   };
 
-  const isFormValid = formData.title && formData.description && formData.category && 
-                     (formData.external_link || formData.full_price > 0);
+  const isFormValid = formData.name && formData.description && formData.category && formData.price > 0;
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Package className="h-5 w-5" />
-          Cadastrar Novo Produto/Serviço
+          Cadastrar Novo Serviço
         </CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Título */}
+          {/* Nome */}
           <div className="space-y-2">
-            <Label htmlFor="title" className="flex items-center gap-2">
+            <Label htmlFor="name" className="flex items-center gap-2">
               <Tag className="h-4 w-4" />
-              Título do Produto/Serviço
+              Nome do Serviço
             </Label>
             <Input
-              id="title"
+              id="name"
               placeholder="Ex: Consultoria em Marketing Digital"
-              value={formData.title}
-              onChange={(e) => handleInputChange("title", e.target.value)}
+              value={formData.name}
+              onChange={(e) => handleInputChange("name", e.target.value)}
               required
             />
           </div>
@@ -157,7 +147,7 @@ export const ProductForm = () => {
             <Label htmlFor="description">Descrição</Label>
             <Textarea
               id="description"
-              placeholder="Descreva detalhadamente seu produto ou serviço..."
+              placeholder="Descreva detalhadamente seu serviço..."
               value={formData.description}
               onChange={(e) => handleInputChange("description", e.target.value)}
               rows={4}
@@ -182,101 +172,33 @@ export const ProductForm = () => {
             </Select>
           </div>
 
-          {/* Visibilidade */}
+          {/* Preço */}
           <div className="space-y-2">
             <Label className="flex items-center gap-2">
-              <Eye className="h-4 w-4" />
-              Visibilidade
-            </Label>
-            <Select value={formData.visibility} onValueChange={(value) => handleInputChange('visibility', value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Quem pode ver este produto?" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="both">Todos os usuários</SelectItem>
-                <SelectItem value="client">Apenas clientes</SelectItem>
-                <SelectItem value="professional">Apenas profissionais</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Link Externo (Dropshipping) */}
-          <div className="space-y-2">
-            <Label className="flex items-center gap-2">
-              <ExternalLink className="h-4 w-4" />
-              Link Externo (Dropshipping)
+              <DollarSign className="h-4 w-4" />
+              Preço (R$)
             </Label>
             <Input
-              type="url"
-              value={formData.external_link}
-              onChange={(e) => handleInputChange('external_link', e.target.value)}
-              placeholder="https://... (opcional para produtos externos)"
+              type="number"
+              min="0"
+              step="0.01"
+              value={formData.price || ''}
+              onChange={(e) => handleInputChange('price', parseFloat(e.target.value) || 0)}
+              placeholder="Ex: 500.00"
+              required
             />
-            <p className="text-xs text-muted-foreground">
-              Se preenchido, o produto redirecionará para este link ao invés de processar pagamento interno
-            </p>
           </div>
 
-          {/* Preços (apenas se não for dropshipping) */}
-          {!formData.external_link && (
-            <>
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2">
-                  <DollarSign className="h-4 w-4" />
-                  Preço Total (R$)
-                </Label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={formData.full_price || ''}
-                  onChange={(e) => handleInputChange('full_price', parseFloat(e.target.value) || 0)}
-                  placeholder="Ex: 1000.00"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2">
-                  <DollarSign className="h-4 w-4" />
-                  Entrada (10% do valor total)
-                </Label>
-                <Input
-                  type="number"
-                  value={calculateDownPayment().toFixed(2)}
-                  disabled
-                  className="bg-muted"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Calculado automaticamente como 10% do preço total
-                </p>
-              </div>
-            </>
-          )}
-
-          {/* Upload de Imagem */}
+          {/* Duração */}
           <div className="space-y-2">
-            <Label className="flex items-center gap-2">
-              <Image className="h-4 w-4" />
-              Imagem do Produto
-            </Label>
-            <SimpleFileUpload
-              onFileSelect={async (file: File) => {
-                // For now, we'll just simulate the upload and use a placeholder
-                const mockUrl = URL.createObjectURL(file);
-                setFormData(prev => ({ ...prev, image_url: mockUrl }));
-                handleImageUpload(mockUrl);
-              }}
-              accept="image/*"
+            <Label htmlFor="duration">Duração</Label>
+            <Input
+              id="duration"
+              placeholder="Ex: 2 horas, 1 dia, 1 semana"
+              value={formData.duration}
+              onChange={(e) => handleInputChange("duration", e.target.value)}
+              required
             />
-            {formData.image_url && (
-              <div className="mt-2">
-                <img
-                  src={formData.image_url}
-                  alt="Preview"
-                  className="w-32 h-32 object-cover rounded-lg border"
-                />
-              </div>
-            )}
           </div>
 
           {/* Botão de Submit */}
@@ -286,28 +208,16 @@ export const ProductForm = () => {
             className="w-full"
           >
             <Save className="h-4 w-4 mr-2" />
-            {loading ? "Cadastrando..." : "Cadastrar Produto"}
+            {loading ? "Cadastrando..." : "Cadastrar Serviço"}
           </Button>
 
-          {/* Informações sobre o tipo de produto */}
+          {/* Informações sobre comissões */}
           <div className="mt-6 p-4 bg-muted rounded-lg">
-            <h4 className="font-medium mb-2">
-              {formData.external_link ? "Produto Dropshipping:" : "Produto Interno:"}
-            </h4>
+            <h4 className="font-medium mb-2">Informações sobre comissões:</h4>
             <div className="text-sm text-muted-foreground space-y-1">
-              {formData.external_link ? (
-                <>
-                  <p>• Este produto redirecionará para o link externo</p>
-                  <p>• Não haverá processamento de pagamento interno</p>
-                  <p>• Ideal para afiliados e parcerias</p>
-                </>
-              ) : (
-                <>
-                  <p>• Você receberá 50% do valor pago em cada venda</p>
-                  <p>• Influenciadores ganham 25% quando indicam seu produto</p>
-                  <p>• Um link único será gerado automaticamente para compartilhamento</p>
-                </>
-              )}
+              <p>• Você receberá o valor integral do serviço quando contratado</p>
+              <p>• Influenciadores ganham comissão quando indicam seu serviço</p>
+              <p>• Um link único será gerado automaticamente para compartilhamento</p>
             </div>
           </div>
         </form>
