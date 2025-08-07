@@ -63,11 +63,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loadUserProfile = async (id: string, email: string) => {
     try {
+      console.log('Loading user profile for:', { id, email });
+      
       // Get user data with metadata
       const authUser = (await supabase.auth.getUser()).data.user;
+      console.log('Auth user:', authUser);
       
       // Check if user is admin based on user_metadata.is_admin or email
       if (authUser?.user_metadata?.is_admin === true || email === "admin@amigodopeito.com" || email.includes("admin")) {
+        console.log('Setting admin user');
         setUser({
           id,
           name: authUser?.user_metadata?.full_name || "Administrador",
@@ -85,6 +89,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .single();
 
       if (professional) {
+        console.log('Setting professional user:', professional);
         setUser({
           id: professional.id,
           name: professional.full_name,
@@ -92,17 +97,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           role: "professional",
           category: professional.category,
           approved: professional.approved
-        });
-        return;
-      }
-
-      // Usar dados básicos do auth para usuários regulares
-      if (authUser) {
-        setUser({
-          id: authUser.id,
-          name: authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || 'Usuário',
-          email: authUser.email || '',
-          role: null
         });
         return;
       }
@@ -115,12 +109,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .single();
 
       if (influencer) {
+        console.log('Setting influencer user:', influencer);
         setUser({
           id: influencer.id,
           name: influencer.full_name,
           email: influencer.email,
           role: "influencer"
         });
+        return;
+      }
+
+      // Check users table for regular users
+      const { data: regularUser } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (regularUser) {
+        console.log('Setting regular user from users table:', regularUser);
+        setUser({
+          id: regularUser.id,
+          name: regularUser.nome || authUser?.user_metadata?.full_name || authUser?.email?.split('@')[0] || 'Usuário',
+          email: regularUser.email,
+          role: null
+        });
+        return;
+      }
+
+      // Fallback: usar dados básicos do auth para usuários regulares
+      if (authUser) {
+        console.log('Setting fallback user from auth data');
+        setUser({
+          id: authUser.id,
+          name: authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || 'Usuário',
+          email: authUser.email || '',
+          role: null
+        });
+        return;
       }
     } catch (error) {
       console.error('Error loading user profile:', error);

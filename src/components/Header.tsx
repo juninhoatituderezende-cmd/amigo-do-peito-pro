@@ -40,9 +40,14 @@ const Header = () => {
               Cadastrar
             </Button>
           )}
+          {user && user.role === null && (
+            <Link to="/usuario/dashboard" className="text-gray-800 hover:text-ap-orange transition-colors">
+              Meu Painel
+            </Link>
+          )}
           {user && user.role === "professional" && (
             <Link to="/profissional" className="text-gray-800 hover:text-ap-orange transition-colors">
-              Meu Painel
+              Painel Profissional
             </Link>
           )}
           {user && user.role === "influencer" && (
@@ -113,12 +118,20 @@ const Header = () => {
                 Cadastrar
               </Link>
             )}
+            {user && user.role === null && (
+              <Link to="/usuario/dashboard" 
+                className="text-gray-800 hover:text-ap-orange transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Meu Painel
+              </Link>
+            )}
             {user && user.role === "professional" && (
               <Link to="/profissional" 
                 className="text-gray-800 hover:text-ap-orange transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Meu Painel
+                Painel Profissional
               </Link>
             )}
             {user && user.role === "influencer" && (

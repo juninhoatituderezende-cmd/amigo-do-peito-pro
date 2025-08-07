@@ -25,7 +25,11 @@ const UserLogin = () => {
     
     try {
       await login(formData.email, formData.password, null);
-      navigate("/usuario/dashboard");
+      // O redirecionamento será feito automaticamente pelo AuthContext
+      // Aguardar um momento para o AuthContext processar o usuário
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 100);
     } catch (error: any) {
       toast({
         title: "Erro no login",
