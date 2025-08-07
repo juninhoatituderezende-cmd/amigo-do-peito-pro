@@ -69,8 +69,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const authUser = (await supabase.auth.getUser()).data.user;
       console.log('Auth user:', authUser);
       
-      // Check if user is admin based on user_metadata.is_admin or email
-      if (authUser?.user_metadata?.is_admin === true || email === "admin@amigodopeito.com" || email.includes("admin")) {
+      // Check if user is admin based on user_metadata.is_admin, email or admin_configs table
+      const isAdminByMetadata = authUser?.user_metadata?.is_admin === true;
+      const isAdminByEmail = email === "admin@amigodopeito.com" || email.includes("admin");
+      
+      // Check admin_configs table
+      const { data: adminConfig } = await supabase
+        .from('admin_configs')
+        .select('is_active')
+        .eq('admin_email', email)
+        .single();
+      
+      const isAdminByConfig = adminConfig?.is_active === true;
+      
+      if (isAdminByMetadata || isAdminByEmail || isAdminByConfig) {
         console.log('Setting admin user');
         setUser({
           id,
