@@ -37,14 +37,23 @@ const AdminLogin = () => {
       const isAdminByMetadata = data.user?.user_metadata?.is_admin === true;
       const isAdminByEmail = data.user?.email === "admin@amigodopeito.com" || data.user?.email?.includes("admin");
       
+      console.log("Admin check - Email:", data.user?.email);
+      console.log("Admin check - Metadata:", isAdminByMetadata);
+      console.log("Admin check - Email check:", isAdminByEmail);
+      
       // Verificar na tabela admin_configs
-      const { data: adminConfig } = await supabase
+      const { data: adminConfig, error: configError } = await supabase
         .from('admin_configs')
         .select('is_active')
         .eq('admin_email', data.user?.email)
         .single();
       
+      console.log("Admin config result:", adminConfig);
+      console.log("Admin config error:", configError);
+      
       const isAdminByConfig = adminConfig?.is_active === true;
+      
+      console.log("Final admin checks:", { isAdminByMetadata, isAdminByEmail, isAdminByConfig });
       
       if (!isAdminByMetadata && !isAdminByEmail && !isAdminByConfig) {
         await supabase.auth.signOut();
