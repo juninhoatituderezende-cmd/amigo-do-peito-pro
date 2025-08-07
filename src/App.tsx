@@ -52,11 +52,11 @@ const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <AuthRedirect />
         <TooltipProvider>
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <AuthRedirect />
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<Index />} />
