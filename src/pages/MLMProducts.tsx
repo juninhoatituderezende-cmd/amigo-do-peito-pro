@@ -42,13 +42,24 @@ export default function MLMProducts() {
   const loadProducts = async () => {
     try {
       const { data, error } = await supabase
-        .from("products")
+        .from("services")
         .select("*")
-        .eq("active", true)
-        .order("entry_value");
+        .order("price");
 
       if (error) throw error;
-      setProducts(data || []);
+      
+      const formattedProducts = (data || []).map(service => ({
+        id: service.id,
+        product_code: `SRV-${service.id.slice(-4)}`,
+        name: service.name,
+        full_value: service.price,
+        entry_value: service.price * 0.1,
+        category: service.category,
+        stripe_product_id: `prod_${service.id}`,
+        stripe_price_id: `price_${service.id}`
+      }));
+      
+      setProducts(formattedProducts);
     } catch (error) {
       console.error("Erro ao carregar produtos:", error);
       toast({
