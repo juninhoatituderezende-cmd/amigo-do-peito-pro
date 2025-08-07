@@ -27,7 +27,8 @@ import {
   DollarSign,
   BarChart3,
   Link as LinkIcon,
-  History
+  History,
+  Network
 } from 'lucide-react';
 
 interface MenuItem {
@@ -44,6 +45,7 @@ const menuItems: MenuItem[] = [
   { title: "Planos Custom", url: "/admin/planos", icon: Package, roles: ["admin"] },
   { title: "Pagamentos", url: "/admin/pagamentos", icon: CreditCard, roles: ["admin"] },
   { title: "Relatórios", url: "/admin/relatorios", icon: BarChart3, roles: ["admin"] },
+  { title: "MLM (Min)", url: "/admin/mlm", icon: Network, roles: ["admin"] },
   { title: "Notificações", url: "/admin/notificacoes", icon: Bell, roles: ["admin"] },
   
   // Professional Items

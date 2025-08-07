@@ -14,7 +14,7 @@ import MLMAdmin from "./pages/admin/MLMAdmin";
 import AdminUsuarios from "./pages/admin/AdminUsuarios";
 import AdminPlanos from "./pages/admin/AdminPlanos";
 import AdminPagamentos from "./pages/admin/AdminPagamentos";
-import AdminRelatorios from "./pages/admin/AdminRelatorios";
+import AdminMLM from "./pages/admin/AdminMLM";
 import AdminNotificacoes from "./pages/admin/AdminNotificacoes";
 import Register from "./pages/Register";
 import Confirmation from "./pages/Confirmation";
@@ -122,9 +122,9 @@ const App = () => (
                 <AdminPagamentos />
               </ProtectedRoute>
             } />
-            <Route path="/admin/relatorios" element={
+            <Route path="/admin/mlm" element={
               <ProtectedRoute role="admin">
-                <AdminRelatorios />
+                <AdminMLM />
               </ProtectedRoute>
             } />
             <Route path="/admin/notificacoes" element={
