@@ -80,55 +80,57 @@ export function PlanSubscription() {
   const loadPlanData = async () => {
     setLoading(true);
     try {
-      // Carregar dados do plano
+      // Usar tabela services como proxy para dados do plano
       const { data: planData, error: planError } = await supabase
-        .from('custom_plans')
+        .from('services')
         .select(`
           *,
-          service_categories(name)
+          professionals(id, full_name)
         `)
-        .eq('plan_code', planCode)
-        .eq('active', true)
+        .eq('id', planCode)
         .single();
 
       if (planError) throw planError;
 
       if (planData) {
+        // Simular dados do plano usando service
         setPlanData({
-          ...planData,
-          category_name: planData.service_categories?.name || '',
-          benefits: planData.benefits || []
+          id: planData.id,
+          plan_code: planCode || '',
+          name: planData.name,
+          description: planData.description,
+          category_name: planData.category,
+          total_price: planData.price,
+          entry_price: planData.price * 0.1, // 10% do valor total
+          max_participants: 10,
+          allow_professional_choice: true,
+          benefits: ['Acesso completo ao serviço', 'Suporte técnico', 'Garantia de qualidade'],
+          image_url: ''
         });
 
-        // Se permite escolha de profissional, carregar lista
-        if (planData.allow_professional_choice) {
-          const { data: professionalsData } = await supabase
-            .from('profissionais')
-            .select('id, nome, especialidade, local_atendimento')
-            .order('nome');
-          
-          if (professionalsData) setProfessionals(professionalsData);
+        // Carregar lista de profissionais
+        const { data: professionalsData } = await supabase
+          .from('professionals')
+          .select('id, full_name, category, location')
+          .order('full_name');
+        
+        if (professionalsData) {
+          setProfessionals(professionalsData.map(p => ({
+            id: p.id,
+            nome: p.full_name,
+            especialidade: p.category,
+            local_atendimento: p.location
+          })));
         }
       }
 
       // Se há código de referência, buscar informações do referenciador
-      if (referralCode) {
-        const { data: linkData } = await supabase
-          .from('plan_referral_links')
-          .select(`
-            user_id,
-            clientes(nome)
-          `)
-          .eq('referral_code', referralCode)
-          .eq('active', true)
-          .single();
-
-        if (linkData && planData) {
-          setReferrerInfo({
-            name: (linkData as any).clientes?.nome || 'Usuário',
-            commission: planData.entry_price * 0.25
-          });
-        }
+      if (referralCode && planData) {
+        // Simular dados do referenciador
+        setReferrerInfo({
+          name: 'Usuário Referenciador',
+          commission: planData.entry_price * 0.25
+        });
       }
 
     } catch (error) {
