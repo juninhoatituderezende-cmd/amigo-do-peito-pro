@@ -158,7 +158,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
-        password
+        password,
+        options: {
+          data: {
+            full_name: userData.full_name
+          }
+        }
       });
 
       if (error) {
@@ -166,24 +171,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (data.user) {
-        // Insert user data into appropriate table
+        // Insert user data into appropriate table based on role
         if (role === "professional") {
           const { error: insertError } = await supabase
             .from('professionals')
             .insert({
               id: data.user.id,
+              user_id: data.user.id,
               ...userData
             });
 
           if (insertError) {
             throw new Error(insertError.message);
           }
-        } else {
-          // Não precisa inserir em tabela users, usar auth diretamente
+        } else if (role === null) {
+          // For regular users, insert into users table
+          const { error: insertError } = await supabase
+            .from('users')
+            .insert({
+              id: data.user.id,
+              nome: userData.full_name,
+              email: userData.email,
+              telefone: userData.phone
+            });
 
+          if (insertError) {
+            throw new Error(insertError.message);
+          }
         }
 
-        // For users, don't auto-login, redirect to login page
+        // For regular users, don't auto-login, redirect to login page
         if (role === null) {
           return; // Don't set user state, let them login manually
         }
