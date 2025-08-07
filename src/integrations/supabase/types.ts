@@ -476,6 +476,146 @@ export type Database = {
         }
         Relationships: []
       }
+      mlm_commissions: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          created_at: string
+          id: string
+          level: number
+          paid_at: string | null
+          percentage: number
+          referral_id: string | null
+          source_user_id: string
+          status: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          created_at?: string
+          id?: string
+          level: number
+          paid_at?: string | null
+          percentage: number
+          referral_id?: string | null
+          source_user_id: string
+          status?: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          created_at?: string
+          id?: string
+          level?: number
+          paid_at?: string | null
+          percentage?: number
+          referral_id?: string | null
+          source_user_id?: string
+          status?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mlm_commissions_referral_id_fkey"
+            columns: ["referral_id"]
+            isOneToOne: false
+            referencedRelation: "mlm_referrals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mlm_network: {
+        Row: {
+          active_referrals: number
+          created_at: string
+          id: string
+          joined_at: string
+          level: number
+          position_in_level: number
+          referral_code: string
+          referred_by_user_id: string | null
+          status: string
+          total_earnings: number
+          total_referrals: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active_referrals?: number
+          created_at?: string
+          id?: string
+          joined_at?: string
+          level?: number
+          position_in_level?: number
+          referral_code: string
+          referred_by_user_id?: string | null
+          status?: string
+          total_earnings?: number
+          total_referrals?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active_referrals?: number
+          created_at?: string
+          id?: string
+          joined_at?: string
+          level?: number
+          position_in_level?: number
+          referral_code?: string
+          referred_by_user_id?: string | null
+          status?: string
+          total_earnings?: number
+          total_referrals?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      mlm_referrals: {
+        Row: {
+          commission_earned: number
+          commission_percentage: number
+          confirmed_at: string | null
+          created_at: string
+          id: string
+          paid_at: string | null
+          referral_code_used: string
+          referred_id: string
+          referrer_id: string
+          status: string
+        }
+        Insert: {
+          commission_earned?: number
+          commission_percentage?: number
+          confirmed_at?: string | null
+          created_at?: string
+          id?: string
+          paid_at?: string | null
+          referral_code_used: string
+          referred_id: string
+          referrer_id: string
+          status?: string
+        }
+        Update: {
+          commission_earned?: number
+          commission_percentage?: number
+          confirmed_at?: string | null
+          created_at?: string
+          id?: string
+          paid_at?: string | null
+          referral_code_used?: string
+          referred_id?: string
+          referrer_id?: string
+          status?: string
+        }
+        Relationships: []
+      }
       notification_triggers: {
         Row: {
           created_at: string
@@ -1022,6 +1162,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_mlm_level: {
+        Args: { referred_by: string }
+        Returns: number
+      }
       clean_old_logs: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -1030,8 +1174,16 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      generate_referral_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       is_admin: {
         Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      process_mlm_referral: {
+        Args: { new_user_id: string; referral_code_used: string }
         Returns: boolean
       }
     }
