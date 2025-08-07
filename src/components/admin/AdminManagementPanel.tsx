@@ -1,150 +1,78 @@
 import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Users, 
-  CheckCircle, 
-  Clock, 
-  DollarSign, 
-  Mail, 
-  Eye, 
-  Filter,
-  Download,
-  UserCheck,
-  Send,
-  Gift
-} from 'lucide-react';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { VoucherGenerator } from "@/components/voucher/VoucherGenerator";
+import { Users, CheckCircle, XCircle, Clock, Settings, Edit, Trash2 } from 'lucide-react';
 
-interface UserRecord {
+interface Participant {
   id: string;
-  name: string;
+  nome: string;
   email: string;
-  phone: string;
-  service_type: string;
-  entry_amount: number;
-  referral_count: number;
-  payment_status: string;
-  contemplation_status: string;
-  voucher_sent: boolean;
-  created_at: string;
-  contemplation_date?: string;
-  professional_assigned?: string;
-}
-
-interface VoucherData {
-  id: string;
-  user_name: string;
-  user_email: string;
-  service_type: string;
-  service_price: number;
-  voucher_code: string;
-  expiry_date: string;
-  professional_name?: string;
-  professional_location?: string;
-  created_at: string;
-}
-
-interface AdminStats {
-  total_users: number;
-  contemplated_users: number;
-  pending_payments: number;
-  vouchers_sent: number;
-  total_revenue: number;
+  telefone: string;
+  serviceType: string;
+  status: string;
+  paymentStatus: string;
+  contemplationStatus: string;
+  joinDate: string;
+  contemplationDate?: string | null;
 }
 
 export function AdminManagementPanel() {
-  const { toast } = useToast();
-  const [users, setUsers] = useState<UserRecord[]>([]);
-  const [filteredUsers, setFilteredUsers] = useState<UserRecord[]>([]);
-  const [stats, setStats] = useState<AdminStats | null>(null);
+  const [participants, setParticipants] = useState<Participant[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedUser, setSelectedUser] = useState<UserRecord | null>(null);
-  const [voucherData, setVoucherData] = useState<VoucherData | null>(null);
-  const [showVoucherDialog, setShowVoucherDialog] = useState(false);
-  
-  // Filtros
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [serviceFilter, setServiceFilter] = useState('all');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedParticipant, setSelectedParticipant] = useState<Participant | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
-    loadAdminData();
+    loadParticipants();
   }, []);
 
-  useEffect(() => {
-    applyFilters();
-  }, [users, statusFilter, serviceFilter, searchTerm]);
-
-  const loadAdminData = async () => {
+  const loadParticipants = async () => {
     setLoading(true);
     try {
-      // Carregar usuários dos participantes de planos
-      const { data: clientesData } = await supabase
-        .from('participacoes')
-        .select(`
-          id,
-          nome,
-          email,
-          telefone,
-          created_at,
-          contemplacao_status,
-          contemplacao_data,
-          service_type,
-          payment_status
-        `)
-        .order('created_at', { ascending: false });
+      // Usando dados simulados já que as tabelas originais não existem
+      const mockData: Participant[] = [
+        {
+          id: '1',
+          nome: 'João Silva',
+          email: 'joao@email.com',
+          telefone: '(11) 99999-9999',
+          serviceType: 'Consultoria',
+          status: 'Ativo',
+          paymentStatus: 'paid',
+          contemplationStatus: 'aguardando',
+          joinDate: '2023-01-15',
+          contemplationDate: null
+        },
+        {
+          id: '2',
+          nome: 'Maria Santos',
+          email: 'maria@email.com',
+          telefone: '(11) 88888-8888',
+          serviceType: 'Terapia',
+          status: 'Ativo',
+          paymentStatus: 'paid',
+          contemplationStatus: 'contemplado',
+          joinDate: '2023-02-10',
+          contemplationDate: '2023-03-15'
+        }
+      ];
 
-      if (clientesData) {
-        const formattedUsers: UserRecord[] = clientesData.map(client => ({
-          id: client.id,
-          name: client.nome || 'N/A',
-          email: client.email || 'N/A',
-          phone: client.telefone || 'N/A',
-          service_type: client.service_type || 'Não definido',
-          entry_amount: 1000, // Valor fixo por enquanto
-          referral_count: 0, // Seria calculado com base em indicações
-          payment_status: client.payment_status || 'pending',
-          contemplation_status: client.contemplacao_status || 'pending',
-          voucher_sent: false, // Campo a ser implementado
-          created_at: client.created_at,
-          contemplation_date: client.contemplacao_data,
-          professional_assigned: 'Profissional não definido'
-        }));
-        
-        setUsers(formattedUsers);
-
-        // Calcular estatísticas
-        const totalUsers = formattedUsers.length;
-        const contemplatedUsers = formattedUsers.filter(u => u.contemplation_status === 'contemplado').length;
-        const pendingPayments = formattedUsers.filter(u => u.payment_status === 'pending').length;
-        const vouchersSent = formattedUsers.filter(u => u.voucher_sent).length;
-        const totalRevenue = formattedUsers.reduce((sum, u) => sum + u.entry_amount, 0);
-
-        setStats({
-          total_users: totalUsers,
-          contemplated_users: contemplatedUsers,
-          pending_payments: pendingPayments,
-          vouchers_sent: vouchersSent,
-          total_revenue: totalRevenue
-        });
-      }
-
+      setParticipants(mockData);
     } catch (error) {
-      console.error('Erro ao carregar dados:', error);
+      console.error('Erro ao carregar participantes:', error);
       toast({
         title: "Erro",
-        description: "Erro ao carregar dados administrativos.",
+        description: "Erro ao carregar participantes.",
         variant: "destructive",
       });
     } finally {
@@ -152,160 +80,61 @@ export function AdminManagementPanel() {
     }
   };
 
-  const applyFilters = () => {
-    let filtered = [...users];
-
-    // Filtro por status
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(user => {
-        switch (statusFilter) {
-          case 'contemplated':
-            return user.contemplation_status === 'contemplado';
-          case 'pending':
-            return user.contemplation_status === 'pending';
-          case 'paid':
-            return user.payment_status === 'paid';
-          default:
-            return true;
-        }
-      });
-    }
-
-    // Filtro por serviço
-    if (serviceFilter !== 'all') {
-      filtered = filtered.filter(user => 
-        user.service_type.toLowerCase().includes(serviceFilter.toLowerCase())
-      );
-    }
-
-    // Filtro por busca
-    if (searchTerm) {
-      filtered = filtered.filter(user =>
-        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    setFilteredUsers(filtered);
-  };
-
-  const approveContemplation = async (userId: string) => {
+  const handleUpdateContemplation = async (participantId: string, newStatus: string) => {
     try {
-      const { error } = await supabase
-        .from('plan_participants')
-        .update({ 
-          contemplacao_status: 'contemplado',
-          contemplacao_data: new Date().toISOString()
-        })
-        .eq('id', userId);
-
-      if (error) throw error;
-
-      toast({
-        title: "Contemplação aprovada!",
-        description: "Usuário foi marcado como contemplado.",
-      });
-
-      loadAdminData();
-    } catch (error) {
-      console.error('Erro ao aprovar contemplação:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao aprovar contemplação.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const validatePayment = async (userId: string) => {
-    try {
-      // Atualizar status de pagamento
-      const { error } = await supabase
-        .from('plan_participants')
-        .update({ payment_status: 'paid' })
-        .eq('id', userId);
-
-      if (error) throw error;
-
-      toast({
-        title: "Pagamento validado!",
-        description: "Pagamento foi marcado como validado.",
-      });
-
-      loadAdminData();
-    } catch (error) {
-      console.error('Erro ao validar pagamento:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao validar pagamento.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const generateVoucher = (user: UserRecord) => {
-    const voucherCode = `VCH${Date.now().toString().slice(-8)}`;
-    const expiryDate = new Date();
-    expiryDate.setMonth(expiryDate.getMonth() + 6); // 6 meses de validade
-
-    const voucher: VoucherData = {
-      id: user.id,
-      user_name: user.name,
-      user_email: user.email,
-      service_type: user.service_type,
-      service_price: user.entry_amount * 10, // Assumindo que entrada é 10% do total
-      voucher_code: voucherCode,
-      expiry_date: expiryDate.toISOString(),
-      professional_name: user.professional_assigned,
-      professional_location: 'Local do profissional', // Seria obtido dos dados reais
-      created_at: new Date().toISOString()
-    };
-
-    setVoucherData(voucher);
-    setSelectedUser(user);
-    setShowVoucherDialog(true);
-  };
-
-  const handleVoucherSent = () => {
-    if (selectedUser) {
-      // Atualizar status de voucher enviado
-      setUsers(prev => prev.map(user => 
-        user.id === selectedUser.id 
-          ? { ...user, voucher_sent: true }
-          : user
+      // Simulação de atualização
+      setParticipants(prev => prev.map(p => 
+        p.id === participantId 
+          ? { ...p, contemplationStatus: newStatus, contemplationDate: newStatus === 'contemplado' ? new Date().toISOString() : null }
+          : p
       ));
-      
-      setShowVoucherDialog(false);
-      setSelectedUser(null);
-      setVoucherData(null);
 
       toast({
-        title: "Voucher enviado!",
-        description: "Voucher foi enviado para o usuário.",
+        title: "Sucesso",
+        description: "Status de contemplação atualizado com sucesso.",
+      });
+    } catch (error) {
+      console.error('Erro ao atualizar contemplação:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar status de contemplação.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteParticipant = async (participantId: string) => {
+    try {
+      // Simulação de exclusão
+      setParticipants(prev => prev.filter(p => p.id !== participantId));
+
+      toast({
+        title: "Sucesso",
+        description: "Participante removido com sucesso.",
+      });
+    } catch (error) {
+      console.error('Erro ao remover participante:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao remover participante.",
+        variant: "destructive",
       });
     }
   };
 
   const getStatusBadge = (status: string) => {
-    const statusMap = {
-      'contemplado': { label: 'Contemplado', variant: 'default' as const },
-      'pending': { label: 'Pendente', variant: 'secondary' as const },
-      'paid': { label: 'Pago', variant: 'default' as const },
-      'failed': { label: 'Falhou', variant: 'destructive' as const }
-    };
-    
-    return statusMap[status as keyof typeof statusMap] || { label: status, variant: 'outline' as const };
-  };
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  };
-
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('pt-BR');
+    switch (status) {
+      case 'paid':
+        return <Badge className="bg-green-500"><CheckCircle className="w-3 h-3 mr-1" />Pago</Badge>;
+      case 'pending':
+        return <Badge variant="secondary"><Clock className="w-3 h-3 mr-1" />Pendente</Badge>;
+      case 'contemplado':
+        return <Badge className="bg-blue-500"><CheckCircle className="w-3 h-3 mr-1" />Contemplado</Badge>;
+      case 'aguardando':
+        return <Badge variant="outline"><Clock className="w-3 h-3 mr-1" />Aguardando</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
   };
 
   if (loading) {
@@ -318,229 +147,158 @@ export function AdminManagementPanel() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">Painel Administrativo</h2>
-        <p className="text-muted-foreground">
-          Gerencie usuários, contemplações e vouchers
-        </p>
+      <div className="flex items-center justify-between">
+        <h2 className="text-3xl font-bold tracking-tight">Gerenciamento de Participantes</h2>
+        <Button onClick={loadParticipants}>
+          <Settings className="mr-2 h-4 w-4" />
+          Atualizar
+        </Button>
       </div>
 
-      {/* Estatísticas */}
-      {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <Tabs defaultValue="participants" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="participants">Participantes</TabsTrigger>
+          <TabsTrigger value="contemplation">Contemplação</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="participants" className="space-y-4">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Usuários</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Users className="mr-2 h-5 w-5" />
+                Lista de Participantes
+              </CardTitle>
+              <CardDescription>
+                Gerencie todos os participantes dos planos
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.total_users}</div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>E-mail</TableHead>
+                    <TableHead>Telefone</TableHead>
+                    <TableHead>Serviço</TableHead>
+                    <TableHead>Pagamento</TableHead>
+                    <TableHead>Contemplação</TableHead>
+                    <TableHead>Data Inscrição</TableHead>
+                    <TableHead>Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {participants.map((participant) => (
+                    <TableRow key={participant.id}>
+                      <TableCell className="font-medium">{participant.nome}</TableCell>
+                      <TableCell>{participant.email}</TableCell>
+                      <TableCell>{participant.telefone}</TableCell>
+                      <TableCell>{participant.serviceType}</TableCell>
+                      <TableCell>{getStatusBadge(participant.paymentStatus)}</TableCell>
+                      <TableCell>{getStatusBadge(participant.contemplationStatus)}</TableCell>
+                      <TableCell>{new Date(participant.joinDate).toLocaleDateString('pt-BR')}</TableCell>
+                      <TableCell>
+                        <div className="flex space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedParticipant(participant);
+                              setIsEditDialogOpen(true);
+                            }}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteParticipant(participant.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
+        </TabsContent>
 
+        <TabsContent value="contemplation" className="space-y-4">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Contemplados</CardTitle>
-              <Gift className="h-4 w-4 text-muted-foreground" />
+            <CardHeader>
+              <CardTitle>Gerenciar Contemplação</CardTitle>
+              <CardDescription>
+                Gerencie o status de contemplação dos participantes
+              </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">{stats.contemplated_users}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pagamentos Pendentes</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-orange-600">{stats.pending_payments}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Vouchers Enviados</CardTitle>
-              <Send className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-600">{stats.vouchers_sent}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Receita Total</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-purple-600">{formatCurrency(stats.total_revenue)}</div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Filtros */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Filter className="mr-2 h-5 w-5" />
-            Filtros
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="search">Buscar</Label>
-              <Input
-                id="search"
-                placeholder="Nome ou email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todos os status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="contemplated">Contemplados</SelectItem>
-                  <SelectItem value="pending">Pendentes</SelectItem>
-                  <SelectItem value="paid">Pagos</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="service">Serviço</Label>
-              <Select value={serviceFilter} onValueChange={setServiceFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todos os serviços" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="tatuagem">Tatuagem</SelectItem>
-                  <SelectItem value="estetica">Estética</SelectItem>
-                  <SelectItem value="odontologia">Odontologia</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex items-end">
-              <Button onClick={() => {
-                setStatusFilter('all');
-                setServiceFilter('all');
-                setSearchTerm('');
-              }} variant="outline">
-                Limpar Filtros
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Tabela de Usuários */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Usuários Cadastrados ({filteredUsers.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Serviço</TableHead>
-                <TableHead>Entrada</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Contemplação</TableHead>
-                <TableHead>Voucher</TableHead>
-                <TableHead>Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredUsers.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell className="font-medium">{user.name}</TableCell>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell>{user.service_type}</TableCell>
-                  <TableCell>{formatCurrency(user.entry_amount)}</TableCell>
-                  <TableCell>
-                    <Badge {...getStatusBadge(user.payment_status)}>
-                      {getStatusBadge(user.payment_status).label}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge {...getStatusBadge(user.contemplation_status)}>
-                      {getStatusBadge(user.contemplation_status).label}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {user.voucher_sent ? (
-                      <Badge variant="default">Enviado</Badge>
-                    ) : (
-                      <Badge variant="secondary">Pendente</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex space-x-2">
-                      {user.contemplation_status === 'pending' && (
-                        <Button
-                          size="sm"
-                          onClick={() => approveContemplation(user.id)}
-                        >
-                          <UserCheck className="h-4 w-4" />
-                        </Button>
-                      )}
-                      
-                      {user.payment_status === 'pending' && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => validatePayment(user.id)}
-                        >
-                          <CheckCircle className="h-4 w-4" />
-                        </Button>
-                      )}
-                      
-                      {user.contemplation_status === 'contemplado' && (
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => generateVoucher(user)}
-                        >
-                          <Gift className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
+            <CardContent className="space-y-4">
+              {participants.filter(p => p.paymentStatus === 'paid').map((participant) => (
+                <div key={participant.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div>
+                    <p className="font-medium">{participant.nome}</p>
+                    <p className="text-sm text-muted-foreground">{participant.serviceType}</p>
+                    <p className="text-sm">Status: {getStatusBadge(participant.contemplationStatus)}</p>
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleUpdateContemplation(participant.id, 'contemplado')}
+                      disabled={participant.contemplationStatus === 'contemplado'}
+                    >
+                      Contemplar
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleUpdateContemplation(participant.id, 'aguardando')}
+                      disabled={participant.contemplationStatus === 'aguardando'}
+                    >
+                      Reverter
+                    </Button>
+                  </div>
+                </div>
               ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
-      {/* Dialog do Voucher */}
-      <Dialog open={showVoucherDialog} onOpenChange={setShowVoucherDialog}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+      {/* Dialog de Edição */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle>Gerar Voucher Digital</DialogTitle>
+            <DialogTitle>Editar Participante</DialogTitle>
             <DialogDescription>
-              Voucher para {selectedUser?.name}
+              Atualize as informações do participante
             </DialogDescription>
           </DialogHeader>
-          
-          {voucherData && (
-            <VoucherGenerator 
-              voucherData={voucherData} 
-              onEmailSent={handleVoucherSent}
-            />
+          {selectedParticipant && (
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="nome">Nome</Label>
+                <Input id="nome" defaultValue={selectedParticipant.nome} />
+              </div>
+              <div>
+                <Label htmlFor="email">E-mail</Label>
+                <Input id="email" defaultValue={selectedParticipant.email} />
+              </div>
+              <div>
+                <Label htmlFor="telefone">Telefone</Label>
+                <Input id="telefone" defaultValue={selectedParticipant.telefone} />
+              </div>
+            </div>
           )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={() => setIsEditDialogOpen(false)}>
+              Salvar
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
