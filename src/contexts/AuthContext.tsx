@@ -63,11 +63,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loadUserProfile = async (id: string, email: string) => {
     try {
-      // Check if user is admin based on email
-      if (email === "admin@amigodopeito.com" || email.includes("admin")) {
+      // Get user data with metadata
+      const authUser = (await supabase.auth.getUser()).data.user;
+      
+      // Check if user is admin based on user_metadata.is_admin or email
+      if (authUser?.user_metadata?.is_admin === true || email === "admin@amigodopeito.com" || email.includes("admin")) {
         setUser({
           id,
-          name: "Administrador",
+          name: authUser?.user_metadata?.full_name || "Administrador",
           email,
           role: "admin"
         });
@@ -93,9 +96,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
 
-      // Usar dados básicos do auth
-      const authUser = (await supabase.auth.getUser()).data.user;
-
+      // Usar dados básicos do auth para usuários regulares
       if (authUser) {
         setUser({
           id: authUser.id,
@@ -212,8 +213,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error(error.message);
       }
 
-      // Verify admin permissions
-      if (data.user?.email !== "admin@amigodopeito.com" && !data.user?.email?.includes("admin")) {
+      // Verify admin permissions - check user_metadata.is_admin or email
+      if (data.user?.user_metadata?.is_admin !== true && 
+          data.user?.email !== "admin@amigodopeito.com" && 
+          !data.user?.email?.includes("admin")) {
         await supabase.auth.signOut();
         throw new Error("Usuário não possui permissões administrativas");
       }

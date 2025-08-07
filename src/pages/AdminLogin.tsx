@@ -24,11 +24,6 @@ const AdminLogin = () => {
     setError("");
 
     try {
-      // Verificar se é um email administrativo válido
-      if (!email.includes("admin") && email !== "admin@amigodopeito.com") {
-        throw new Error("Email deve ser um email administrativo válido");
-      }
-
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -38,8 +33,10 @@ const AdminLogin = () => {
         throw new Error(error.message);
       }
 
-      // Verificar se o usuário tem permissões de admin
-      if (data.user?.email !== "admin@amigodopeito.com" && !data.user?.email?.includes("admin")) {
+      // Verificar se o usuário tem permissões de admin (user_metadata.is_admin ou email específico)
+      if (data.user?.user_metadata?.is_admin !== true && 
+          data.user?.email !== "admin@amigodopeito.com" && 
+          !data.user?.email?.includes("admin")) {
         await supabase.auth.signOut();
         throw new Error("Usuário não possui permissões administrativas");
       }
