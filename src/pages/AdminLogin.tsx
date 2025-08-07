@@ -1,95 +1,132 @@
 
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useNavigate } from "react-router-dom";
+import { Loader2, Shield } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import Header from "../components/Header";
-import Footer from "../components/Footer";
 
 const AdminLogin = () => {
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const navigate = useNavigate();
-  const { adminLogin, user } = useAuth();
   const { toast } = useToast();
-
-  // If user is already logged in as admin, redirect to admin dashboard
-  if (user && user.role === "admin") {
-    navigate("/admin");
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError("");
 
     try {
-      await adminLogin(password);
-      navigate("/admin");
-    } catch (error) {
-      toast({
-        title: "Erro no login",
-        description: "Senha incorreta. Por favor, tente novamente.",
-        variant: "destructive",
+      // Verificar se é um email administrativo válido
+      if (!email.includes("admin") && email !== "admin@amigodopeito.com") {
+        throw new Error("Email deve ser um email administrativo válido");
+      }
+
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
-      console.error("Login error:", error);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      // Verificar se o usuário tem permissões de admin
+      if (data.user?.email !== "admin@amigodopeito.com" && !data.user?.email?.includes("admin")) {
+        await supabase.auth.signOut();
+        throw new Error("Usuário não possui permissões administrativas");
+      }
+
+      toast({
+        title: "Login realizado com sucesso!",
+        description: "Bem-vindo ao painel administrativo.",
+      });
+
+      navigate("/admin");
+    } catch (error: any) {
+      console.error("Admin login error:", error);
+      setError(error.message || "Erro ao fazer login. Verifique suas credenciais.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      
-      <section className="py-16 flex-1 flex items-center justify-center bg-gradient-to-br from-ap-light-orange to-white">
-        <div className="w-full max-w-md px-4">
-          <Card className="shadow-lg">
-            <CardContent className="pt-6">
-              <div className="text-center mb-6">
-                <h1 className="text-2xl font-bold">Acesso Administrativo</h1>
-                <p className="text-gray-600 mt-2">Entre com a senha do administrador</p>
-              </div>
-              
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <Label htmlFor="password">Senha</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Digite a senha de administrador"
-                    required
-                  />
-                </div>
-                
-                <Button 
-                  type="submit" 
-                  className="w-full bg-ap-orange hover:bg-ap-orange/90"
-                  disabled={loading}
-                >
-                  {loading ? "Entrando..." : "Entrar"}
-                </Button>
-              </form>
-              
-              <div className="text-center mt-6">
-                <button 
-                  onClick={() => navigate("/")}
-                  className="text-sm text-gray-600 hover:text-gray-800 transition-colors"
-                >
-                  Voltar para a página inicial
-                </button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-      
-      <Footer />
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-ap-light-orange to-white">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <div className="flex justify-center mb-4">
+            <Shield className="h-12 w-12 text-ap-orange" />
+          </div>
+          <CardTitle className="text-2xl font-bold">Admin Login</CardTitle>
+          <CardDescription>
+            Acesso restrito ao painel administrativo
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Administrativo</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="admin@amigodopeito.com"
+                required
+                disabled={loading}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="password">Senha</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Digite sua senha"
+                required
+                disabled={loading}
+              />
+            </div>
+            
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Autenticando...
+                </>
+              ) : (
+                "Entrar"
+              )}
+            </Button>
+          </form>
+          
+          <div className="mt-6 text-center">
+            <Button 
+              variant="ghost" 
+              onClick={() => navigate("/")}
+              className="text-sm"
+            >
+              ← Voltar ao site
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

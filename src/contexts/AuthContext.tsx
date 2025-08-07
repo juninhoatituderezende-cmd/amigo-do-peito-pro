@@ -19,7 +19,7 @@ interface AuthContextType {
   supabaseUser: SupabaseUser | null;
   login: (email: string, password: string, role: UserRole) => Promise<void>;
   register: (email: string, password: string, userData: any, role: UserRole) => Promise<void>;
-  adminLogin: (password: string) => Promise<void>;
+  adminLogin: (email: string, password: string) => Promise<void>;
   logout: () => void;
   loading: boolean;
 }
@@ -63,8 +63,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loadUserProfile = async (id: string, email: string) => {
     try {
-      // Check if user is admin
-      if (email === "admin@amigodopeito.com") {
+      // Check if user is admin based on email
+      if (email === "admin@amigodopeito.com" || email.includes("admin")) {
         setUser({
           id,
           name: "Administrador",
@@ -198,27 +198,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const adminLogin = async (password: string) => {
+  const adminLogin = async (email: string, password: string) => {
     setLoading(true);
     
     try {
-      // Verify admin password
-      if (password !== "Atitude2025@") {
-        throw new Error("Senha incorreta!");
+      // Use Supabase Auth for admin login
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) {
+        throw new Error(error.message);
       }
 
-      const adminUser = {
-        id: "admin-1",
-        name: "Administrador",
-        email: "admin@amigodopeito.com",
-        role: "admin" as UserRole,
-      };
+      // Verify admin permissions
+      if (data.user?.email !== "admin@amigodopeito.com" && !data.user?.email?.includes("admin")) {
+        await supabase.auth.signOut();
+        throw new Error("Usuário não possui permissões administrativas");
+      }
 
-      localStorage.setItem("user", JSON.stringify(adminUser));
-      setUser(adminUser);
-    } catch (error) {
+      if (data.user) {
+        setSupabaseUser(data.user);
+        await loadUserProfile(data.user.id, data.user.email!);
+      }
+    } catch (error: any) {
       console.error("Admin login failed:", error);
-      throw error;
+      throw new Error(error.message || "Falha no login administrativo");
     } finally {
       setLoading(false);
     }
