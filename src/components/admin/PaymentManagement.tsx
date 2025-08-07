@@ -218,12 +218,15 @@ export const PaymentManagement = () => {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) throw new Error('User not authenticated');
 
-      const { error } = await supabase.rpc('mark_payment_as_paid', {
-        p_payment_type: paymentType,
-        p_payment_id: paymentId,
-        p_proof_url: proofUrl,
-        p_admin_id: user.user.id
-      });
+      const table = paymentType === 'professional' ? 'transactions' : 'credit_transactions';
+      
+      const { error } = await supabase
+        .from(table)
+        .update({ 
+          status: 'completed',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', paymentId);
 
       if (error) throw error;
 
@@ -253,10 +256,13 @@ export const PaymentManagement = () => {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) throw new Error('User not authenticated');
 
-      const { error } = await supabase.rpc('release_professional_payment', {
-        p_payment_id: paymentId,
-        p_admin_id: user.user.id
-      });
+      const { error } = await supabase
+        .from('transactions')
+        .update({ 
+          status: 'pending',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', paymentId);
 
       if (error) throw error;
 
