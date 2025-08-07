@@ -55,14 +55,19 @@ class Logger {
         stack: error.stack,
         component_stack: component,
         user_id: this.getUserId(),
-        ...clientInfo
+        user_agent: clientInfo.user_agent,
+        url: clientInfo.url,
+        timestamp: clientInfo.timestamp
       };
 
       console.error('🔍 DIAGNOSTIC ERROR LOG:', errorData);
 
       const { error: dbError } = await supabase
         .from('error_logs')
-        .insert([errorData]);
+        .insert([{
+          ...errorData,
+          timestamp: errorData.timestamp?.toISOString()
+        }]);
 
       if (dbError) {
         console.error('Failed to log error to database:', dbError);
@@ -80,7 +85,7 @@ class Logger {
         action,
         details,
         ip_address: 'client',
-        ...clientInfo
+        user_agent: clientInfo.user_agent
       };
 
       console.log('🔍 DIAGNOSTIC ACTIVITY LOG:', activityData);
@@ -160,9 +165,16 @@ class Logger {
     try {
       console.log(`🔍 TESTING QUERY ON ${tableName}:`, query);
       
+      // Check if table name is valid
+      const validTables = ["users", "services", "professionals", "groups", "transactions", "activity_logs", "error_logs", "performance_metrics"];
+      
+      if (!validTables.includes(tableName)) {
+        throw new Error(`Invalid table name: ${tableName}`);
+      }
+      
       const startTime = performance.now();
       const result = await supabase
-        .from(tableName)
+        .from(tableName as any)
         .select(query);
       
       const endTime = performance.now();

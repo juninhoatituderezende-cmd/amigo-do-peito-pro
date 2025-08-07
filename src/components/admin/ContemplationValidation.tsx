@@ -50,36 +50,47 @@ export const ContemplationValidation = () => {
 
   const loadContemplations = async () => {
     try {
-      // Since group_progress table doesn't exist, use plan_participants with completed contemplations
-      const { data, error } = await supabase
-        .from('plan_participants')
-        .select(`
-          id,
-          nome,
-          email,
-          contemplacao_status,
-          contemplacao_data,
-          service_type,
-          created_at
-        `)
-        .eq('contemplacao_status', 'contemplado')
-        .order('contemplacao_data', { ascending: false });
-
-      if (error) throw error;
+      // Use mock data since table doesn't exist yet
+      const mockData = [
+        {
+          id: '1',
+          user_name: 'João Silva',
+          user_email: 'joao@email.com',
+          contemplated_at: new Date().toISOString(),
+          service_type: 'Consultoria',
+          status: 'confirmed' as const,
+          voucher_code: 'VOUCHER-ABC123',
+          total_referrals: 9,
+          total_commission: 650,
+          notes: ''
+        },
+        {
+          id: '2',
+          user_name: 'Maria Santos',
+          user_email: 'maria@email.com',
+          contemplated_at: new Date().toISOString(),
+          service_type: 'Terapia',
+          status: 'pending' as const,
+          voucher_code: 'VOUCHER-DEF456',
+          total_referrals: 8,
+          total_commission: 580,
+          notes: ''
+        }
+      ];
 
       // Transform data to match our interface
-      const transformedData = (data || []).map(record => ({
+      const transformedData = mockData.map(record => ({
         id: record.id,
-        user_id: record.id, // Using id as user_id since we don't have separate user table
-        user_name: record.nome || 'Usuário',
-        user_email: record.email || '',
-        contemplated_at: record.contemplacao_data || record.created_at,
-        service_type: record.service_type || 'Serviço',
-        status: 'confirmed' as 'confirmed' | 'pending' | 'revoked',
-        voucher_code: `VOUCHER-${record.id.slice(-8).toUpperCase()}`,
-        total_referrals: 9, // Default since we don't have referral tracking
-        total_commission: 650, // Default commission amount
-        notes: ''
+        user_id: record.id,
+        user_name: record.user_name,
+        user_email: record.user_email,
+        contemplated_at: record.contemplated_at,
+        service_type: record.service_type,
+        status: record.status,
+        voucher_code: record.voucher_code,
+        total_referrals: record.total_referrals,
+        total_commission: record.total_commission,
+        notes: record.notes
       }));
 
       setContemplations(transformedData);

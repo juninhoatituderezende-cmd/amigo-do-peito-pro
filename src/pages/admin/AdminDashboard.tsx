@@ -41,7 +41,7 @@ import {
 } from "lucide-react";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
-import { supabase } from "../../lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { NotificationTriggersManager } from "@/components/admin/NotificationTriggersManager";
 import { MaterialUploadPanel } from "@/components/admin/MaterialUploadPanel";
 import { PaymentManagement } from "@/components/admin/PaymentManagement";
@@ -167,7 +167,16 @@ const AdminDashboard = () => {
         if (usersError) {
           console.error('Error loading users:', usersError);
         } else {
-          setUsers(usersData || []);
+          const transformedUsers = (usersData || []).map(user => ({
+            id: user.id,
+            name: user.nome,
+            email: user.email,
+            full_name: user.nome,
+            phone: user.telefone,
+            created_at: user.created_at,
+            referral_code: `REF-${user.id.slice(-4).toUpperCase()}`
+          }));
+          setUsers(transformedUsers);
         }
         
         // Load influencers
@@ -414,7 +423,18 @@ const AdminDashboard = () => {
       ]);
 
       if (professionalsRes.data) setProfessionals(professionalsRes.data);
-      if (usersRes.data) setUsers(usersRes.data);
+      if (usersRes.data) {
+        const transformedUsers = usersRes.data.map(user => ({
+          id: user.id,
+          name: user.nome,
+          email: user.email,
+          full_name: user.nome,
+          phone: user.telefone,
+          created_at: user.created_at,
+          referral_code: `REF-${user.id.slice(-4).toUpperCase()}`
+        }));
+        setUsers(transformedUsers);
+      }
       if (influencersRes.data) setInfluencers(influencersRes.data);
 
       toast({

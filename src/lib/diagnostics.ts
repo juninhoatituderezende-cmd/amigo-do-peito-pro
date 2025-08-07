@@ -67,8 +67,16 @@ class DiagnosticsManager {
     try {
       this.log("DATABASE", `Testing table access: ${tableName}`);
       
+      // Check if table name is valid
+      const validTables = ["users", "services", "professionals", "groups", "transactions", "activity_logs", "error_logs", "performance_metrics"];
+      
+      if (!validTables.includes(tableName)) {
+        this.log("DATABASE", `Table ${tableName} not in valid tables list`);
+        return false;
+      }
+      
       const { data, error } = await supabase
-        .from(tableName)
+        .from(tableName as any)
         .select("count", { count: "exact", head: true });
       
       if (error) {
