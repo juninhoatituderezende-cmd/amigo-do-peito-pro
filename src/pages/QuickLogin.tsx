@@ -1,107 +1,201 @@
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { GoogleLoginButton } from "@/components/GoogleLoginButton";
-import { GoogleCredentialsSetup } from "@/components/GoogleCredentialsSetup";
-import { AdvancedOAuthDiagnostic } from "@/components/AdvancedOAuthDiagnostic";
-import { CriticalConfigVerification } from "@/components/CriticalConfigVerification";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
-import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const QuickLogin = () => {
-  const [showDebug, setShowDebug] = useState(false);
+  const [isLogin, setIsLogin] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const { login, register } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      if (isLogin) {
+        const { error } = await login(email, password);
+        if (error) throw error;
+        
+        toast({
+          title: "Login realizado com sucesso!",
+          description: "Redirecionando para seu painel...",
+        });
+        
+        navigate("/usuario/dashboard");
+      } else {
+        const userData = {
+          email,
+          fullName: fullName || "Usuário",
+          phone: phone || ""
+        };
+        
+        const { error } = await register(email, password, userData);
+        if (error) throw error;
+        
+        toast({
+          title: "Cadastro realizado com sucesso!",
+          description: "Sua conta foi criada. Redirecionando...",
+        });
+        
+        navigate("/usuario/dashboard");
+      }
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error.message || "Ocorreu um erro. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
       
-      <main className="flex-1 py-16 bg-gradient-to-br from-ap-light-orange to-white">
-        <div className="ap-container">
+      <main className="flex-1 py-16 bg-gradient-to-br from-primary/5 to-background">
+        <div className="container">
           <div className="max-w-md mx-auto">
             <Card>
               <CardHeader className="text-center">
-                <CardTitle className="text-2xl">Login do Cliente</CardTitle>
+                <CardTitle className="text-2xl">Acesso do Cliente</CardTitle>
                 <CardDescription>
-                  Entre como cliente usando sua conta Google - rápido e sem complicação
+                  {isLogin ? "Entre em sua conta" : "Crie sua conta agora"}
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Alerta crítico */}
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <h4 className="text-red-800 font-medium mb-2">🚨 ERRO 403 DETECTADO</h4>
-                  <p className="text-red-700 text-sm mb-3">
-                    O Google OAuth está retornando erro 403. Isso indica configuração incorreta.
-                  </p>
-                  <div className="text-xs text-red-600 space-y-1">
-                    <div>• Verificar se o Google Provider está habilitado no Supabase</div>
-                    <div>• Confirmar URLs no Google Cloud Console</div>
-                    <div>• Validar Client ID e Secret</div>
-                  </div>
-                </div>
-                
-                <GoogleLoginButton>
-                  🚀 Entrar como Cliente
-                </GoogleLoginButton>
-                
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <Separator className="w-full" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-white px-2 text-muted-foreground">
-                      Ou use o método tradicional
-                    </span>
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Button variant="outline" asChild className="w-full">
-                    <Link to="/usuario/login">
-                      Login com Email/Senha
-                    </Link>
-                  </Button>
+              <CardContent>
+                <Tabs value={isLogin ? "login" : "register"} className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger 
+                      value="login" 
+                      onClick={() => setIsLogin(true)}
+                    >
+                      Entrar
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="register" 
+                      onClick={() => setIsLogin(false)}
+                    >
+                      Cadastrar
+                    </TabsTrigger>
+                  </TabsList>
                   
-                  <Button variant="ghost" asChild className="w-full">
-                    <Link to="/usuario/cadastro">
-                      Criar conta tradicional
-                    </Link>
-                  </Button>
-                </div>
+                  <TabsContent value="login" className="space-y-4 mt-4">
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="email">E-mail *</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          required
+                          placeholder="seu@email.com"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="password">Senha *</Label>
+                        <Input
+                          id="password"
+                          type="password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          required
+                          placeholder="Sua senha"
+                        />
+                      </div>
+                      
+                      <Button type="submit" className="w-full" disabled={loading}>
+                        {loading ? "Entrando..." : "Entrar"}
+                      </Button>
+                    </form>
+                  </TabsContent>
+                  
+                  <TabsContent value="register" className="space-y-4 mt-4">
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="fullName">Nome</Label>
+                        <Input
+                          id="fullName"
+                          type="text"
+                          value={fullName}
+                          onChange={(e) => setFullName(e.target.value)}
+                          placeholder="Seu nome completo (opcional)"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="email">E-mail *</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          required
+                          placeholder="seu@email.com"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="phone">Telefone</Label>
+                        <Input
+                          id="phone"
+                          type="tel"
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                          placeholder="(11) 99999-9999 (opcional)"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="password">Senha *</Label>
+                        <Input
+                          id="password"
+                          type="password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          required
+                          placeholder="Mínimo 6 caracteres"
+                          minLength={6}
+                        />
+                      </div>
+                      
+                      <Button type="submit" className="w-full" disabled={loading}>
+                        {loading ? "Criando conta..." : "Criar conta"}
+                      </Button>
+                    </form>
+                  </TabsContent>
+                </Tabs>
                 
-                <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <h4 className="text-sm font-medium text-blue-800 mb-2">
-                    ⚡ Login de Cliente:
+                <div className="mt-6 p-4 bg-muted/50 rounded-lg">
+                  <h4 className="text-sm font-medium mb-2">
+                    ✅ Sistema Simplificado:
                   </h4>
-                  <ul className="text-xs text-blue-700 space-y-1">
-                    <li>✅ Apenas um clique para entrar</li>
-                    <li>✅ Cadastro automático com Google</li>
-                    <li>✅ Telefone opcional</li>
-                    <li>✅ Vai direto para o seu painel</li>
+                  <ul className="text-xs text-muted-foreground space-y-1">
+                    <li>• Acesso imediato após cadastro</li>
+                    <li>• Sem verificação de e-mail</li>
+                    <li>• Campos opcionais para agilidade</li>
+                    <li>• Vai direto para o painel</li>
                   </ul>
-                </div>
-                
-                <div className="mt-4 text-center">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => setShowDebug(!showDebug)}
-                    className="text-xs"
-                  >
-                    {showDebug ? '🔼 Ocultar Setup' : '🔧 Setup OAuth'}
-                  </Button>
                 </div>
               </CardContent>
             </Card>
-            
-            {showDebug && (
-              <div className="mt-6 space-y-6">
-                <CriticalConfigVerification />
-                <GoogleCredentialsSetup />
-                <AdvancedOAuthDiagnostic />
-              </div>
-            )}
           </div>
         </div>
       </main>

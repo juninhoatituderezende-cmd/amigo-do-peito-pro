@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "../contexts/AuthContext";
-import { GoogleLoginButton } from "@/components/GoogleLoginButton";
+// Google OAuth removido - sistema simplificado
 
 const UserRegister = () => {
   const [formData, setFormData] = useState({
@@ -90,14 +90,14 @@ const UserRegister = () => {
       
       console.log('📋 Registration result:', result);
       
-      if (result.error?.requiresConfirmation) {
+      if (result.error) {
         toast({
-          title: "Cadastro realizado com sucesso!",
-          description: result.error.message,
-          variant: "default",
+          title: "Erro no cadastro",
+          description: result.error.message || "Ocorreu um erro. Tente novamente.",
+          variant: "destructive",
         });
-        navigate("/usuario/login");
-      } else if (result.data?.user) {
+        return;
+      } else {
         toast({
           title: "Cadastro realizado com sucesso!",
           description: "Bem-vindo à Amigo do Peito! Você pode fazer login agora.",
@@ -260,20 +260,7 @@ const UserRegister = () => {
                     {loading ? "Criando conta..." : "Criar Conta"}
                   </Button>
                   
-                  <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                      <span className="w-full border-t" />
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-white px-2 text-muted-foreground">
-                        Ou continue com
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <GoogleLoginButton>
-                    Cadastrar com Google
-                  </GoogleLoginButton>
+                  {/* Google OAuth removido - sistema simplificado */}
                 </form>
 
                 <div className="mt-6 text-center">

@@ -23,7 +23,7 @@ const AdminLogin = () => {
     setError("");
 
     try {
-      const { data, error } = await adminLogin(email, password);
+      const { error } = await adminLogin(email, password);
 
       if (error) {
         throw error;

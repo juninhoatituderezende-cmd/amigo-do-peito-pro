@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "../contexts/AuthContext";
-import { GoogleLoginButton } from "@/components/GoogleLoginButton";
+// Google OAuth removido - sistema simplificado
 import { Stethoscope, Loader2 } from "lucide-react";
 
 const ProfessionalLogin = () => {
@@ -34,7 +34,7 @@ const ProfessionalLogin = () => {
     setError("");
 
     try {
-      const { data, error } = await login(formData.email, formData.password, "professional");
+      const { error } = await login(formData.email, formData.password, "professional");
       
       if (error) {
         throw new Error(error.message);
@@ -118,18 +118,7 @@ const ProfessionalLogin = () => {
                     )}
                   </Button>
                   
-                  <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                      <span className="w-full border-t" />
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-white px-2 text-muted-foreground">
-                        Ou continue com
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <GoogleLoginButton />
+                  {/* Google OAuth removido - sistema simplificado */}
                 </form>
                 
                 <div className="mt-6 text-center space-y-2">

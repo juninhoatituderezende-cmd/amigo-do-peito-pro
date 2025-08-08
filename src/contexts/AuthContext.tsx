@@ -21,17 +21,11 @@ interface AuthContextType {
   user: User | null;
   supabaseUser: SupabaseUser | null;
   session: Session | null;
-  login: (email: string, password: string, role?: UserRole) => Promise<{ data: any; error: any }>;
-  loginWithGoogle: () => Promise<{ data: any; error: any }>;
-  register: (
-    email: string, 
-    password: string, 
-    userData: any, 
-    role?: UserRole
-  ) => Promise<{ data: any; error: any }>;
-  adminLogin: (email: string, password: string) => Promise<{ data: any; error: any }>;
-  logout: () => Promise<void>;
   loading: boolean;
+  login: (email: string, password: string, role?: UserRole) => Promise<{ error: Error | null }>;
+  register: (email: string, password: string, userData: any, role?: UserRole) => Promise<{ error: Error | null }>;
+  adminLogin: (email: string, password: string) => Promise<{ error: Error | null }>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -215,165 +209,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) throw error;
 
-      return { data, error: null };
+      return { error: null };
     } catch (error: any) {
       console.error('Erro no login:', error);
-      return { data: null, error };
+      return { error };
     } finally {
       setLoading(false);
     }
   };
 
-  const loginWithGoogle = async () => {
+  // Google OAuth removido - sistema simplificado
+
+  const register = async (email: string, password: string, userData: any, role: UserRole = 'user') => {
     try {
       setLoading(true);
       
-      const currentUrl = window.location.origin;
-      const redirectUrl = `${currentUrl}/`;
-      
-      console.log('🚀 Starting Google OAuth login...', {
-        currentUrl,
-        redirectUrl,
-        userAgent: navigator.userAgent,
-        timestamp: new Date().toISOString()
-      });
-      
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: redirectUrl,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          },
-        }
-      });
-
-      if (error) {
-        console.error('❌ Google OAuth error:', {
-          message: error.message,
-          details: error,
-          redirectUrl,
-          timestamp: new Date().toISOString()
-        });
-        throw error;
-      }
-
-      console.log('✅ Google OAuth initiated successfully', {
-        data,
-        redirectUrl,
-        timestamp: new Date().toISOString()
-      });
-      
-      return { data, error: null };
-    } catch (error: any) {
-      console.error('❌ Google OAuth failed:', {
-        message: error.message,
-        error,
-        stackTrace: error.stack,
-        timestamp: new Date().toISOString()
-      });
-      return { data: null, error };
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const register = async (
-    email: string, 
-    password: string, 
-    userData: any, 
-    role: UserRole = 'user'
-  ) => {
-    try {
-      setLoading(true);
-      
-      console.log('🚀 Starting registration process...');
-      console.log('📧 Email:', email);
-      console.log('👤 Role:', role);
-      console.log('📝 User data:', userData);
-
+      // Cadastro direto sem confirmação de email
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
-            full_name: userData.full_name || userData.name,
-            phone: userData.phone,
-            role
+            full_name: userData.fullName || userData.nome || 'Usuário',
+            phone: userData.phone || userData.telefone || '',
+            role: role,
           }
         }
       });
 
-      console.log('📤 Registration response:', { data, error });
-
-      // Se for profissional, criar registro na tabela professionals
-      if (error) throw error;
-      
-      if (data.user && role === 'professional') {
-        const { error: profError } = await supabase
-          .from('professionals')
-          .insert({
-            user_id: data.user.id,
-            email: userData.email,
-            full_name: userData.full_name,
-            phone: userData.phone,
-            category: userData.category || '',
-            location: userData.location || '',
-            cep: userData.cep || '',
-            instagram: userData.instagram || '',
-            cpf: userData.cpf || '',
-            description: userData.description || '',
-            experience: userData.experience || '',
-            approved: false
-          });
-        
-        if (profError) console.warn('Erro ao criar perfil profissional:', profError);
-      }
-      
-      // Se for influenciador, criar registro na tabela influencers
-      if (data.user && role === 'influencer') {
-        const { error: influencerError } = await supabase
-          .from('influencers')
-          .insert({
-            user_id: data.user.id,
-            email: userData.email,
-            full_name: userData.full_name,
-            phone: userData.phone,
-            instagram: userData.instagram || '',
-            followers: userData.followers || '',
-            approved: false
-          });
-        
-        if (influencerError) console.warn('Erro ao criar perfil influenciador:', influencerError);
-      }
-
       if (error) throw error;
 
-      // Verificar se o usuário foi criado com sucesso
+      // Se o usuário foi criado com sucesso, fazer login automático
       if (data.user) {
-        console.log('✅ User created successfully:', data.user.id);
+        // Aguardar um pouco para garantir que o trigger foi executado
+        await new Promise(resolve => setTimeout(resolve, 1000));
         
-        // Se o email não foi confirmado automaticamente, mostrar mensagem específica
-        if (!data.user.email_confirmed_at && !data.session) {
-          console.log('📧 Email confirmation required');
-          return { 
-            data, 
-            error: { 
-              message: 'Conta criada com sucesso! Verifique seu email para ativar a conta.',
-              requiresConfirmation: true 
-            } 
-          };
+        // Fazer login automático
+        const { error: loginError } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
+        
+        if (loginError) {
+          console.warn('Usuário criado mas login automático falhou:', loginError);
         }
-        
-        console.log('🎉 Registration completed successfully');
       }
 
-      // O perfil será criado automaticamente pelo trigger
-      return { data, error: null };
+      return { error: null };
     } catch (error: any) {
-      console.error('Erro no cadastro:', error);
-      return { data: null, error };
+      console.error('Erro durante cadastro:', error);
+      return { error };
     } finally {
       setLoading(false);
     }
@@ -405,10 +290,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
 
-      return { data, error: null };
+      return { error: null };
     } catch (error: any) {
       console.error('Erro no login admin:', error);
-      return { data: null, error };
+      return { error };
     } finally {
       setLoading(false);
     }
@@ -437,9 +322,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         user, 
         supabaseUser, 
         session, 
-        login,
-        loginWithGoogle, 
-        register, 
+    login,
+    register,
         adminLogin, 
         logout, 
         loading 
