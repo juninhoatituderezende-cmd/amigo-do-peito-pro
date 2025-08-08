@@ -48,7 +48,7 @@ export const GoogleLoginButton = ({ className, children }: GoogleLoginButtonProp
       
       // Simular delay e redirecionar para página de finalização
       setTimeout(() => {
-        navigate('/google-complete');
+        window.location.href = '/google-complete';
       }, 2000);
       
     } catch (error: any) {

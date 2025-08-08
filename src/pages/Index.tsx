@@ -30,12 +30,7 @@ const Index = () => {
                 </Link>
                 <Link to="/login-rapido">
                   <Button className="bg-ap-light-blue hover:bg-ap-light-blue/90 text-white px-8 py-6 text-lg">
-                    🚀 Entrar Rápido (Google)
-                  </Button>
-                </Link>
-                <Link to="/usuario/cadastro">
-                  <Button variant="outline" className="border-2 border-ap-light-blue text-ap-light-blue hover:bg-ap-light-blue hover:text-white px-8 py-6 text-lg">
-                    Sou Cliente
+                    🚀 Sou Cliente (Login Google)
                   </Button>
                 </Link>
                 <Link to="/influenciador/cadastro">

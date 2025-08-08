@@ -31,7 +31,7 @@ export default function GoogleSignupComplete() {
       });
       
       // Redirecionar para dashboard do usuário
-      navigate('/usuario/dashboard');
+      window.location.href = '/usuario/dashboard';
     } catch (error) {
       toast({
         title: "Erro",
@@ -49,7 +49,7 @@ export default function GoogleSignupComplete() {
       description: "Você pode adicionar o telefone depois no seu perfil.",
       variant: "default",
     });
-    navigate('/usuario/dashboard');
+    window.location.href = '/usuario/dashboard';
   };
 
   return (

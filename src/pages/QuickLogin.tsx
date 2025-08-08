@@ -16,14 +16,14 @@ const QuickLogin = () => {
           <div className="max-w-md mx-auto">
             <Card>
               <CardHeader className="text-center">
-                <CardTitle className="text-2xl">Acesso Rápido</CardTitle>
+                <CardTitle className="text-2xl">Login do Cliente</CardTitle>
                 <CardDescription>
-                  Entre na plataforma em segundos com sua conta Google
+                  Entre como cliente usando sua conta Google - rápido e sem complicação
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <GoogleLoginButton>
-                  Entrar com Google
+                  🚀 Entrar como Cliente
                 </GoogleLoginButton>
                 
                 <div className="relative">
@@ -53,13 +53,13 @@ const QuickLogin = () => {
                 
                 <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                   <h4 className="text-sm font-medium text-blue-800 mb-2">
-                    ⚡ Login com Google:
+                    ⚡ Login de Cliente:
                   </h4>
                   <ul className="text-xs text-blue-700 space-y-1">
-                    <li>✅ Sem necessidade de senha</li>
-                    <li>✅ Cadastro automático</li>
-                    <li>✅ Acesso instantâneo</li>
-                    <li>✅ Sem preenchimento de formulários</li>
+                    <li>✅ Apenas um clique para entrar</li>
+                    <li>✅ Cadastro automático com Google</li>
+                    <li>✅ Telefone opcional</li>
+                    <li>✅ Vai direto para o seu painel</li>
                   </ul>
                 </div>
               </CardContent>
