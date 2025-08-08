@@ -87,5 +87,8 @@ verify_jwt = true
 [functions.upload-secure-file]
 verify_jwt = true
 
+[functions.create-admin-user]
+verify_jwt = false
+
 [functions.use-user-credits]
 verify_jwt = true
