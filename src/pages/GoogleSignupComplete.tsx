@@ -9,9 +9,14 @@ import { CheckCircle, User, Mail } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function GoogleSignupComplete() {
+  // Pegar dados da URL (simulariam dados reais do Google OAuth)
+  const urlParams = new URLSearchParams(window.location.search);
+  const googleEmail = urlParams.get('email') || 'cliente@example.com';
+  const googleName = urlParams.get('name') || 'Cliente Google';
+  
   const [userData, setUserData] = useState({
-    name: "João Silva", // Mockado - viria do Google
-    email: "joao.silva@gmail.com", // Mockado - viria do Google
+    name: googleName,
+    email: googleEmail,
     phone: ""
   });
   const [loading, setLoading] = useState(false);

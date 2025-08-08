@@ -1812,6 +1812,10 @@ export type Database = {
         }
         Returns: string
       }
+      gen_random_bytes: {
+        Args: { count: number }
+        Returns: string
+      }
       generate_plan_code: {
         Args: Record<PropertyKey, never>
         Returns: string

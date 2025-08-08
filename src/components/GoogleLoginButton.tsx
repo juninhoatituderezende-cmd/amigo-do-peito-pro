@@ -31,10 +31,11 @@ export const GoogleLoginButton = ({ className, children }: GoogleLoginButtonProp
       // Simular delay de autenticação
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Simular criação automática de conta de usuário
+      // Simular dados que viriam do Google OAuth
+      const timestamp = Date.now();
       const mockUserData = {
-        email: "usuario.google@example.com",
-        name: "Usuário Google",
+        email: `cliente${timestamp}@gmail.com`,
+        name: `Cliente ${timestamp}`,
         provider: "google"
       };
       
@@ -46,9 +47,13 @@ export const GoogleLoginButton = ({ className, children }: GoogleLoginButtonProp
         variant: "default",
       });
       
-      // Simular delay e redirecionar para página de finalização
+      // Redirecionar para finalização passando dados na URL
       setTimeout(() => {
-        window.location.href = '/google-complete';
+        const params = new URLSearchParams({
+          email: mockUserData.email,
+          name: mockUserData.name
+        });
+        window.location.href = `/google-complete?${params.toString()}`;
       }, 2000);
       
     } catch (error: any) {
