@@ -378,15 +378,15 @@ export function AdminProductsManager() {
         </TabsContent>
 
         {/* Create Product Tab */}
-        <TabsContent value="create-product" className="space-y-4">
-          <Card>
+        <TabsContent value="create-product" className="space-y-4 overflow-y-auto max-h-screen">
+          <Card className="max-w-4xl mx-auto">
             <CardHeader>
               <CardTitle>Cadastrar Novo Produto</CardTitle>
               <CardDescription>
                 Adicione um novo produto ao marketplace
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-6 max-h-none overflow-y-auto pb-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="title">Nome do Produto *</Label>

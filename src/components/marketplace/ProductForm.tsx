@@ -118,15 +118,16 @@ export const ProductForm = () => {
   const isFormValid = formData.name && formData.description && formData.category && formData.price > 0;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Package className="h-5 w-5" />
-          Cadastrar Novo Serviço
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
+    <div className="w-full min-h-screen overflow-y-auto">
+      <Card className="max-w-4xl mx-auto my-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Package className="h-5 w-5" />
+            Cadastrar Novo Serviço
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="max-h-none overflow-y-auto">
+          <form onSubmit={handleSubmit} className="space-y-6">
           {/* Nome */}
           <div className="space-y-2">
             <Label htmlFor="name" className="flex items-center gap-2">
@@ -221,7 +222,8 @@ export const ProductForm = () => {
             </div>
           </div>
         </form>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
