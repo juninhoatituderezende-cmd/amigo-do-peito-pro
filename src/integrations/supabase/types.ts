@@ -101,6 +101,116 @@ export type Database = {
         }
         Relationships: []
       }
+      asaas_subaccounts: {
+        Row: {
+          address_city: string
+          address_complement: string | null
+          address_district: string
+          address_number: string
+          address_postal_code: string
+          address_state: string
+          address_street: string
+          approved_at: string | null
+          asaas_account_id: string
+          bank_account_digit: string | null
+          bank_account_number: string | null
+          bank_account_type: string | null
+          bank_agency: string | null
+          bank_code: string | null
+          birth_date: string | null
+          company_type: string | null
+          cpf_cnpj: string
+          created_at: string
+          documents_uploaded: boolean
+          email: string
+          id: string
+          kyc_completed: boolean
+          name: string
+          phone: string
+          pix_key: string | null
+          professional_id: string
+          rejected_at: string | null
+          status: string
+          updated_at: string
+          verification_notes: string | null
+          verification_status: string
+        }
+        Insert: {
+          address_city: string
+          address_complement?: string | null
+          address_district: string
+          address_number: string
+          address_postal_code: string
+          address_state: string
+          address_street: string
+          approved_at?: string | null
+          asaas_account_id: string
+          bank_account_digit?: string | null
+          bank_account_number?: string | null
+          bank_account_type?: string | null
+          bank_agency?: string | null
+          bank_code?: string | null
+          birth_date?: string | null
+          company_type?: string | null
+          cpf_cnpj: string
+          created_at?: string
+          documents_uploaded?: boolean
+          email: string
+          id?: string
+          kyc_completed?: boolean
+          name: string
+          phone: string
+          pix_key?: string | null
+          professional_id: string
+          rejected_at?: string | null
+          status?: string
+          updated_at?: string
+          verification_notes?: string | null
+          verification_status?: string
+        }
+        Update: {
+          address_city?: string
+          address_complement?: string | null
+          address_district?: string
+          address_number?: string
+          address_postal_code?: string
+          address_state?: string
+          address_street?: string
+          approved_at?: string | null
+          asaas_account_id?: string
+          bank_account_digit?: string | null
+          bank_account_number?: string | null
+          bank_account_type?: string | null
+          bank_agency?: string | null
+          bank_code?: string | null
+          birth_date?: string | null
+          company_type?: string | null
+          cpf_cnpj?: string
+          created_at?: string
+          documents_uploaded?: boolean
+          email?: string
+          id?: string
+          kyc_completed?: boolean
+          name?: string
+          phone?: string
+          pix_key?: string | null
+          professional_id?: string
+          rejected_at?: string | null
+          status?: string
+          updated_at?: string
+          verification_notes?: string | null
+          verification_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asaas_subaccounts_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contemplations: {
         Row: {
           contemplated_at: string
@@ -1001,6 +1111,127 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_split_rules: {
+        Row: {
+          created_at: string
+          fixed_platform_fee: number | null
+          id: string
+          influencer_percentage: number
+          platform_percentage: number
+          product_id: string | null
+          professional_percentage: number
+          service_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          fixed_platform_fee?: number | null
+          id?: string
+          influencer_percentage?: number
+          platform_percentage?: number
+          product_id?: string | null
+          professional_percentage?: number
+          service_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          fixed_platform_fee?: number | null
+          id?: string
+          influencer_percentage?: number
+          platform_percentage?: number
+          product_id?: string | null
+          professional_percentage?: number
+          service_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_split_rules_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_split_rules_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_splits: {
+        Row: {
+          asaas_payment_id: string
+          created_at: string
+          id: string
+          influencer_amount: number
+          influencer_id: string | null
+          payment_id: string
+          platform_amount: number
+          professional_amount: number
+          professional_id: string | null
+          split_error: string | null
+          split_executed: boolean
+          split_executed_at: string | null
+          total_amount: number
+        }
+        Insert: {
+          asaas_payment_id: string
+          created_at?: string
+          id?: string
+          influencer_amount?: number
+          influencer_id?: string | null
+          payment_id: string
+          platform_amount?: number
+          professional_amount?: number
+          professional_id?: string | null
+          split_error?: string | null
+          split_executed?: boolean
+          split_executed_at?: string | null
+          total_amount: number
+        }
+        Update: {
+          asaas_payment_id?: string
+          created_at?: string
+          id?: string
+          influencer_amount?: number
+          influencer_id?: string | null
+          payment_id?: string
+          platform_amount?: number
+          professional_amount?: number
+          professional_id?: string | null
+          split_error?: string | null
+          split_executed?: boolean
+          split_executed_at?: string | null
+          total_amount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_splits_influencer_id_fkey"
+            columns: ["influencer_id"]
+            isOneToOne: false
+            referencedRelation: "influencers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_splits_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_splits_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_validations: {
         Row: {
           amount_verified: boolean
@@ -1618,6 +1849,15 @@ export type Database = {
           paid_at: string
         }[]
       }
+      get_split_rules: {
+        Args: { p_product_id?: string; p_service_id?: string }
+        Returns: {
+          professional_percentage: number
+          platform_percentage: number
+          influencer_percentage: number
+          fixed_platform_fee: number
+        }[]
+      }
       get_user_commissions: {
         Args: { target_user_id: string }
         Returns: {
@@ -1677,6 +1917,10 @@ export type Database = {
       }
       process_mlm_referral: {
         Args: { new_user_id: string; referral_code_used: string }
+        Returns: boolean
+      }
+      validate_cpf_cnpj: {
+        Args: { document: string }
         Returns: boolean
       }
       validate_financial_transaction: {

@@ -8,7 +8,7 @@ const corsHeaders = {
 
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
-  console.log(`[CREATE-PIX-PAYMENT] ${step}${detailsStr}`);
+  console.log(`[CREATE-PIX-PAYMENT-SPLIT] ${step}${detailsStr}`);
 };
 
 serve(async (req) => {
@@ -19,8 +19,8 @@ serve(async (req) => {
   try {
     logStep("Function started");
 
-    const { plan_id, user_id, product_code, referral_code } = await req.json();
-    logStep("Request data received", { plan_id, user_id, product_code, referral_code });
+    const { plan_id, user_id, product_code, service_id, referral_code, professional_id } = await req.json();
+    logStep("Request data received", { plan_id, user_id, product_code, service_id, referral_code, professional_id });
 
     // Initialize Supabase client
     const supabaseClient = createClient(
@@ -41,9 +41,12 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
-    // Get plan or product details
+    // Get payment details and calculate split
     let amount = 40000; // R$ 400.00 padrão em centavos
     let description = "Plano MIN - Sistema MLM";
+    let productId = null;
+    let serviceIdForSplit = null;
+    let professionalForSplit = null;
     
     if (plan_id) {
       const { data: plan, error: planError } = await supabaseClient
@@ -55,21 +58,45 @@ serve(async (req) => {
       if (!planError && plan) {
         amount = Math.round(plan.entry_price * 100);
         description = plan.name;
+        if (plan.professional_id) {
+          professionalForSplit = plan.professional_id;
+        }
       }
     } else if (product_code) {
+      // Buscar produto no marketplace
+      const { data: product, error: productError } = await supabaseClient
+        .from("marketplace_products")
+        .select("*")
+        .eq("id", product_code)
+        .single();
+      
+      if (!productError && product) {
+        amount = Math.round(product.valor_total * (product.percentual_entrada / 100) * 100);
+        description = product.name;
+        productId = product.id;
+        professionalForSplit = product.professional_id;
+      }
+    } else if (service_id) {
       const { data: service, error: serviceError } = await supabaseClient
         .from("services")
         .select("*")
-        .eq("id", product_code.replace("SRV-", "").slice(0, -4))
+        .eq("id", service_id)
         .single();
       
       if (!serviceError && service) {
         amount = Math.round(service.price * 0.1 * 100); // 10% de entrada
         description = service.name;
+        serviceIdForSplit = service.id;
+        professionalForSplit = service.professional_id;
       }
     }
 
-    logStep("Payment details calculated", { amount, description });
+    // Se professional_id foi fornecido diretamente, usar ele
+    if (professional_id) {
+      professionalForSplit = professional_id;
+    }
+
+    logStep("Payment details calculated", { amount, description, professionalForSplit, productId, serviceIdForSplit });
 
     // Create payment record first
     const { data: payment, error: paymentError } = await supabaseClient
@@ -94,13 +121,63 @@ serve(async (req) => {
 
     logStep("Payment record created", { paymentId: payment.id });
 
-    // Create PIX payment with Asaas API
+    // Get split rules and subaccount info
+    let splitInfo = null;
+    let receiverAccountId = null;
+    
+    if (professionalForSplit) {
+      // Buscar regras de split
+      const { data: splitRules } = await supabaseClient
+        .rpc("get_split_rules", { 
+          p_product_id: productId, 
+          p_service_id: serviceIdForSplit 
+        });
+      
+      if (splitRules && splitRules.length > 0) {
+        const rules = splitRules[0];
+        
+        // Buscar subconta do profissional
+        const { data: subaccount } = await supabaseClient
+          .from("asaas_subaccounts")
+          .select("asaas_account_id, status, verification_status")
+          .eq("professional_id", professionalForSplit)
+          .eq("status", "active")
+          .eq("verification_status", "approved")
+          .single();
+        
+        if (subaccount) {
+          receiverAccountId = subaccount.asaas_account_id;
+          
+          // Calcular valores do split
+          const totalAmountInReais = amount / 100;
+          const professionalAmount = Math.round(totalAmountInReais * (rules.professional_percentage / 100) * 100) / 100;
+          const platformAmount = Math.round(totalAmountInReais * (rules.platform_percentage / 100) * 100) / 100;
+          const influencerAmount = referral_code ? Math.round(totalAmountInReais * (rules.influencer_percentage / 100) * 100) / 100 : 0;
+          
+          splitInfo = {
+            professional_percentage: rules.professional_percentage,
+            platform_percentage: rules.platform_percentage,
+            influencer_percentage: rules.influencer_percentage,
+            professional_amount: professionalAmount,
+            platform_amount: platformAmount,
+            influencer_amount: influencerAmount,
+            receiver_account_id: receiverAccountId
+          };
+          
+          logStep("Split calculated", splitInfo);
+        } else {
+          logStep("Professional subaccount not ready for split", { professionalForSplit });
+        }
+      }
+    }
+
+    // Create PIX payment with Asaas API (with split if applicable)
     const asaasApiKey = Deno.env.get("ASAAS_API_KEY");
     if (!asaasApiKey) {
       throw new Error("ASAAS_API_KEY não configurada");
     }
 
-    const asaasPayload = {
+    const asaasPayload: any = {
       customer: user.email,
       billingType: "PIX",
       value: amount / 100,
@@ -109,6 +186,18 @@ serve(async (req) => {
       externalReference: payment.id,
       postalService: false,
     };
+
+    // Adicionar split se configurado
+    if (splitInfo && receiverAccountId) {
+      asaasPayload.split = [
+        {
+          walletId: receiverAccountId,
+          fixedValue: splitInfo.professional_amount,
+          percentualValue: null
+        }
+      ];
+      logStep("Split configuration added to payment", asaasPayload.split);
+    }
 
     logStep("Creating PIX with Asaas", asaasPayload);
 
@@ -161,6 +250,28 @@ serve(async (req) => {
       logStep("Error updating payment with PIX data", updateError);
     }
 
+    // Criar registro de split se configurado
+    if (splitInfo) {
+      const { error: splitError } = await supabaseClient
+        .from("payment_splits")
+        .insert({
+          payment_id: payment.id,
+          asaas_payment_id: asaasData.id,
+          professional_id: professionalForSplit,
+          total_amount: amount / 100,
+          professional_amount: splitInfo.professional_amount,
+          platform_amount: splitInfo.platform_amount,
+          influencer_amount: splitInfo.influencer_amount,
+          split_executed: !!receiverAccountId
+        });
+
+      if (splitError) {
+        logStep("Error creating split record", splitError);
+      } else {
+        logStep("Split record created successfully");
+      }
+    }
+
     // Process referral if exists
     if (referral_code) {
       logStep("Processing referral", { referral_code });
@@ -196,6 +307,8 @@ serve(async (req) => {
       pix_copy_paste: pixCopyPaste,
       status: asaasData.status,
       due_date: asaasData.dueDate,
+      split_configured: !!splitInfo,
+      split_details: splitInfo || null,
     };
 
     logStep("Payment created successfully", result);
