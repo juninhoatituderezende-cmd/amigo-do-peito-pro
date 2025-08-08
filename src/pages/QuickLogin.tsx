@@ -26,6 +26,19 @@ const QuickLogin = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Alerta crítico */}
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <h4 className="text-red-800 font-medium mb-2">🚨 ERRO 403 DETECTADO</h4>
+                  <p className="text-red-700 text-sm mb-3">
+                    O Google OAuth está retornando erro 403. Isso indica configuração incorreta.
+                  </p>
+                  <div className="text-xs text-red-600 space-y-1">
+                    <div>• Verificar se o Google Provider está habilitado no Supabase</div>
+                    <div>• Confirmar URLs no Google Cloud Console</div>
+                    <div>• Validar Client ID e Secret</div>
+                  </div>
+                </div>
+                
                 <GoogleLoginButton>
                   🚀 Entrar como Cliente
                 </GoogleLoginButton>

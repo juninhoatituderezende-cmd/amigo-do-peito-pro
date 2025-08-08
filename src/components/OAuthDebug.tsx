@@ -4,13 +4,41 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CheckCircle, XCircle, AlertTriangle, RefreshCw } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 export const OAuthDebug = () => {
   const { user, session, loading } = useAuth();
   const { toast } = useToast();
   const [testingConnection, setTestingConnection] = useState(false);
+  const [supabaseAuthConfig, setSupabaseAuthConfig] = useState<any>(null);
+  const [oauthProviders, setOauthProviders] = useState<any>(null);
+
+  // Verificar configuração do Supabase ao carregar
+  useEffect(() => {
+    checkSupabaseConfig();
+  }, []);
+
+  const checkSupabaseConfig = async () => {
+    try {
+      // Tentar acessar configuração de auth (se disponível via API)
+      console.log('🔍 Checking Supabase configuration...');
+      
+      // Verificar se conseguimos fazer uma query básica
+      const { data, error } = await supabase.from('profiles').select('count').limit(1);
+      
+      if (error) {
+        console.error('❌ Database connection failed:', error);
+        setSupabaseAuthConfig({ error: error.message });
+      } else {
+        console.log('✅ Database connection successful');
+        setSupabaseAuthConfig({ connected: true });
+      }
+    } catch (err: any) {
+      console.error('❌ Supabase config check failed:', err);
+      setSupabaseAuthConfig({ error: err.message });
+    }
+  };
 
   const testSupabaseConnection = async () => {
     setTestingConnection(true);
@@ -41,9 +69,50 @@ export const OAuthDebug = () => {
     }
   };
 
+  const handleAdvancedTest = async () => {
+    try {
+      console.log('🧪 Running advanced OAuth diagnostics...');
+      
+      // Testar se o provider Google está habilitado
+      const response = await fetch('https://rczygmsaybzcrmdxxyge.supabase.co/auth/v1/settings', {
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const settings = await response.json();
+        console.log('📋 Supabase Auth Settings:', settings);
+        setOauthProviders(settings);
+        
+        toast({
+          title: "✅ Configurações carregadas",
+          description: "Verifique o console para detalhes",
+          variant: "default",
+        });
+      } else {
+        console.error('❌ Failed to fetch auth settings:', response.status, response.statusText);
+        toast({
+          title: "❌ Erro ao carregar configurações",
+          description: `Status: ${response.status}`,
+          variant: "destructive",
+        });
+      }
+    } catch (err: any) {
+      console.error('❌ Advanced test failed:', err);
+      toast({
+        title: "❌ Teste avançado falhou",
+        description: err.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleTestGoogleOAuth = async () => {
     try {
       console.log('🧪 Testing Google OAuth configuration...');
+      console.log('📍 Current URL:', window.location.href);
+      console.log('📍 Origin:', window.location.origin);
       
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -57,12 +126,19 @@ export const OAuthDebug = () => {
       });
 
       if (error) {
+        console.error('❌ Google OAuth Error Details:', {
+          message: error.message,
+          status: error.status,
+          details: error
+        });
+        
         toast({
           title: "❌ Erro no Google OAuth",
-          description: error.message,
+          description: `${error.message} (Status: ${error.status || 'unknown'})`,
           variant: "destructive",
         });
       } else {
+        console.log('✅ Google OAuth data:', data);
         toast({
           title: "🚀 Google OAuth iniciado",
           description: "Redirecionando para Google...",
@@ -70,6 +146,7 @@ export const OAuthDebug = () => {
         });
       }
     } catch (err: any) {
+      console.error('❌ Unexpected error:', err);
       toast({
         title: "❌ Erro inesperado",
         description: err.message,
@@ -131,6 +208,14 @@ export const OAuthDebug = () => {
               </Button>
               
               <Button 
+                onClick={handleAdvancedTest}
+                variant="outline"
+                className="w-full"
+              >
+                🔬 Verificar Configuração Supabase
+              </Button>
+              
+              <Button 
                 onClick={handleTestGoogleOAuth}
                 variant="outline"
                 className="w-full"
@@ -139,6 +224,25 @@ export const OAuthDebug = () => {
               </Button>
             </div>
           </div>
+
+          {/* Resultados dos testes */}
+          {supabaseAuthConfig && (
+            <div className="bg-gray-50 p-4 rounded-lg border">
+              <h4 className="font-medium mb-2">🔬 Resultados dos Testes:</h4>
+              <pre className="text-xs bg-white p-2 rounded border overflow-auto">
+                {JSON.stringify(supabaseAuthConfig, null, 2)}
+              </pre>
+            </div>
+          )}
+
+          {oauthProviders && (
+            <div className="bg-gray-50 p-4 rounded-lg border">
+              <h4 className="font-medium mb-2">⚙️ Configuração OAuth:</h4>
+              <pre className="text-xs bg-white p-2 rounded border overflow-auto max-h-40">
+                {JSON.stringify(oauthProviders, null, 2)}
+              </pre>
+            </div>
+          )}
 
           {/* URLs importantes */}
           <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
