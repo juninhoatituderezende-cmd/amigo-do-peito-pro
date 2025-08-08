@@ -26,6 +26,7 @@ import ProServices from "./pages/pro/ProServices";
 import UserRegister from "./pages/UserRegister";
 import UserLogin from "./pages/UserLogin";
 import UserDashboard from "./pages/user/UserDashboard";
+import UserMarketplace from "./pages/user/UserMarketplace";
 import InfluencerRegister from "./pages/InfluencerRegister";
 import InfluencerLogin from "./pages/InfluencerLogin";
 import InfluencerDashboard from "./pages/influencer/InfluencerDashboard";
@@ -77,6 +78,11 @@ const App = () => (
             <Route path="/usuario/dashboard" element={
               <ProtectedRoute role="user">
                 <UserDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/usuario/marketplace" element={
+              <ProtectedRoute role="user">
+                <UserMarketplace />
               </ProtectedRoute>
             } />
             

@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useCredits } from "@/hooks/useCredits";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,11 +13,27 @@ import { UserProfile } from "@/components/user/UserProfile";
 import { NotificationCenter } from "@/components/shared/NotificationCenter";
 import { ReferralSystem } from "@/components/user/ReferralSystem";
 import { PlansSelection } from "@/components/plans/PlansSelection";
-import { PlanProgress } from "@/components/user/PlanProgress";
-import { User, Users, Bell, ShoppingCart, Settings, Share } from "lucide-react";
+import { CreditBalance } from "@/components/user/CreditBalance";
+import { ParticipationDashboard } from "@/components/user/ParticipationDashboard";
+import { 
+  User, 
+  Users, 
+  Bell, 
+  ShoppingCart, 
+  Settings, 
+  Share, 
+  Wallet,
+  Target,
+  Package,
+  TrendingUp,
+  Gift
+} from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
 
 const UserDashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const { balance } = useCredits();
   const [userData, setUserData] = useState({
     name: user?.name || "Usuário",
     email: user?.email || "",
@@ -25,10 +43,16 @@ const UserDashboard = () => {
     contemplatedGroups: 0
   });
   const [loading, setLoading] = useState(true);
+  const [quickStats, setQuickStats] = useState({
+    activeParticipations: 0,
+    totalReferrals: 0,
+    unreadNotifications: 0
+  });
 
   useEffect(() => {
     if (user) {
       loadUserData();
+      loadQuickStats();
     }
   }, [user]);
 
@@ -52,7 +76,7 @@ const UserDashboard = () => {
       setUserData({
         name: user?.name || "Usuário",
         email: user?.email || "",
-        joinDate: "2024-01-10", // Default date since created_at is not available in User type
+        joinDate: "2024-01-10",
         totalGroups,
         activeGroups,
         contemplatedGroups
@@ -61,6 +85,39 @@ const UserDashboard = () => {
       console.error('Error loading user data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadQuickStats = async () => {
+    try {
+      // Load active participations
+      const { data: activeParticipations } = await supabase
+        .from('plan_participants')
+        .select('id')
+        .eq('user_id', user?.id)
+        .eq('contemplation_status', 'waiting');
+
+      // Load MLM referrals
+      const { data: mlmData } = await supabase
+        .from('mlm_network')
+        .select('total_referrals')
+        .eq('user_id', user?.id)
+        .single();
+
+      // Load unread notifications
+      const { data: notifications } = await supabase
+        .from('notifications')
+        .select('id')
+        .eq('user_id', user?.id)
+        .eq('read', false);
+
+      setQuickStats({
+        activeParticipations: activeParticipations?.length || 0,
+        totalReferrals: mlmData?.total_referrals || 0,
+        unreadNotifications: notifications?.length || 0
+      });
+    } catch (error) {
+      console.error('Error loading quick stats:', error);
     }
   };
 
@@ -73,42 +130,128 @@ const UserDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <Header />
       
-      <main className="ap-container py-8">
-        {/* User Profile Header */}
+      <main className="container mx-auto px-4 py-8">
+        {/* Header com Informações Rápidas */}
         <div className="mb-8">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="h-16 w-16 bg-ap-orange rounded-full flex items-center justify-center">
-              <User className="h-8 w-8 text-white" />
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-6">
+            <div className="flex items-center gap-4">
+              <div className="h-16 w-16 bg-primary rounded-full flex items-center justify-center">
+                <User className="h-8 w-8 text-primary-foreground" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold">Olá, {userData.name}!</h1>
+                <p className="text-muted-foreground">
+                  Membro desde {userData.joinDate}
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Olá, {userData.name}!</h1>
-              <p className="text-muted-foreground">
-                Membro desde {userData.joinDate}
-              </p>
+
+            {/* Ações Rápidas */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button 
+                onClick={() => navigate('/usuario/marketplace')}
+                className="flex items-center gap-2"
+              >
+                <ShoppingCart className="h-4 w-4" />
+                Marketplace
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => navigate('/plans')}
+                className="flex items-center gap-2"
+              >
+                <Target className="h-4 w-4" />
+                Participar de Plano
+              </Button>
             </div>
+          </div>
+
+          {/* Cards de Resumo */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Wallet className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Créditos</p>
+                    <p className="text-xl font-bold">
+                      {balance ? formatCurrency(balance.availableCredits) : "R$ 0,00"}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <Target className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Planos Ativos</p>
+                    <p className="text-xl font-bold">{quickStats.activeParticipations}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-green-100 rounded-lg">
+                    <TrendingUp className="h-5 w-5 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Indicações</p>
+                    <p className="text-xl font-bold">{quickStats.totalReferrals}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-orange-100 rounded-lg">
+                    <Bell className="h-5 w-5 text-orange-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Notificações</p>
+                    <p className="text-xl font-bold">{quickStats.unreadNotifications}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
 
-        <Tabs defaultValue="groups" className="space-y-6">
-          <TabsList className="grid w-full lg:w-auto grid-cols-5">
+        <Tabs defaultValue="dashboard" className="space-y-6">
+          <TabsList className="grid w-full lg:w-auto grid-cols-6">
+            <TabsTrigger value="dashboard" className="flex items-center gap-2">
+              <Target className="h-4 w-4" />
+              Dashboard
+            </TabsTrigger>
             <TabsTrigger value="groups" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
-              Meus Grupos
+              Grupos
             </TabsTrigger>
             <TabsTrigger value="referrals" className="flex items-center gap-2">
               <Share className="h-4 w-4" />
               Indicações
             </TabsTrigger>
+            <TabsTrigger value="credits" className="flex items-center gap-2">
+              <Wallet className="h-4 w-4" />
+              Créditos
+            </TabsTrigger>
             <TabsTrigger value="notifications" className="flex items-center gap-2">
               <Bell className="h-4 w-4" />
               Notificações
-            </TabsTrigger>
-            <TabsTrigger value="marketplace" className="flex items-center gap-2">
-              <ShoppingCart className="h-4 w-4" />
-              Participar
             </TabsTrigger>
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
@@ -116,24 +259,24 @@ const UserDashboard = () => {
             </TabsTrigger>
           </TabsList>
 
-        <TabsContent value="groups">
-          <UserGroupsHistory />
-        </TabsContent>
+          <TabsContent value="dashboard">
+            <ParticipationDashboard />
+          </TabsContent>
 
-        <TabsContent value="progress">
-          <PlanProgress />
-        </TabsContent>
+          <TabsContent value="groups">
+            <UserGroupsHistory />
+          </TabsContent>
 
           <TabsContent value="referrals">
             <ReferralSystem />
           </TabsContent>
 
-          <TabsContent value="notifications">
-            <NotificationCenter />
+          <TabsContent value="credits">
+            <CreditBalance />
           </TabsContent>
 
-          <TabsContent value="marketplace">
-            <PlansSelection />
+          <TabsContent value="notifications">
+            <NotificationCenter />
           </TabsContent>
 
           <TabsContent value="profile">

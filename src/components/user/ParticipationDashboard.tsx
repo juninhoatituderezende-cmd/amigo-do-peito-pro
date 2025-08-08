@@ -1,0 +1,361 @@
+import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { 
+  Users, 
+  Target, 
+  Clock, 
+  CheckCircle, 
+  AlertCircle,
+  TrendingUp,
+  Calendar,
+  Gift
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { formatCurrency } from "@/lib/utils";
+
+interface PlanParticipation {
+  id: string;
+  plan_id: string;
+  group_id: string;
+  contemplation_status: string;
+  payment_status: string;
+  contemplation_date?: string;
+  joined_at: string;
+  plan_groups: {
+    current_participants: number;
+    status: string;
+    start_date?: string;
+    end_date?: string;
+  };
+  custom_plans: {
+    name: string;
+    entry_price: number;
+    total_price: number;
+    max_participants: number;
+  };
+}
+
+interface ReferralData {
+  referralCode: string;
+  totalReferrals: number;
+  confirmedReferrals: number;
+  pendingReferrals: number;
+}
+
+export const ParticipationDashboard = () => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [participations, setParticipations] = useState<PlanParticipation[]>([]);
+  const [referralData, setReferralData] = useState<ReferralData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (user) {
+      loadParticipationData();
+      loadReferralData();
+    }
+  }, [user]);
+
+  const loadParticipationData = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('plan_participants')
+        .select(`
+          *,
+          plan_groups(*),
+          custom_plans(*)
+        `)
+        .eq('user_id', user?.id)
+        .order('joined_at', { ascending: false });
+
+      if (error) throw error;
+      setParticipations(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar participações:', error);
+    }
+  };
+
+  const loadReferralData = async () => {
+    try {
+      // Buscar dados do MLM network do usuário
+      const { data: mlmData, error: mlmError } = await supabase
+        .from('mlm_network')
+        .select('referral_code, total_referrals, active_referrals')
+        .eq('user_id', user?.id)
+        .single();
+
+      if (mlmError && mlmError.code !== 'PGRST116') {
+        throw mlmError;
+      }
+
+      if (mlmData) {
+        setReferralData({
+          referralCode: mlmData.referral_code,
+          totalReferrals: mlmData.total_referrals,
+          confirmedReferrals: mlmData.active_referrals,
+          pendingReferrals: mlmData.total_referrals - mlmData.active_referrals
+        });
+      } else {
+        // Se não existir, não há problema - será criado automaticamente pelo trigger quando necessário
+        setReferralData({
+          referralCode: 'Aguardando...',
+          totalReferrals: 0,
+          confirmedReferrals: 0,
+          pendingReferrals: 0
+        });
+
+      }
+    } catch (error) {
+      console.error('Erro ao carregar dados de indicação:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getStatusBadge = (contemplationStatus: string, paymentStatus: string) => {
+    if (contemplationStatus === 'contemplated') {
+      return <Badge className="bg-green-100 text-green-800">Contemplado</Badge>;
+    }
+    if (contemplationStatus === 'waiting' && paymentStatus === 'pending') {
+      return <Badge className="bg-blue-100 text-blue-800">Em Andamento</Badge>;
+    }
+    if (paymentStatus === 'paid') {
+      return <Badge className="bg-purple-100 text-purple-800">Finalizado</Badge>;
+    }
+    return <Badge variant="secondary">Aguardando</Badge>;
+  };
+
+  const getProgressPercentage = (currentParticipants: number, maxParticipants: number) => {
+    return Math.min((currentParticipants / maxParticipants) * 100, 100);
+  };
+
+  const copyReferralLink = () => {
+    if (referralData) {
+      const link = `${window.location.origin}/register?ref=${referralData.referralCode}`;
+      navigator.clipboard.writeText(link);
+      toast({
+        title: "Link copiado!",
+        description: "Seu link de indicação foi copiado para a área de transferência.",
+      });
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-32">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  // Participação ativa mais recente
+  const activeParticipation = participations.find(p => 
+    p.contemplation_status === 'waiting' && p.payment_status === 'pending'
+  );
+
+  return (
+    <div className="space-y-6">
+      {/* Status da Participação Atual */}
+      {activeParticipation ? (
+        <Card className="border-primary/20 bg-primary/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Target className="h-5 w-5 text-primary" />
+              Plano Atual: {activeParticipation.custom_plans.name}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-primary">
+                  {activeParticipation.plan_groups.current_participants}
+                </div>
+                <div className="text-sm text-muted-foreground">Participantes Atuais</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold">
+                  {activeParticipation.custom_plans.max_participants}
+                </div>
+                <div className="text-sm text-muted-foreground">Meta do Grupo</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-orange-600">
+                  {activeParticipation.custom_plans.max_participants - activeParticipation.plan_groups.current_participants}
+                </div>
+                <div className="text-sm text-muted-foreground">Faltam</div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span>Progresso do Grupo</span>
+                <span>
+                  {activeParticipation.plan_groups.current_participants}/
+                  {activeParticipation.custom_plans.max_participants}
+                </span>
+              </div>
+              <Progress 
+                value={getProgressPercentage(
+                  activeParticipation.plan_groups.current_participants,
+                  activeParticipation.custom_plans.max_participants
+                )} 
+                className="h-3"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="text-muted-foreground">Valor da Entrada:</span>
+                <span className="ml-2 font-semibold">
+                  {formatCurrency(activeParticipation.custom_plans.entry_price)}
+                </span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Valor Total:</span>
+                <span className="ml-2 font-semibold">
+                  {formatCurrency(activeParticipation.custom_plans.total_price)}
+                </span>
+              </div>
+            </div>
+
+            {getStatusBadge(activeParticipation.contemplation_status, activeParticipation.payment_status)}
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="border-dashed border-2 border-muted">
+          <CardContent className="p-8 text-center">
+            <Gift className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+            <h3 className="text-lg font-semibold mb-2">Nenhum plano ativo</h3>
+            <p className="text-muted-foreground mb-4">
+              Participe de um plano para começar a formar seu grupo!
+            </p>
+            <Button>Escolher Plano</Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Dados de Indicação */}
+      {referralData && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Status das Indicações */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Minhas Indicações
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <div className="text-2xl font-bold text-blue-600">
+                    {referralData.totalReferrals}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Total</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-green-600">
+                    {referralData.confirmedReferrals}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Confirmadas</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-orange-600">
+                    {referralData.pendingReferrals}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Pendentes</div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Progresso Pessoal</span>
+                  <span>{referralData.confirmedReferrals}/9</span>
+                </div>
+                <Progress 
+                  value={Math.min((referralData.confirmedReferrals / 9) * 100, 100)} 
+                  className="h-2"
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Link de Indicação */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                Meu Link de Indicação
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="p-3 bg-muted rounded-lg">
+                <div className="text-sm font-medium text-muted-foreground mb-1">
+                  Seu código:
+                </div>
+                <div className="font-mono text-lg font-bold">
+                  {referralData.referralCode}
+                </div>
+              </div>
+
+              <Button onClick={copyReferralLink} className="w-full">
+                Copiar Link de Indicação
+              </Button>
+
+              <div className="text-xs text-muted-foreground">
+                Compartilhe este link para que amigos se juntem ao seu grupo
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Histórico de Participações */}
+      {participations.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              Histórico de Participações
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {participations.map((participation) => (
+                <div 
+                  key={participation.id}
+                  className="flex items-center justify-between p-4 border rounded-lg"
+                >
+                  <div className="flex-1">
+                    <h4 className="font-medium">{participation.custom_plans.name}</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Participou em: {new Date(participation.joined_at).toLocaleDateString('pt-BR')}
+                    </p>
+                    <p className="text-sm">
+                      Grupo: {participation.plan_groups.current_participants}/
+                      {participation.custom_plans.max_participants} participantes
+                    </p>
+                  </div>
+                  
+                  <div className="text-right">
+                    {getStatusBadge(participation.contemplation_status, participation.payment_status)}
+                    {participation.contemplation_date && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Contemplado em: {new Date(participation.contemplation_date).toLocaleDateString('pt-BR')}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+};
