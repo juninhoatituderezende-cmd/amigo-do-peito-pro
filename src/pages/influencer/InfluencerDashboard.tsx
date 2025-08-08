@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +16,7 @@ import { InfluencerProducts } from "@/components/influencer/InfluencerProducts";
 import { User, Instagram, CheckCircle, AlertCircle, Wallet, Megaphone } from "lucide-react";
 
 const InfluencerDashboard = () => {
+  const navigate = useNavigate();
   // Mock data - será substituído por dados reais do Supabase
   const influencerData = {
     name: "Amanda Ferreira",
@@ -119,7 +121,7 @@ const InfluencerDashboard = () => {
                   <Button 
                     variant="outline" 
                     className="w-full"
-                    onClick={() => window.location.href = "/influenciador/ferramentas"}
+                    onClick={() => navigate("/influenciador/ferramentas")}
                   >
                     Ver Materiais
                   </Button>

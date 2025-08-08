@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,14 +15,62 @@ import { PlanProgress } from "@/components/user/PlanProgress";
 import { User, Users, Bell, ShoppingCart, Settings, Share } from "lucide-react";
 
 const UserDashboard = () => {
-  const userData = {
-    name: "João Silva",
-    email: "joao@email.com",
+  const { user } = useAuth();
+  const [userData, setUserData] = useState({
+    name: user?.name || "Usuário",
+    email: user?.email || "",
     joinDate: "2024-01-10",
-    totalGroups: 3,
-    activeGroups: 1,
-    contemplatedGroups: 1
+    totalGroups: 0,
+    activeGroups: 0,
+    contemplatedGroups: 0
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (user) {
+      loadUserData();
+    }
+  }, [user]);
+
+  const loadUserData = async () => {
+    try {
+      setLoading(true);
+      
+      // Load user participations
+      const { data: participations } = await supabase
+        .from('plan_participants')
+        .select(`
+          *,
+          plan_groups(*)
+        `)
+        .eq('user_id', user?.id);
+
+      const totalGroups = participations?.length || 0;
+      const activeGroups = participations?.filter(p => p.contemplation_status === 'waiting').length || 0;
+      const contemplatedGroups = participations?.filter(p => p.contemplation_status === 'contemplated').length || 0;
+
+      setUserData({
+        name: user?.name || "Usuário",
+        email: user?.email || "",
+        joinDate: "2024-01-10", // Default date since created_at is not available in User type
+        totalGroups,
+        activeGroups,
+        contemplatedGroups
+      });
+    } catch (error) {
+      console.error('Error loading user data:', error);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-ap-orange" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -70,7 +120,7 @@ const UserDashboard = () => {
           <UserGroupsHistory />
         </TabsContent>
 
-        <TabsContent value="plans">
+        <TabsContent value="progress">
           <PlanProgress />
         </TabsContent>
 

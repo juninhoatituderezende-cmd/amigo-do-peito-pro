@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { User as SupabaseUser, Session } from "@supabase/supabase-js";
 
 // Types
-type UserRole = 'admin' | 'professional' | 'influencer' | 'user';
+export type UserRole = 'admin' | 'professional' | 'influencer' | 'user';
 
 interface User {
   id: string;
@@ -183,6 +183,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           });
         
         if (profError) console.warn('Erro ao criar perfil profissional:', profError);
+      }
+      
+      // Se for influenciador, criar registro na tabela influencers
+      if (data.user && role === 'influencer') {
+        const { error: influencerError } = await supabase
+          .from('influencers')
+          .insert({
+            user_id: data.user.id,
+            email: userData.email,
+            full_name: userData.full_name,
+            phone: userData.phone,
+            instagram: userData.instagram || '',
+            followers: userData.followers || '',
+            approved: false
+          });
+        
+        if (influencerError) console.warn('Erro ao criar perfil influenciador:', influencerError);
       }
 
       if (error) throw error;

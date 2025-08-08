@@ -73,7 +73,7 @@ const ProDashboard: React.FC = () => {
 
   useEffect(() => {
     if (!user || user.role !== 'professional') {
-      navigate('/profissional');
+      navigate('/profissional/login');
       return;
     }
     loadDashboardData();
@@ -87,7 +87,7 @@ const ProDashboard: React.FC = () => {
       const { data: profData, error: profError } = await supabase
         .from('professionals')
         .select('*')
-        .eq('id', user?.id)
+        .eq('user_id', user?.id)
         .single();
 
       if (profError) throw profError;

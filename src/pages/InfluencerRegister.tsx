@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "../contexts/AuthContext";
 
 const InfluencerRegister = () => {
   const [formData, setFormData] = useState({
@@ -27,6 +27,7 @@ const InfluencerRegister = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { register } = useAuth();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const target = e.target as HTMLInputElement;
@@ -99,35 +100,18 @@ const InfluencerRegister = () => {
     setLoading(true);
     
     try {
-      // Criar conta no Supabase Auth
-      const { data, error } = await supabase.auth.signUp({
+      const userData = {
+        full_name: formData.fullName,
         email: formData.email,
-        password: formData.password
-      });
+        phone: formData.phone,
+        instagram: instagramHandle,
+        followers: formData.followers,
+        niche: formData.niche,
+        description: formData.description,
+        approved: false
+      };
 
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      if (data.user) {
-        // Inserir dados na tabela influencers
-        const { error: insertError } = await supabase
-          .from('influencers')
-          .insert({
-            user_id: data.user.id,
-            full_name: formData.fullName,
-            email: formData.email,
-            phone: formData.phone,
-            instagram: instagramHandle,
-            followers: formData.followers,
-            approved: false // Sempre inicia como não aprovado
-          });
-
-        if (insertError) {
-          console.error('Insert error:', insertError);
-          throw new Error(insertError.message);
-        }
-      }
+      await register(formData.email, formData.password, userData, "influencer");
       
       toast({
         title: "Cadastro enviado com sucesso!",

@@ -32,11 +32,7 @@ const UserRegister = () => {
     }));
   };
 
-  const generateReferralCode = (name: string) => {
-    const cleanName = name.replace(/\s+/g, '').toUpperCase();
-    const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
-    return `${cleanName.slice(0, 4)}${randomSuffix}`;
-  };
+  // Referral code will be generated securely on the server side
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,11 +81,10 @@ const UserRegister = () => {
         full_name: formData.fullName,
         email: formData.email,
         phone: formData.phone,
-        referral_code: generateReferralCode(formData.fullName),
         referred_by: formData.referralCode || null
       };
 
-      await register(formData.email, formData.password, userData, null);
+      await register(formData.email, formData.password, userData, "user");
       
       toast({
         title: "Cadastro realizado com sucesso!",

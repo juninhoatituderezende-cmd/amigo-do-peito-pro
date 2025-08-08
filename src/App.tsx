@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -17,6 +16,7 @@ import AdminPagamentos from "./pages/admin/AdminPagamentos";
 import AdminMLM from "./pages/admin/AdminMLM";
 import AdminNotificacoes from "./pages/admin/AdminNotificacoes";
 import Register from "./pages/Register";
+import ProfessionalLogin from "./pages/ProfessionalLogin";
 import Confirmation from "./pages/Confirmation";
 import ProDashboard from "./pages/pro/ProDashboard";
 import ProProfile from "./pages/pro/ProProfile";
@@ -74,7 +74,39 @@ const App = () => (
             {/* User Routes */}
             <Route path="/usuario/cadastro" element={<UserRegister />} />
             <Route path="/usuario/login" element={<UserLogin />} />
-            <Route path="/usuario/dashboard" element={<UserDashboard />} />
+            <Route path="/usuario/dashboard" element={
+              <ProtectedRoute role="user">
+                <UserDashboard />
+              </ProtectedRoute>
+            } />
+            
+            {/* Professional Routes */}
+            <Route path="/profissional/login" element={<ProfessionalLogin />} />
+            <Route path="/profissional/dashboard" element={
+              <ProtectedRoute role="professional">
+                <ProDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/profissional/perfil" element={
+              <ProtectedRoute role="professional">
+                <ProProfile />
+              </ProtectedRoute>
+            } />
+            <Route path="/profissional/agenda" element={
+              <ProtectedRoute role="professional">
+                <ProSchedule />
+              </ProtectedRoute>
+            } />
+            <Route path="/profissional/financeiro" element={
+              <ProtectedRoute role="professional">
+                <ProFinances />
+              </ProtectedRoute>
+            } />
+            <Route path="/profissional/servicos" element={
+              <ProtectedRoute role="professional">
+                <ProServices />
+              </ProtectedRoute>
+            } />
             
             {/* Influencer Routes */}
             <Route path="/influenciador/cadastro" element={<InfluencerRegister />} />
@@ -102,11 +134,6 @@ const App = () => (
                 <AdminDashboard />
               </ProtectedRoute>
             } />
-            <Route path="/admin/mlm" element={
-              <ProtectedRoute role="admin">
-                <MLMAdmin />
-              </ProtectedRoute>
-            } />
             <Route path="/admin/usuarios" element={
               <ProtectedRoute role="admin">
                 <AdminUsuarios />
@@ -130,33 +157,6 @@ const App = () => (
             <Route path="/admin/notificacoes" element={
               <ProtectedRoute role="admin">
                 <AdminNotificacoes />
-              </ProtectedRoute>
-            } />
-            
-            {/* Professional Protected Routes */}
-            <Route path="/profissional" element={
-              <ProtectedRoute role="professional">
-                <ProDashboard />
-              </ProtectedRoute>
-            } />
-            <Route path="/profissional/perfil" element={
-              <ProtectedRoute role="professional">
-                <ProProfile />
-              </ProtectedRoute>
-            } />
-            <Route path="/profissional/agenda" element={
-              <ProtectedRoute role="professional">
-                <ProSchedule />
-              </ProtectedRoute>
-            } />
-            <Route path="/profissional/financeiro" element={
-              <ProtectedRoute role="professional">
-                <ProFinances />
-              </ProtectedRoute>
-            } />
-            <Route path="/profissional/servicos" element={
-              <ProtectedRoute role="professional">
-                <ProServices />
               </ProtectedRoute>
             } />
             
