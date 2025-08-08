@@ -1433,6 +1433,15 @@ export type Database = {
         Args: { referred_by: string }
         Returns: number
       }
+      check_rate_limit: {
+        Args: {
+          identifier: string
+          action_type: string
+          max_requests?: number
+          window_minutes?: number
+        }
+        Returns: boolean
+      }
       clean_old_logs: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -1537,8 +1546,16 @@ export type Database = {
         Args: { new_user_id: string; referral_code_used: string }
         Returns: boolean
       }
+      validate_financial_transaction: {
+        Args: { transaction_type: string; amount: number; user_id: string }
+        Returns: boolean
+      }
       validate_payment_amount: {
         Args: { payment_id: string; received_amount: number }
+        Returns: boolean
+      }
+      validate_webhook_security: {
+        Args: { payload: Json; signature: string; user_agent?: string }
         Returns: boolean
       }
     }

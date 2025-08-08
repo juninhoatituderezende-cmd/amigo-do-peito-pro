@@ -65,18 +65,65 @@ serve(async (req) => {
   try {
     logStep("Secure webhook received");
 
-    // Get raw body for signature verification
-    const rawBody = await req.text();
-    const webhookData = JSON.parse(rawBody);
-    
-    logStep("Webhook data received", { event: webhookData.event, paymentId: webhookData.payment?.id });
-
     // Initialize Supabase client
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
       { auth: { persistSession: false } }
     );
+
+    // SECURITY: Rate limiting check
+    const clientIp = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
+    const userAgent = req.headers.get("user-agent") || "unknown";
+    
+    // Check rate limit: max 10 webhook requests per minute per IP
+    const rateLimitCheck = await supabaseClient.rpc('check_rate_limit', {
+      identifier: clientIp,
+      action_type: 'webhook_request',
+      max_requests: 10,
+      window_minutes: 1
+    });
+
+    if (!rateLimitCheck.data) {
+      logStep("SECURITY: Rate limit exceeded", { ip: clientIp });
+      
+      await supabaseClient.from("security_events").insert({
+        event_type: "webhook_rate_limit_exceeded",
+        ip_address: clientIp,
+        user_agent: userAgent,
+        details: {
+          endpoint: "secure-pix-webhook",
+          timestamp: new Date().toISOString()
+        }
+      });
+
+      return new Response("Rate limit exceeded", { status: 429 });
+    }
+
+    // Get raw body for signature verification
+    const rawBody = await req.text();
+    
+    // SECURITY: Validate JSON format
+    let webhookData;
+    try {
+      webhookData = JSON.parse(rawBody);
+    } catch (parseError) {
+      logStep("SECURITY: Invalid JSON in webhook", parseError);
+      
+      await supabaseClient.from("security_events").insert({
+        event_type: "webhook_invalid_json",
+        ip_address: clientIp,
+        user_agent: userAgent,
+        details: {
+          error: parseError.message,
+          body_length: rawBody.length
+        }
+      });
+
+      return new Response("Invalid JSON", { status: 400 });
+    }
+    
+    logStep("Webhook data received", { event: webhookData.event, paymentId: webhookData.payment?.id });
 
     // SECURITY: Verify webhook signature
     const asaasWebhookSecret = Deno.env.get("ASAAS_WEBHOOK_SECRET");

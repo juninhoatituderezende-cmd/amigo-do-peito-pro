@@ -89,47 +89,180 @@ export function validatePaymentAmount(amount: number): boolean {
   return amount > 0 && amount <= 1000000 && Number.isFinite(amount);
 }
 
+// Enhanced Security Functions
+export function detectSQLInjection(input: string): boolean {
+  const sqlPatterns = [
+    /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|UNION|SCRIPT)\b)/gi,
+    /'(\s*OR\s*'|\s*AND\s*')/gi,
+    /(\s|^)(OR|AND)\s+\d+\s*=\s*\d+/gi,
+    /';(\s*--|\/\*)/gi,
+    /(EXEC|EXECUTE)\s*\(/gi
+  ];
+  
+  return sqlPatterns.some(pattern => pattern.test(input));
+}
+
+export function detectXSS(input: string): boolean {
+  const xssPatterns = [
+    /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
+    /javascript:/gi,
+    /on\w+\s*=/gi,
+    /<iframe/gi,
+    /<object/gi,
+    /<embed/gi,
+    /eval\s*\(/gi,
+    /expression\s*\(/gi
+  ];
+  
+  return xssPatterns.some(pattern => pattern.test(input));
+}
+
+export function validateFinancialAmount(amount: number): { isValid: boolean; error?: string } {
+  if (isNaN(amount) || amount <= 0) {
+    return { isValid: false, error: 'Amount must be a positive number' };
+  }
+  
+  if (amount < 0.01) {
+    return { isValid: false, error: 'Amount must be at least R$ 0.01' };
+  }
+  
+  if (amount > 50000) {
+    return { isValid: false, error: 'Amount exceeds maximum limit of R$ 50,000' };
+  }
+  
+  // Check for suspicious decimal precision (might indicate tampering)
+  const decimalPlaces = (amount.toString().split('.')[1] || '').length;
+  if (decimalPlaces > 2) {
+    return { isValid: false, error: 'Invalid amount precision' };
+  }
+  
+  return { isValid: true };
+}
+
+export function validateSecureInput(input: string, type: 'referral' | 'email' | 'name' | 'general' = 'general'): { isValid: boolean; sanitized: string; errors: string[] } {
+  const errors: string[] = [];
+  let sanitized = input.trim();
+  
+  // Check for malicious patterns
+  if (detectSQLInjection(sanitized)) {
+    errors.push('Input contains potentially malicious SQL patterns');
+  }
+  
+  if (detectXSS(sanitized)) {
+    errors.push('Input contains potentially malicious script patterns');
+  }
+  
+  // Length validation based on type
+  const maxLengths = {
+    referral: 16,
+    email: 254,
+    name: 100,
+    general: 500
+  };
+  
+  if (sanitized.length > maxLengths[type]) {
+    errors.push(`Input too long (max ${maxLengths[type]} characters)`);
+  }
+  
+  // Type-specific validation
+  switch (type) {
+    case 'referral':
+      if (!/^[A-Z0-9]{3,16}$/.test(sanitized)) {
+        errors.push('Referral code must be 3-16 alphanumeric characters');
+      }
+      break;
+    case 'email':
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(sanitized)) {
+        errors.push('Invalid email format');
+      }
+      break;
+    case 'name':
+      if (!/^[a-zA-ZÀ-ÿ\s]{2,100}$/.test(sanitized)) {
+        errors.push('Name must contain only letters and spaces');
+      }
+      break;
+  }
+  
+  // Sanitize the input
+  sanitized = sanitizeHtml(sanitized);
+  
+  return {
+    isValid: errors.length === 0,
+    sanitized,
+    errors
+  };
+}
+
 // Enhanced rate limiting with security features
 export function createSecureRateLimiter(windowMs: number, maxRequests: number) {
-  const requests = new Map<string, number[]>();
-  const blockedIPs = new Set<string>();
+  const requests = new Map<string, { times: number[]; blocked: boolean; blockUntil?: number }>();
   
   return {
     isAllowed: (identifier: string): boolean => {
-      // Check if IP is blocked
-      if (blockedIPs.has(identifier)) {
-        return false;
-      }
-
       const now = Date.now();
       const windowStart = now - windowMs;
       
-      if (!requests.has(identifier)) {
-        requests.set(identifier, []);
-      }
+      // Get existing requests for this identifier
+      const userRecord = requests.get(identifier) || { times: [], blocked: false };
       
-      const userRequests = requests.get(identifier)!;
-      const validRequests = userRequests.filter(time => time > windowStart);
-      
-      if (validRequests.length >= maxRequests) {
-        // Block IP after exceeding limits multiple times
-        if (validRequests.length > maxRequests * 2) {
-          blockedIPs.add(identifier);
-        }
+      // Check if still blocked
+      if (userRecord.blocked && userRecord.blockUntil && now < userRecord.blockUntil) {
         return false;
       }
       
-      validRequests.push(now);
-      requests.set(identifier, validRequests);
+      // Reset if block period expired
+      if (userRecord.blocked && userRecord.blockUntil && now >= userRecord.blockUntil) {
+        userRecord.blocked = false;
+        userRecord.times = [];
+      }
+      
+      // Filter out old requests
+      const recentRequests = userRecord.times.filter(time => time > windowStart);
+      
+      // Check if under limit
+      if (recentRequests.length >= maxRequests) {
+        // Block for extended period on repeated violations
+        userRecord.blocked = true;
+        userRecord.blockUntil = now + (windowMs * 5); // Block for 5x the window
+        requests.set(identifier, userRecord);
+        return false;
+      }
+      
+      // Add current request
+      recentRequests.push(now);
+      userRecord.times = recentRequests;
+      requests.set(identifier, userRecord);
+      
       return true;
     },
     
     blockIP: (identifier: string): void => {
-      blockedIPs.add(identifier);
+      const now = Date.now();
+      requests.set(identifier, {
+        times: Array(maxRequests).fill(now),
+        blocked: true,
+        blockUntil: now + (windowMs * 10) // Extended block
+      });
     },
     
     unblockIP: (identifier: string): void => {
-      blockedIPs.delete(identifier);
+      requests.delete(identifier);
+    },
+    
+    getStatus: (identifier: string) => {
+      const record = requests.get(identifier);
+      if (!record) return { blocked: false, requests: 0 };
+      
+      const now = Date.now();
+      const windowStart = now - windowMs;
+      const recentRequests = record.times.filter(time => time > windowStart);
+      
+      return {
+        blocked: record.blocked && record.blockUntil ? now < record.blockUntil : false,
+        requests: recentRequests.length,
+        maxRequests,
+        timeUntilReset: record.blockUntil ? Math.max(0, record.blockUntil - now) : 0
+      };
     }
   };
 }
