@@ -135,6 +135,10 @@ interface CategoryStats {
 
 const AdminDashboard = () => {
   const { toast } = useToast();
+  
+  const handleGoogleSetup = () => {
+    window.open('/google-setup', '_blank');
+  };
   const [activeTab, setActiveTab] = useState("overview");
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
@@ -1447,7 +1451,7 @@ const AdminDashboard = () => {
                 <CardHeader>
                   <CardTitle>Relatórios Disponíveis</CardTitle>
                 </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <Button variant="outline" className="h-20 flex-col">
                     <span className="text-lg mb-1">📊</span>
                     Relatório Financeiro
@@ -1459,6 +1463,14 @@ const AdminDashboard = () => {
                   <Button variant="outline" className="h-20 flex-col">
                     <span className="text-lg mb-1">⭐</span>
                     Relatório de Performance
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="h-20 flex-col bg-blue-50 border-blue-200 hover:bg-blue-100"
+                    onClick={() => window.open('/google-setup', '_blank')}
+                  >
+                    <span className="text-lg mb-1">🔑</span>
+                    <span className="text-xs text-center">Configurar Google OAuth</span>
                   </Button>
                 </CardContent>
               </Card>

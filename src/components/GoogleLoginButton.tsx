@@ -22,14 +22,24 @@ export const GoogleLoginButton = ({ className, children }: GoogleLoginButtonProp
       
       if (result.error) {
         console.error('❌ Google login failed:', result.error);
-        toast({
-          title: "Erro no login",
-          description: "Falha ao fazer login com Google. Tente novamente.",
-          variant: "destructive",
-        });
+        
+        // Verificar se é um erro de provider não habilitado
+        if (result.error.message?.includes('provider is not enabled') || result.error.message?.includes('unsupported provider')) {
+          toast({
+            title: "Google Login não configurado",
+            description: "O login com Google ainda não foi configurado no sistema. Use o login tradicional por enquanto.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Erro no login",
+            description: result.error.message || "Falha ao fazer login com Google. Tente novamente.",
+            variant: "destructive",
+          });
+        }
       } else {
         console.log('✅ Google login successful');
-        // O redirecionamento será tratado automaticamente
+        // O redirecionamento será tratado automaticamente pelo OAuth flow
       }
     } catch (error: any) {
       console.error('❌ Google login error:', error);

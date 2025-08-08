@@ -45,16 +45,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
+        console.log('🔄 Auth state changed:', { event, userId: session?.user?.id });
         setSession(session);
         setSupabaseUser(session?.user ?? null);
         
-        // Defer profile loading to prevent deadlocks
-        if (session?.user) {
+        // Handle OAuth sign-in events
+        if (event === 'SIGNED_IN' && session?.user) {
+          // Check if this is an OAuth login (Google, etc.)
+          const isOAuthLogin = session.user.app_metadata?.providers?.includes('google');
+          
+          if (isOAuthLogin) {
+            console.log('🚀 OAuth login detected, checking for existing profile...');
+            
+            // Check if profile exists
+            const { data: existingProfile } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', session.user.id)
+              .single();
+            
+            if (!existingProfile) {
+              console.log('✨ Creating new profile for OAuth user...');
+              
+              // Create profile automatically for OAuth users as regular users
+              await supabase
+                .from('profiles')
+                .insert({
+                  id: session.user.id,
+                  email: session.user.email,
+                  full_name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || '',
+                  role: 'user', // Default role for OAuth signups
+                });
+              
+              console.log('✅ Profile created successfully for OAuth user');
+            }
+          }
+          
+          // Defer profile loading to prevent deadlocks
           setTimeout(() => {
             loadUserProfile(session.user.id);
           }, 0);
-        } else {
+        } else if (!session?.user) {
           setUser(null);
         }
         setLoading(false);
@@ -149,10 +181,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Google OAuth error:', error);
+        throw error;
+      }
 
       console.log('✅ Google OAuth initiated successfully');
       return { data, error: null };
