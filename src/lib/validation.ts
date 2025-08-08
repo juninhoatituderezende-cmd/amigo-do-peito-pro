@@ -72,27 +72,64 @@ export function validateEmail(email: string): boolean {
   return emailRegex.test(email) && email.length <= 255;
 }
 
-// Rate limiting helper
-export function createRateLimiter(windowMs: number, maxRequests: number) {
+// Enhanced input validation functions
+export function validateReferralCode(code: string): boolean {
+  // SECURITY: Validate referral code format
+  const referralRegex = /^REF[A-F0-9]{16}$/i;
+  return referralRegex.test(code) && code.length === 19;
+}
+
+export function sanitizeReferralInput(input: string): string {
+  // Remove all non-alphanumeric characters except allowed ones
+  return input.replace(/[^A-Za-z0-9]/g, '').toUpperCase().substring(0, 19);
+}
+
+export function validatePaymentAmount(amount: number): boolean {
+  // SECURITY: Validate payment amounts
+  return amount > 0 && amount <= 1000000 && Number.isFinite(amount);
+}
+
+// Enhanced rate limiting with security features
+export function createSecureRateLimiter(windowMs: number, maxRequests: number) {
   const requests = new Map<string, number[]>();
+  const blockedIPs = new Set<string>();
   
-  return (identifier: string): boolean => {
-    const now = Date.now();
-    const windowStart = now - windowMs;
+  return {
+    isAllowed: (identifier: string): boolean => {
+      // Check if IP is blocked
+      if (blockedIPs.has(identifier)) {
+        return false;
+      }
+
+      const now = Date.now();
+      const windowStart = now - windowMs;
+      
+      if (!requests.has(identifier)) {
+        requests.set(identifier, []);
+      }
+      
+      const userRequests = requests.get(identifier)!;
+      const validRequests = userRequests.filter(time => time > windowStart);
+      
+      if (validRequests.length >= maxRequests) {
+        // Block IP after exceeding limits multiple times
+        if (validRequests.length > maxRequests * 2) {
+          blockedIPs.add(identifier);
+        }
+        return false;
+      }
+      
+      validRequests.push(now);
+      requests.set(identifier, validRequests);
+      return true;
+    },
     
-    if (!requests.has(identifier)) {
-      requests.set(identifier, []);
+    blockIP: (identifier: string): void => {
+      blockedIPs.add(identifier);
+    },
+    
+    unblockIP: (identifier: string): void => {
+      blockedIPs.delete(identifier);
     }
-    
-    const userRequests = requests.get(identifier)!;
-    const validRequests = userRequests.filter(time => time > windowStart);
-    
-    if (validRequests.length >= maxRequests) {
-      return false;
-    }
-    
-    validRequests.push(now);
-    requests.set(identifier, validRequests);
-    return true;
   };
 }

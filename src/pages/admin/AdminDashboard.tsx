@@ -48,6 +48,7 @@ import { PaymentManagement } from "@/components/admin/PaymentManagement";
 import { CustomPlansManager } from "@/components/admin/CustomPlansManager";
 import { AdminManagementPanel } from "@/components/admin/AdminManagementPanel";
 import { ContemplationValidation } from "@/components/admin/ContemplationValidation";
+import { SecurityDashboard } from "@/components/admin/SecurityDashboard";
 
 interface Professional {
   id: string;
@@ -637,7 +638,7 @@ const AdminDashboard = () => {
 
           <Tabs defaultValue="overview" onValueChange={setActiveTab} className="space-y-6">
             <div className="border-b">
-              <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-9 h-auto p-1 bg-gray-100">
+              <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-10 h-auto p-1 bg-gray-100">
                 <TabsTrigger value="overview" className="text-sm py-3">
                   <BarChart3 className="h-4 w-4 mr-2" />
                   Visão Geral
@@ -681,6 +682,10 @@ const AdminDashboard = () => {
                 <TabsTrigger value="contemplations" className="text-sm py-3">
                   <CheckCircle className="h-4 w-4 mr-2" />
                   Contemplações
+                </TabsTrigger>
+                <TabsTrigger value="security" className="text-sm py-3">
+                  <AlertTriangle className="h-4 w-4 mr-2" />
+                  Segurança
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -1332,6 +1337,11 @@ const AdminDashboard = () => {
             {/* VALIDAÇÃO DE CONTEMPLAÇÕES */}
             <TabsContent value="contemplations" className="space-y-6">
               <ContemplationValidation />
+            </TabsContent>
+
+            {/* DASHBOARD DE SEGURANÇA */}
+            <TabsContent value="security" className="space-y-6">
+              <SecurityDashboard />
             </TabsContent>
           </Tabs>
         </div>

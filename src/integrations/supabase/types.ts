@@ -71,6 +71,36 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_invitations: {
+        Row: {
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string | null
+          token: string
+          used_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          token?: string
+          used_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          token?: string
+          used_at?: string | null
+        }
+        Relationships: []
+      }
       contemplations: {
         Row: {
           contemplated_at: string
@@ -779,6 +809,44 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_validations: {
+        Row: {
+          amount_verified: boolean
+          asaas_payment_id: string
+          id: string
+          payment_id: string
+          processed_at: string
+          signature_verified: boolean
+          webhook_signature: string | null
+        }
+        Insert: {
+          amount_verified?: boolean
+          asaas_payment_id: string
+          id?: string
+          payment_id: string
+          processed_at?: string
+          signature_verified?: boolean
+          webhook_signature?: string | null
+        }
+        Update: {
+          amount_verified?: boolean
+          asaas_payment_id?: string
+          id?: string
+          payment_id?: string
+          processed_at?: string
+          signature_verified?: boolean
+          webhook_signature?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_validations_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           amount: number
@@ -1006,6 +1074,36 @@ export type Database = {
           updated_at?: string
           user_id?: string
           video_url?: string | null
+        }
+        Relationships: []
+      }
+      security_events: {
+        Row: {
+          created_at: string
+          details: Json | null
+          event_type: string
+          id: string
+          ip_address: unknown | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          details?: Json | null
+          event_type: string
+          id?: string
+          ip_address?: unknown | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          details?: Json | null
+          event_type?: string
+          id?: string
+          ip_address?: unknown | null
+          user_agent?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -1244,6 +1342,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      generate_secure_referral_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_referrals_by_status: {
         Args: { filter_status?: string }
         Returns: {
@@ -1292,8 +1394,22 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      log_security_event: {
+        Args: {
+          event_type: string
+          user_id?: string
+          ip_address?: unknown
+          user_agent?: string
+          details?: Json
+        }
+        Returns: undefined
+      }
       process_mlm_referral: {
         Args: { new_user_id: string; referral_code_used: string }
+        Returns: boolean
+      }
+      validate_payment_amount: {
+        Args: { payment_id: string; received_amount: number }
         Returns: boolean
       }
     }

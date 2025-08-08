@@ -69,11 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const authUser = (await supabase.auth.getUser()).data.user;
       console.log('Auth user:', authUser);
       
-      // Check if user is admin based on user_metadata.is_admin, email or admin_configs table
-      const isAdminByMetadata = authUser?.user_metadata?.is_admin === true;
-      const isAdminByEmail = email === "admin@amigodopeito.com" || email.includes("admin");
-      
-      // Check admin_configs table
+      // SECURITY FIX: Only check admin_configs table - no hardcoded emails or metadata
       const { data: adminConfig } = await supabase
         .from('admin_configs')
         .select('is_active')
@@ -82,7 +78,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       const isAdminByConfig = adminConfig?.is_active === true;
       
-      if (isAdminByMetadata || isAdminByEmail || isAdminByConfig) {
+      if (isAdminByConfig) {
         console.log('Setting admin user');
         setUser({
           id,
@@ -268,10 +264,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error(error.message);
       }
 
-      // Verify admin permissions - check user_metadata.is_admin or email
-      if (data.user?.user_metadata?.is_admin !== true && 
-          data.user?.email !== "admin@amigodopeito.com" && 
-          !data.user?.email?.includes("admin")) {
+      // SECURITY FIX: Verify admin permissions only through admin_configs table
+      const { data: adminConfig } = await supabase
+        .from('admin_configs')
+        .select('is_active')
+        .eq('admin_email', data.user.email!)
+        .single();
+      
+      if (!adminConfig?.is_active) {
         await supabase.auth.signOut();
         throw new Error("Usuário não possui permissões administrativas");
       }
