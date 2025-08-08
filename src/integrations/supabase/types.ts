@@ -1793,6 +1793,15 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      create_admin_user: {
+        Args: {
+          p_email: string
+          p_password: string
+          p_full_name?: string
+          p_phone?: string
+        }
+        Returns: Json
+      }
       create_influencer_commission: {
         Args: {
           p_influencer_id: string
