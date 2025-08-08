@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 interface GoogleLoginButtonProps {
   className?: string;
@@ -19,64 +20,35 @@ export const GoogleLoginButton = ({ className, children }: GoogleLoginButtonProp
     setLoading(true);
     
     try {
-      console.log('🚀 Initiating Google login...');
+      console.log('🚀 Iniciando login com Google OAuth...');
       
-      // Para demonstração, simular o comportamento direto sem validações
       toast({
         title: "Conectando com Google...",
-        description: "Simulando autenticação direta (OAuth em produção será instantâneo)",
+        description: "Abrindo tela de seleção de conta Google",
         variant: "default",
       });
       
-      // Simular delay mínimo da autenticação Google
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Simular dados realistas que viriam do Google OAuth
-      const userEmail = `cliente.real.${Date.now()}@gmail.com`; // Email único para evitar conflitos
-      const mockUserData = {
-        email: userEmail,
-        name: "Cliente Real",
-        provider: "google",
-        id: "google_" + Date.now()
-      };
-      
-      console.log('✅ Google login successful:', mockUserData);
-      
-      // Criar conta diretamente no Supabase (simular o que o OAuth faria)
-      const result = await register(
-        mockUserData.email,
-        "google_oauth_user", // senha temporária
-        {
-          name: mockUserData.name,
-          full_name: mockUserData.name,
-          provider: 'google'
-        },
-        'user' // role de cliente/usuário comum
-      );
+      // Login OAuth real com Google via Supabase
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/usuario/dashboard`
+        }
+      });
 
-      if (result.error) {
-        throw new Error(result.error.message);
+      if (error) {
+        throw new Error(error.message);
       }
 
-      toast({
-        title: "Login realizado com sucesso! 🎉",
-        description: "Redirecionando para seu painel...",
-        variant: "default",
-      });
-      
-      // Redirecionamento direto para dashboard (sem confirmações)
-      setTimeout(() => {
-        window.location.href = '/usuario/dashboard';
-      }, 1000);
+      console.log('✅ Google OAuth iniciado com sucesso');
       
     } catch (error: any) {
-      console.error('❌ Google login error:', error);
+      console.error('❌ Erro no login Google OAuth:', error);
       toast({
         title: "Erro no login",
-        description: error.message || "Erro inesperado. Tente novamente.",
+        description: error.message || "Erro ao conectar com Google. Tente novamente.",
         variant: "destructive",
       });
-    } finally {
       setLoading(false);
     }
   };
