@@ -52,8 +52,9 @@ import { CustomPlansManager } from "@/components/admin/CustomPlansManager";
 import { AdminManagementPanel } from "@/components/admin/AdminManagementPanel";
 import { ContemplationValidation } from "@/components/admin/ContemplationValidation";
 import { SecurityDashboard } from "@/components/admin/SecurityDashboard";
-import { ProductManager } from "@/components/admin/ProductManager";
-import { MarketplaceManager } from "@/components/admin/MarketplaceManager";
+import { ServicePlansManager } from "@/components/admin/ServicePlansManager";
+import { UserMarketplaceManager } from "@/components/admin/UserMarketplaceManager";
+import { ProfessionalMarketplaceManager } from "@/components/admin/ProfessionalMarketplaceManager";
 import { SalesManager } from "@/components/admin/SalesManager";
 
 interface Professional {
@@ -693,13 +694,17 @@ const AdminDashboard = () => {
                   <AlertTriangle className="h-4 w-4 mr-2" />
                   Segurança
                 </TabsTrigger>
-                <TabsTrigger value="products" className="text-sm py-3">
+                <TabsTrigger value="service-plans" className="text-sm py-3">
                   <Package className="h-4 w-4 mr-2" />
-                  Produtos
+                  Planos de Serviço
                 </TabsTrigger>
-                <TabsTrigger value="marketplace" className="text-sm py-3">
+                <TabsTrigger value="user-marketplace" className="text-sm py-3">
                   <Store className="h-4 w-4 mr-2" />
-                  Marketplace
+                  Marketplace Usuário
+                </TabsTrigger>
+                <TabsTrigger value="professional-marketplace" className="text-sm py-3">
+                  <Store className="h-4 w-4 mr-2" />
+                  Marketplace Profissional
                 </TabsTrigger>
                 <TabsTrigger value="sales" className="text-sm py-3">
                   <ShoppingCart className="h-4 w-4 mr-2" />
@@ -1362,14 +1367,19 @@ const AdminDashboard = () => {
               <SecurityDashboard />
             </TabsContent>
 
-            {/* GERENCIAR PRODUTOS */}
-            <TabsContent value="products" className="space-y-6">
-              <ProductManager />
+            {/* PLANOS DE SERVIÇO */}
+            <TabsContent value="service-plans" className="space-y-6">
+              <ServicePlansManager />
             </TabsContent>
 
-            {/* GERENCIAR MARKETPLACE */}
-            <TabsContent value="marketplace" className="space-y-6">
-              <MarketplaceManager />
+            {/* MARKETPLACE USUÁRIO */}
+            <TabsContent value="user-marketplace" className="space-y-6">
+              <UserMarketplaceManager />
+            </TabsContent>
+
+            {/* MARKETPLACE PROFISSIONAL */}
+            <TabsContent value="professional-marketplace" className="space-y-6">
+              <ProfessionalMarketplaceManager />
             </TabsContent>
 
             {/* LISTA DE VENDAS */}

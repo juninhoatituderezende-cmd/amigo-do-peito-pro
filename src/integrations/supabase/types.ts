@@ -538,6 +538,7 @@ export type Database = {
           name: string
           percentual_entrada: number
           professional_id: string | null
+          target_audience: string
           updated_at: string
           valor_total: number
         }
@@ -555,6 +556,7 @@ export type Database = {
           name: string
           percentual_entrada?: number
           professional_id?: string | null
+          target_audience?: string
           updated_at?: string
           valor_total: number
         }
@@ -572,6 +574,7 @@ export type Database = {
           name?: string
           percentual_entrada?: number
           professional_id?: string | null
+          target_audience?: string
           updated_at?: string
           valor_total?: number
         }

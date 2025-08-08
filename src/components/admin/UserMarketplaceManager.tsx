@@ -9,10 +9,10 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Upload, Edit, Trash2, Eye } from "lucide-react";
+import { Plus, Edit, Trash2, ShoppingCart } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
-interface Product {
+interface UserProduct {
   id: string;
   name: string;
   description: string;
@@ -21,17 +21,17 @@ interface Product {
   percentual_entrada: number;
   image_url: string;
   ativo: boolean;
+  target_audience: string;
   created_at: string;
   approved: boolean;
-  professional_id?: string;
 }
 
-export const ProductManager: React.FC = () => {
+export const UserMarketplaceManager: React.FC = () => {
   const { toast } = useToast();
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<UserProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [editingProduct, setEditingProduct] = useState<UserProduct | null>(null);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -39,17 +39,18 @@ export const ProductManager: React.FC = () => {
     description: '',
     category: '',
     valor_total: 0,
-    percentual_entrada: 10,
+    percentual_entrada: 0,
     image_url: '',
     ativo: true
   });
 
   const categories = [
-    'Odontologia',
-    'Tatuagem',
-    'Estética',
-    'Consultas',
-    'Procedimentos',
+    'Acessórios',
+    'Produtos de Beleza',
+    'Suplementos',
+    'Consultorias',
+    'Cursos Online',
+    'Produtos Físicos',
     'Outros'
   ];
 
@@ -62,15 +63,16 @@ export const ProductManager: React.FC = () => {
       const { data, error } = await supabase
         .from('marketplace_products')
         .select('*')
+        .eq('target_audience', 'user')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       setProducts(data || []);
     } catch (error) {
-      console.error('Error loading products:', error);
+      console.error('Error loading user marketplace products:', error);
       toast({
         title: "Erro",
-        description: "Erro ao carregar produtos",
+        description: "Erro ao carregar produtos do marketplace de usuários",
         variant: "destructive"
       });
     } finally {
@@ -88,6 +90,7 @@ export const ProductManager: React.FC = () => {
 
       const productData = {
         ...formData,
+        target_audience: 'user',
         created_by: user.id,
         approved: true, // Admin products are auto-approved
         approved_by: user.id,
@@ -123,7 +126,7 @@ export const ProductManager: React.FC = () => {
       loadProducts();
       setIsDialogOpen(false);
     } catch (error: any) {
-      console.error('Error saving product:', error);
+      console.error('Error saving user marketplace product:', error);
       toast({
         title: "Erro",
         description: error.message || "Erro ao salvar produto",
@@ -161,7 +164,7 @@ export const ProductManager: React.FC = () => {
     }
   };
 
-  const handleEdit = (product: Product) => {
+  const handleEdit = (product: UserProduct) => {
     setEditingProduct(product);
     setFormData({
       name: product.name,
@@ -181,7 +184,7 @@ export const ProductManager: React.FC = () => {
       description: '',
       category: '',
       valor_total: 0,
-      percentual_entrada: 10,
+      percentual_entrada: 0,
       image_url: '',
       ativo: true
     });
@@ -196,13 +199,18 @@ export const ProductManager: React.FC = () => {
   };
 
   if (loading) {
-    return <div className="flex justify-center p-8">Carregando produtos...</div>;
+    return <div className="flex justify-center p-8">Carregando produtos para usuários...</div>;
   }
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Gerenciar Produtos</h2>
+        <div>
+          <h2 className="text-2xl font-bold">Marketplace para Usuários</h2>
+          <p className="text-sm text-muted-foreground">
+            Produtos que usuários podem comprar com saldo de reembolso ou pagamento direto
+          </p>
+        </div>
         
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
@@ -215,7 +223,7 @@ export const ProductManager: React.FC = () => {
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>
-                {editingProduct ? 'Editar Produto' : 'Cadastrar Novo Produto'}
+                {editingProduct ? 'Editar Produto' : 'Cadastrar Novo Produto para Usuários'}
               </DialogTitle>
             </DialogHeader>
             
@@ -258,7 +266,7 @@ export const ProductManager: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="valor_total">Valor Total (R$)</Label>
+                  <Label htmlFor="valor_total">Preço (R$)</Label>
                   <Input
                     id="valor_total"
                     type="number"
@@ -270,14 +278,14 @@ export const ProductManager: React.FC = () => {
                 </div>
                 
                 <div>
-                  <Label htmlFor="percentual_entrada">Percentual de Entrada (%)</Label>
+                  <Label htmlFor="percentual_entrada">Desconto com Saldo (%)</Label>
                   <Input
                     id="percentual_entrada"
                     type="number"
                     step="0.1"
                     value={formData.percentual_entrada}
-                    onChange={(e) => setFormData({...formData, percentual_entrada: parseFloat(e.target.value) || 10})}
-                    required
+                    onChange={(e) => setFormData({...formData, percentual_entrada: parseFloat(e.target.value) || 0})}
+                    placeholder="0 = sem desconto"
                   />
                 </div>
               </div>
@@ -338,9 +346,7 @@ export const ProductManager: React.FC = () => {
                   <Badge variant={product.ativo ? "default" : "secondary"}>
                     {product.ativo ? "Ativo" : "Inativo"}
                   </Badge>
-                  <Badge variant={product.approved ? "default" : "destructive"}>
-                    {product.approved ? "Aprovado" : "Pendente"}
-                  </Badge>
+                  <Badge variant="outline">Usuários</Badge>
                 </div>
               </div>
             </CardHeader>
@@ -350,9 +356,11 @@ export const ProductManager: React.FC = () => {
                 <p className="text-sm text-gray-600 line-clamp-2">{product.description}</p>
                 <p className="text-sm"><strong>Categoria:</strong> {product.category}</p>
                 <p className="text-lg font-bold text-green-600">{formatCurrency(product.valor_total)}</p>
-                <p className="text-sm text-gray-500">
-                  Entrada: {product.percentual_entrada}% ({formatCurrency(product.valor_total * (product.percentual_entrada / 100))})
-                </p>
+                {product.percentual_entrada > 0 && (
+                  <p className="text-sm text-blue-600">
+                    Desconto com saldo: {product.percentual_entrada}%
+                  </p>
+                )}
                 
                 <div className="flex justify-end space-x-2 pt-4">
                   <Button size="sm" variant="outline" onClick={() => handleEdit(product)}>
@@ -371,9 +379,10 @@ export const ProductManager: React.FC = () => {
       {products.length === 0 && (
         <Card>
           <CardContent className="p-8 text-center">
-            <p className="text-gray-500">Nenhum produto cadastrado ainda.</p>
+            <ShoppingCart className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+            <p className="text-gray-500">Nenhum produto para usuários cadastrado ainda.</p>
             <p className="text-sm text-gray-400 mt-2">
-              Clique em "Cadastrar Produto" para adicionar o primeiro produto.
+              Clique em "Cadastrar Produto" para adicionar o primeiro produto do marketplace de usuários.
             </p>
           </CardContent>
         </Card>
