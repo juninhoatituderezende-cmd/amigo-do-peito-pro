@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { GoogleLoginButton } from "@/components/GoogleLoginButton";
 import { GoogleCredentialsSetup } from "@/components/GoogleCredentialsSetup";
 import { AdvancedOAuthDiagnostic } from "@/components/AdvancedOAuthDiagnostic";
+import { CriticalConfigVerification } from "@/components/CriticalConfigVerification";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Separator } from "@/components/ui/separator";
@@ -96,6 +97,7 @@ const QuickLogin = () => {
             
             {showDebug && (
               <div className="mt-6 space-y-6">
+                <CriticalConfigVerification />
                 <GoogleCredentialsSetup />
                 <AdvancedOAuthDiagnostic />
               </div>
