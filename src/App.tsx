@@ -174,9 +174,6 @@ const App = () => (
             {/* Google OAuth Setup Page */}
             <Route path="/google-setup" element={<GoogleSetup />} />
             
-            {/* Google Signup Complete Page */}
-            <Route path="/google-complete" element={<GoogleSignupComplete />} />
-            
             {/* Catch-all route */}
             <Route path="*" element={<NotFound />} />
           </Routes>
