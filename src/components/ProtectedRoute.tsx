@@ -19,13 +19,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, role }) => {
     } else if (!loading && user && user.role !== role) {
       // User doesn't have the required role
       if (user.role === "admin") {
-        navigate("/admin");
+        navigate("/admin/dashboard");
       } else if (user.role === "professional") {
-        navigate("/profissional");
+        navigate("/profissional/dashboard");
       } else if (user.role === "influencer") {
         navigate("/influenciador/dashboard");
       } else {
-        navigate("/");
+        navigate("/usuario/dashboard");
       }
     }
     

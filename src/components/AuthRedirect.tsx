@@ -12,9 +12,9 @@ export const AuthRedirect = () => {
       
       // Redirect based on user role
       if (user.role === 'admin') {
-        navigate('/admin');
+        navigate('/admin/dashboard');
       } else if (user.role === 'professional') {
-        navigate('/profissional');
+        navigate('/profissional/dashboard');
       } else if (user.role === 'influencer') {
         navigate('/influenciador/dashboard');
       } else {
