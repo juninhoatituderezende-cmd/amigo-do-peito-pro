@@ -37,7 +37,10 @@ import {
   PieChart as PieChartIcon,
   Target,
   Zap,
-  Upload
+  Upload,
+  Package,
+  Store,
+  ShoppingCart
 } from "lucide-react";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
@@ -49,6 +52,9 @@ import { CustomPlansManager } from "@/components/admin/CustomPlansManager";
 import { AdminManagementPanel } from "@/components/admin/AdminManagementPanel";
 import { ContemplationValidation } from "@/components/admin/ContemplationValidation";
 import { SecurityDashboard } from "@/components/admin/SecurityDashboard";
+import { ProductManager } from "@/components/admin/ProductManager";
+import { MarketplaceManager } from "@/components/admin/MarketplaceManager";
+import { SalesManager } from "@/components/admin/SalesManager";
 
 interface Professional {
   id: string;
@@ -638,7 +644,7 @@ const AdminDashboard = () => {
 
           <Tabs defaultValue="overview" onValueChange={setActiveTab} className="space-y-6">
             <div className="border-b">
-              <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-10 h-auto p-1 bg-gray-100">
+              <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-13 h-auto p-1 bg-gray-100">
                 <TabsTrigger value="overview" className="text-sm py-3">
                   <BarChart3 className="h-4 w-4 mr-2" />
                   Visão Geral
@@ -686,6 +692,18 @@ const AdminDashboard = () => {
                 <TabsTrigger value="security" className="text-sm py-3">
                   <AlertTriangle className="h-4 w-4 mr-2" />
                   Segurança
+                </TabsTrigger>
+                <TabsTrigger value="products" className="text-sm py-3">
+                  <Package className="h-4 w-4 mr-2" />
+                  Produtos
+                </TabsTrigger>
+                <TabsTrigger value="marketplace" className="text-sm py-3">
+                  <Store className="h-4 w-4 mr-2" />
+                  Marketplace
+                </TabsTrigger>
+                <TabsTrigger value="sales" className="text-sm py-3">
+                  <ShoppingCart className="h-4 w-4 mr-2" />
+                  Vendas
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -1342,6 +1360,21 @@ const AdminDashboard = () => {
             {/* DASHBOARD DE SEGURANÇA */}
             <TabsContent value="security" className="space-y-6">
               <SecurityDashboard />
+            </TabsContent>
+
+            {/* GERENCIAR PRODUTOS */}
+            <TabsContent value="products" className="space-y-6">
+              <ProductManager />
+            </TabsContent>
+
+            {/* GERENCIAR MARKETPLACE */}
+            <TabsContent value="marketplace" className="space-y-6">
+              <MarketplaceManager />
+            </TabsContent>
+
+            {/* LISTA DE VENDAS */}
+            <TabsContent value="sales" className="space-y-6">
+              <SalesManager />
             </TabsContent>
           </Tabs>
         </div>

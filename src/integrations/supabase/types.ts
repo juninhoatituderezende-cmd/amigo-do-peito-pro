@@ -523,6 +523,133 @@ export type Database = {
         }
         Relationships: []
       }
+      marketplace_products: {
+        Row: {
+          approved: boolean
+          approved_at: string | null
+          approved_by: string | null
+          ativo: boolean
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          image_url: string | null
+          name: string
+          percentual_entrada: number
+          professional_id: string | null
+          updated_at: string
+          valor_total: number
+        }
+        Insert: {
+          approved?: boolean
+          approved_at?: string | null
+          approved_by?: string | null
+          ativo?: boolean
+          category: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          name: string
+          percentual_entrada?: number
+          professional_id?: string | null
+          updated_at?: string
+          valor_total: number
+        }
+        Update: {
+          approved?: boolean
+          approved_at?: string | null
+          approved_by?: string | null
+          ativo?: boolean
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          name?: string
+          percentual_entrada?: number
+          professional_id?: string | null
+          updated_at?: string
+          valor_total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_products_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketplace_sales: {
+        Row: {
+          buyer_email: string
+          buyer_id: string
+          buyer_name: string
+          comissao_influencer: number | null
+          comissao_profissional: number | null
+          created_at: string
+          id: string
+          influencer_code: string | null
+          influencer_id: string | null
+          payment_id: string | null
+          payment_method: string | null
+          product_id: string
+          status: string
+          updated_at: string
+          valor_entrada_pago: number
+          valor_total: number
+        }
+        Insert: {
+          buyer_email: string
+          buyer_id: string
+          buyer_name: string
+          comissao_influencer?: number | null
+          comissao_profissional?: number | null
+          created_at?: string
+          id?: string
+          influencer_code?: string | null
+          influencer_id?: string | null
+          payment_id?: string | null
+          payment_method?: string | null
+          product_id: string
+          status?: string
+          updated_at?: string
+          valor_entrada_pago: number
+          valor_total: number
+        }
+        Update: {
+          buyer_email?: string
+          buyer_id?: string
+          buyer_name?: string
+          comissao_influencer?: number | null
+          comissao_profissional?: number | null
+          created_at?: string
+          id?: string
+          influencer_code?: string | null
+          influencer_id?: string | null
+          payment_id?: string | null
+          payment_method?: string | null
+          product_id?: string
+          status?: string
+          updated_at?: string
+          valor_entrada_pago?: number
+          valor_total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_sales_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       materials: {
         Row: {
           category: string
