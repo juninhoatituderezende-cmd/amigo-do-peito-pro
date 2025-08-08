@@ -290,7 +290,7 @@ export function CustomPlansManager() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 min-h-screen overflow-y-auto">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Planos Customizados</h2>
@@ -375,15 +375,15 @@ export function CustomPlansManager() {
           </div>
         </TabsContent>
 
-        <TabsContent value="create" className="space-y-4">
-          <Card>
+        <TabsContent value="create" className="space-y-4 overflow-y-auto max-h-screen">
+          <Card className="max-w-4xl mx-auto">
             <CardHeader>
               <CardTitle>Criar Novo Plano</CardTitle>
               <CardDescription>
                 Configure um novo plano personalizado
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-6 max-h-none overflow-y-auto pb-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Nome do Plano *</Label>

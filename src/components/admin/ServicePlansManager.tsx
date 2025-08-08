@@ -212,7 +212,7 @@ export const ServicePlansManager: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 min-h-screen overflow-y-auto">
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold">Planos de Serviço (para Usuários)</h2>
@@ -229,14 +229,14 @@ export const ServicePlansManager: React.FC = () => {
             </Button>
           </DialogTrigger>
           
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingPlan ? 'Editar Plano de Serviço' : 'Cadastrar Novo Plano de Serviço'}
               </DialogTitle>
             </DialogHeader>
             
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4 overflow-y-auto">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="name">Nome do Plano</Label>
