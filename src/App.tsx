@@ -26,8 +26,6 @@ import ProServices from "./pages/pro/ProServices";
 import UserRegister from "./pages/UserRegister";
 import UserLogin from "./pages/UserLogin";
 import CreateAdmin from "./pages/CreateAdmin";
-import GoogleSetup from "./pages/GoogleSetup";
-import GoogleSignupComplete from "./pages/GoogleSignupComplete";
 import QuickLogin from "./pages/QuickLogin";
 import UserDashboard from "./pages/user/UserDashboard";
 import UserMarketplace from "./pages/user/UserMarketplace";
@@ -169,10 +167,6 @@ const App = () => (
                 <AdminNotificacoes />
               </ProtectedRoute>
             } />
-            
-            
-            {/* Google OAuth Setup Page */}
-            <Route path="/google-setup" element={<GoogleSetup />} />
             
             {/* Catch-all route */}
             <Route path="*" element={<NotFound />} />

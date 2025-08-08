@@ -32,8 +32,9 @@ export const GoogleLoginButton = ({ className, children }: GoogleLoginButtonProp
       await new Promise(resolve => setTimeout(resolve, 1500));
       
       // Simular dados realistas que viriam do Google OAuth
+      const userEmail = `cliente.real.${Date.now()}@gmail.com`; // Email único para evitar conflitos
       const mockUserData = {
-        email: "cliente.real@gmail.com", // Email mais realista
+        email: userEmail,
         name: "Cliente Real",
         provider: "google",
         id: "google_" + Date.now()
