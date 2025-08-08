@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Edit, Trash2, Wrench } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { SecureFileUpload } from "@/components/SecureFileUpload";
 
 interface ProfessionalProduct {
   id: string;
@@ -293,14 +294,25 @@ export const ProfessionalMarketplaceManager: React.FC = () => {
               </div>
 
               <div>
-                <Label htmlFor="image_url">URL da Imagem</Label>
-                <Input
-                  id="image_url"
-                  type="url"
-                  value={formData.image_url}
-                  onChange={(e) => setFormData({...formData, image_url: e.target.value})}
-                  placeholder="https://..."
+                <Label>Imagem do Produto</Label>
+                <SecureFileUpload
+                  type="image"
+                  category="marketplace_products"
+                  onUploadComplete={(result) => {
+                    setFormData({...formData, image_url: result.url});
+                    toast({
+                      title: "Upload concluído",
+                      description: "Imagem enviada com sucesso!"
+                    });
+                  }}
+                  label="Selecionar Imagem"
+                  description="Clique ou arraste uma imagem para fazer upload"
                 />
+                {formData.image_url && (
+                  <div className="mt-2">
+                    <img src={formData.image_url} alt="Preview" className="w-20 h-20 object-cover rounded" />
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center space-x-2">
