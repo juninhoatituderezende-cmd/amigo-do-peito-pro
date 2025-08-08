@@ -228,12 +228,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setLoading(true);
       
-      console.log('🚀 Starting Google OAuth login...');
+      const currentUrl = window.location.origin;
+      const redirectUrl = `${currentUrl}/`;
+      
+      console.log('🚀 Starting Google OAuth login...', {
+        currentUrl,
+        redirectUrl,
+        userAgent: navigator.userAgent,
+        timestamp: new Date().toISOString()
+      });
       
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/`,
+          redirectTo: redirectUrl,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
@@ -242,14 +250,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (error) {
-        console.error('❌ Google OAuth error:', error);
+        console.error('❌ Google OAuth error:', {
+          message: error.message,
+          details: error,
+          redirectUrl,
+          timestamp: new Date().toISOString()
+        });
         throw error;
       }
 
-      console.log('✅ Google OAuth initiated successfully');
+      console.log('✅ Google OAuth initiated successfully', {
+        data,
+        redirectUrl,
+        timestamp: new Date().toISOString()
+      });
+      
       return { data, error: null };
     } catch (error: any) {
-      console.error('❌ Google OAuth failed:', error);
+      console.error('❌ Google OAuth failed:', {
+        message: error.message,
+        error,
+        stackTrace: error.stack,
+        timestamp: new Date().toISOString()
+      });
       return { data: null, error };
     } finally {
       setLoading(false);

@@ -15,9 +15,37 @@ const Index = () => {
   const { toast } = useToast();
 
   useEffect(() => {
+    console.log('🔍 Index useEffect - Auth State:', { 
+      loading, 
+      hasSession: !!session, 
+      hasUser: !!user,
+      userRole: user?.role,
+      currentUrl: window.location.href,
+      currentPath: window.location.pathname,
+      searchParams: window.location.search
+    });
+
+    // Detectar se está retornando do OAuth (tem parâmetros específicos)
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasOAuthParams = urlParams.has('code') || urlParams.has('access_token') || urlParams.has('token_type');
+    
+    if (hasOAuthParams) {
+      console.log('🔄 OAuth callback detected in URL params:', {
+        hasCode: urlParams.has('code'),
+        hasAccessToken: urlParams.has('access_token'),
+        hasTokenType: urlParams.has('token_type'),
+        allParams: Object.fromEntries(urlParams.entries())
+      });
+    }
+
     // Detectar se o usuário acabou de fazer login via OAuth
     if (!loading && session && user) {
-      console.log('🔄 OAuth return detected, redirecting user...');
+      console.log('🔄 OAuth return detected, user authenticated:', {
+        userId: user.id,
+        userEmail: user.email,
+        userRole: user.role,
+        sessionPresent: !!session
+      });
       
       // Mostrar toast de sucesso
       toast({
@@ -28,30 +56,39 @@ const Index = () => {
       
       // Redirecionar baseado no role do usuário
       setTimeout(() => {
-        switch (user.role) {
-          case 'admin':
-            navigate('/admin');
-            break;
-          case 'professional':
-            navigate('/profissional/dashboard');
-            break;
-          case 'influencer':
-            navigate('/influenciador/dashboard');
-            break;
-          default:
-            navigate('/usuario/dashboard');
-        }
+        const targetRoute = user.role === 'admin' ? '/admin' :
+                          user.role === 'professional' ? '/profissional/dashboard' :
+                          user.role === 'influencer' ? '/influenciador/dashboard' :
+                          '/usuario/dashboard';
+        
+        console.log('🎯 Redirecting to:', targetRoute);
+        navigate(targetRoute);
       }, 1500);
+    }
+
+    // Log quando há problemas
+    if (!loading && hasOAuthParams && !session) {
+      console.error('❌ OAuth params detected but no session created');
     }
   }, [loading, session, user, navigate, toast]);
 
-  // Show loading state during OAuth callback processing
-  if (loading) {
+  // Show loading state during OAuth callback processing or if URL has OAuth params
+  const urlParams = new URLSearchParams(window.location.search);
+  const hasOAuthParams = urlParams.has('code') || urlParams.has('access_token') || urlParams.has('token_type');
+  
+  if (loading || hasOAuthParams) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ap-orange mx-auto mb-4"></div>
-          <p className="text-lg">Processando login...</p>
+          <p className="text-lg">
+            {hasOAuthParams ? 'Processando retorno do Google...' : 'Processando login...'}
+          </p>
+          {hasOAuthParams && (
+            <p className="text-sm text-gray-600 mt-2">
+              Aguarde enquanto validamos sua autenticação
+            </p>
+          )}
         </div>
       </div>
     );

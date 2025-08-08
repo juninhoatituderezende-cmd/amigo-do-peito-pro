@@ -142,11 +142,77 @@ export const OAuthDebug = () => {
 
           {/* URLs importantes */}
           <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-            <h4 className="font-medium text-blue-800 mb-2">📋 URLs de configuração:</h4>
-            <div className="text-sm text-blue-700 space-y-1">
-              <div><strong>Redirect URI:</strong> https://rczygmsaybzcrmdxxyge.supabase.co/auth/v1/callback</div>
-              <div><strong>JavaScript Origins:</strong> https://rczygmsaybzcrmdxxyge.supabase.co</div>
-              <div><strong>Preview URL:</strong> {window.location.origin}</div>
+            <h4 className="font-medium text-blue-800 mb-2">📋 URLs que devem estar configuradas no Google Cloud:</h4>
+            <div className="text-sm text-blue-700 space-y-2">
+              <div>
+                <strong>Authorized JavaScript Origins:</strong>
+                <div className="bg-white p-2 rounded border font-mono text-xs mt-1 space-y-1">
+                  <div>https://rczygmsaybzcrmdxxyge.supabase.co</div>
+                  <div>{window.location.origin}</div>
+                </div>
+              </div>
+              <div>
+                <strong>Authorized Redirect URIs:</strong>
+                <div className="bg-white p-2 rounded border font-mono text-xs mt-1">
+                  https://rczygmsaybzcrmdxxyge.supabase.co/auth/v1/callback
+                </div>
+              </div>
+            </div>
+            
+            <div className="mt-3 p-3 bg-yellow-100 border border-yellow-300 rounded">
+              <p className="text-xs text-yellow-800">
+                <strong>⚠️ IMPORTANTE:</strong> Se você está testando, adicione <code>{window.location.origin}</code> às "Authorized JavaScript Origins" no Google Cloud Console.
+              </p>
+            </div>
+          </div>
+
+          {/* URLs do Supabase */}
+          <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+            <h4 className="font-medium text-green-800 mb-2">⚙️ Configuração no Supabase:</h4>
+            <div className="text-sm text-green-700 space-y-2">
+              <div>
+                <strong>Site URL (em Auth Settings):</strong>
+                <div className="bg-white p-2 rounded border font-mono text-xs mt-1">
+                  {window.location.origin}
+                </div>
+              </div>
+              <div>
+                <strong>Redirect URLs (adicionar):</strong>
+                <div className="bg-white p-2 rounded border font-mono text-xs mt-1">
+                  {window.location.origin}/**
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Links diretos para configuração */}
+          <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+            <h4 className="font-medium text-purple-800 mb-2">🔗 Links diretos para configuração:</h4>
+            <div className="space-y-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => window.open('https://supabase.com/dashboard/project/rczygmsaybzcrmdxxyge/auth/url-configuration', '_blank')}
+                className="w-full text-xs"
+              >
+                📐 Supabase - URL Configuration
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => window.open('https://supabase.com/dashboard/project/rczygmsaybzcrmdxxyge/auth/providers', '_blank')}
+                className="w-full text-xs"
+              >
+                🔑 Supabase - OAuth Providers
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => window.open('https://console.cloud.google.com/apis/credentials', '_blank')}
+                className="w-full text-xs"
+              >
+                ☁️ Google Cloud - Credentials
+              </Button>
             </div>
           </div>
 
@@ -157,7 +223,8 @@ export const OAuthDebug = () => {
               <li>□ Google Cloud Console configurado</li>
               <li>□ Client ID e Secret inseridos no Supabase</li>
               <li>□ Provider Google habilitado no Supabase</li>
-              <li>□ URLs de redirect configuradas</li>
+              <li>□ URLs de redirect configuradas corretamente</li>
+              <li>□ {window.location.origin} adicionado nas JavaScript Origins</li>
             </ul>
           </div>
         </CardContent>
