@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { CheckCircle, User, Mail } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function GoogleSignupComplete() {
   const [userData, setUserData] = useState({
@@ -16,26 +17,43 @@ export default function GoogleSignupComplete() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { register } = useAuth();
 
   const handleComplete = async () => {
     setLoading(true);
     
     try {
-      // Simular finalização do cadastro
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
+      // Simular criação de conta com dados do Google + telefone opcional
+      const result = await register(
+        userData.email,
+        "google_oauth_user", // senha temporária para usuários Google
+        {
+          name: userData.name,
+          phone: userData.phone,
+          provider: 'google'
+        },
+        'user' // role padrão para clientes
+      );
+
+      if (result.error) {
+        throw new Error(result.error.message);
+      }
+
       toast({
         title: "Conta criada com sucesso! 🎉",
-        description: "Bem-vindo à Amigo do Peito! Você já está logado.",
+        description: "Bem-vindo à Amigo do Peito! Redirecionando...",
         variant: "default",
       });
       
-      // Redirecionar para dashboard do usuário
-      window.location.href = '/usuario/dashboard';
-    } catch (error) {
+      // Pequeno delay para mostrar toast e depois redirecionar
+      setTimeout(() => {
+        window.location.href = '/usuario/dashboard';
+      }, 1500);
+      
+    } catch (error: any) {
       toast({
         title: "Erro",
-        description: "Falha ao finalizar cadastro. Tente novamente.",
+        description: error.message || "Falha ao finalizar cadastro. Tente novamente.",
         variant: "destructive",
       });
     } finally {
@@ -43,13 +61,44 @@ export default function GoogleSignupComplete() {
     }
   };
 
-  const handleSkip = () => {
-    toast({
-      title: "Conta criada! 🎉",
-      description: "Você pode adicionar o telefone depois no seu perfil.",
-      variant: "default",
-    });
-    window.location.href = '/usuario/dashboard';
+  const handleSkip = async () => {
+    setLoading(true);
+    
+    try {
+      // Criar conta sem telefone
+      const result = await register(
+        userData.email,
+        "google_oauth_user",
+        {
+          name: userData.name,
+          provider: 'google'
+        },
+        'user'
+      );
+
+      if (result.error) {
+        throw new Error(result.error.message);
+      }
+
+      toast({
+        title: "Conta criada! 🎉",
+        description: "Redirecionando para seu painel...",
+        variant: "default",
+      });
+      
+      setTimeout(() => {
+        window.location.href = '/usuario/dashboard';
+      }, 1500);
+      
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error.message || "Falha ao criar conta. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

@@ -40,7 +40,6 @@ import MLMDashboard from "./pages/MLMDashboard";
 import MLMSuccess from "./pages/MLMSuccess";
 import MLMCancel from "./pages/MLMCancel";
 import { AuthProvider } from "./contexts/AuthContext";
-import { AuthRedirect } from "./components/AuthRedirect";
 import ProtectedRoute from "./components/ProtectedRoute";
 import About from "./pages/About";
 import Todos from "./pages/Todos";
@@ -66,7 +65,6 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <AuthRedirect />
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<Index />} />
