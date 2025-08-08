@@ -2,7 +2,7 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { GoogleLoginButton } from "@/components/GoogleLoginButton";
-import { OAuthDebug } from "@/components/OAuthDebug";
+import { AdvancedOAuthDiagnostic } from "@/components/AdvancedOAuthDiagnostic";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Separator } from "@/components/ui/separator";
@@ -95,7 +95,7 @@ const QuickLogin = () => {
             
             {showDebug && (
               <div className="mt-6">
-                <OAuthDebug />
+                <AdvancedOAuthDiagnostic />
               </div>
             )}
           </div>
