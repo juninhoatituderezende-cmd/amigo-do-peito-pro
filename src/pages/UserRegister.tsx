@@ -84,14 +84,25 @@ const UserRegister = () => {
         referred_by: formData.referralCode || null
       };
 
-      await register(formData.email, formData.password, userData, "user");
+      console.log('🚀 Initiating user registration...');
+      const result = await register(formData.email, formData.password, userData, "user");
       
-      toast({
-        title: "Cadastro realizado com sucesso!",
-        description: "Bem-vindo à Amigo do Peito! Você pode fazer login agora.",
-      });
-
-      navigate("/usuario/login");
+      console.log('📋 Registration result:', result);
+      
+      if (result.error?.requiresConfirmation) {
+        toast({
+          title: "Cadastro realizado com sucesso!",
+          description: result.error.message,
+          variant: "default",
+        });
+        navigate("/usuario/login");
+      } else if (result.data?.user) {
+        toast({
+          title: "Cadastro realizado com sucesso!",
+          description: "Bem-vindo à Amigo do Peito! Você pode fazer login agora.",
+        });
+        navigate("/usuario/login");
+      }
     } catch (error: any) {
       console.error("Registration error:", error);
       toast({

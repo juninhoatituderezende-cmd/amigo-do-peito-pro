@@ -28,9 +28,29 @@ const UserLogin = () => {
     
     try {
       console.log('🚀 Calling login function...');
-      await login(formData.email, formData.password, null);
-      console.log('✅ Login successful');
-      // Redirect will be handled by AuthRedirect component in the main app
+      const result = await login(formData.email, formData.password, null);
+      
+      if (result.error) {
+        console.error('❌ Login failed:', result.error);
+        
+        // Verificar se é problema de email não confirmado
+        if (result.error.message?.includes('Email not confirmed')) {
+          toast({
+            title: "Email não confirmado",
+            description: "Verifique seu email e clique no link de confirmação antes de fazer login.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Erro no login",
+            description: result.error.message || "Credenciais inválidas. Verifique seu email e senha.",
+            variant: "destructive",
+          });
+        }
+      } else {
+        console.log('✅ Login successful');
+        // Redirect will be handled by AuthRedirect component in the main app
+      }
     } catch (error: any) {
       console.error('❌ Login failed:', error);
       toast({

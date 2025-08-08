@@ -146,13 +146,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   ) => {
     try {
       setLoading(true);
-      const redirectUrl = `${window.location.origin}/`;
+      
+      console.log('🚀 Starting registration process...');
+      console.log('📧 Email:', email);
+      console.log('👤 Role:', role);
+      console.log('📝 User data:', userData);
 
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: redirectUrl,
           data: {
             full_name: userData.full_name || userData.name,
             phone: userData.phone,
@@ -160,6 +163,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
       });
+
+      console.log('📤 Registration response:', { data, error });
 
       // Se for profissional, criar registro na tabela professionals
       if (error) throw error;
@@ -203,6 +208,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (error) throw error;
+
+      // Verificar se o usuário foi criado com sucesso
+      if (data.user) {
+        console.log('✅ User created successfully:', data.user.id);
+        
+        // Se o email não foi confirmado automaticamente, mostrar mensagem específica
+        if (!data.user.email_confirmed_at && !data.session) {
+          console.log('📧 Email confirmation required');
+          return { 
+            data, 
+            error: { 
+              message: 'Conta criada com sucesso! Verifique seu email para ativar a conta.',
+              requiresConfirmation: true 
+            } 
+          };
+        }
+        
+        console.log('🎉 Registration completed successfully');
+      }
 
       // O perfil será criado automaticamente pelo trigger
       return { data, error: null };
