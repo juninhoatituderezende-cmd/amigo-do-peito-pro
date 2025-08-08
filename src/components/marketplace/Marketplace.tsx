@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,9 +17,9 @@ import {
   ExternalLink
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCredits } from "@/hooks/useCredits";
+import { useMarketplaceProducts } from "@/hooks/useOptimizedData";
 
 interface Product {
   id: string;
@@ -53,8 +53,6 @@ const CATEGORIES = [
 ];
 
 export const Marketplace = () => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -65,51 +63,41 @@ export const Marketplace = () => {
   const { user } = useAuth();
   const { balance, useCredits: useUserCredits } = useCredits();
 
-  useEffect(() => {
-    loadProducts();
-  }, []);
+  // Usar hook otimizado com cache para produtos
+  const { data: products = [], loading } = useMarketplaceProducts();
 
-  const loadProducts = async () => {
-    try {
-      // Use services table as substitute for products since products table doesn't exist
-      const { data: servicesData, error } = await supabase
-        .from('services')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      // Transform services into product format
-      const mockProducts = (servicesData || []).map(service => ({
-        id: service.id,
-        title: service.name,
-        description: service.description,
-        category: service.category,
-        full_price: service.price,
-        down_payment: service.price * 0.3, // 30% down payment
-        image_url: '',
-        external_link: undefined,
-        visibility: 'both' as const,
-        professional_id: service.professional_id,
-        professional_name: 'Profissional',
-        professional_avatar: undefined,
-        is_active: true,
-        created_at: service.created_at,
-        total_sales: Math.floor(Math.random() * 50),
-        rating: Math.round((4 + Math.random()) * 10) / 10
-      }));
-
-      setProducts(mockProducts);
-    } catch (error: any) {
-      toast({
-        title: "Erro ao carregar produtos",
-        description: error.message,
-        variant: "destructive"
+  // Filtrar e ordenar produtos com useMemo para otimização
+  const filteredAndSortedProducts = useMemo(() => {
+    return products
+      .filter(product => {
+        const matchesSearch = product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                             product.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                             (product.professional_name || '').toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
+        
+        // Filtro de visibilidade baseado no tipo de usuário
+        const matchesVisibility = product.visibility === 'both' || 
+                                 product.visibility === userType ||
+                                 (userType === 'professional'); // Profissionais veem tudo
+        
+        // Esconder insumos técnicos para clientes
+        const hideForClients = userType === 'client' && product.category === 'insumos-tecnicos';
+        
+        return matchesSearch && matchesCategory && matchesVisibility && !hideForClients;
+      })
+      .sort((a, b) => {
+        switch (sortBy) {
+          case "popular":
+            return (b.total_sales || 0) - (a.total_sales || 0);
+          case "price_low":
+            return a.down_payment - b.down_payment;
+          case "price_high":
+            return b.down_payment - a.down_payment;
+          default: // newest
+            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        }
       });
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [products, searchQuery, selectedCategory, sortBy, userType]);
 
   const handlePurchase = (product: Product) => {
     // Se é produto dropshipping, redireciona para link externo
@@ -159,36 +147,6 @@ export const Marketplace = () => {
   };
 
   const userType = getUserType();
-
-  const filteredAndSortedProducts = products
-    .filter(product => {
-      const matchesSearch = product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           product.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           (product.professional_name || '').toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
-      
-      // Filtro de visibilidade baseado no tipo de usuário
-      const matchesVisibility = product.visibility === 'both' || 
-                               product.visibility === userType ||
-                               (userType === 'professional'); // Profissionais veem tudo
-      
-      // Esconder insumos técnicos para clientes
-      const hideForClients = userType === 'client' && product.category === 'insumos-tecnicos';
-      
-      return matchesSearch && matchesCategory && matchesVisibility && !hideForClients;
-    })
-    .sort((a, b) => {
-      switch (sortBy) {
-        case "popular":
-          return (b.total_sales || 0) - (a.total_sales || 0);
-        case "price_low":
-          return a.down_payment - b.down_payment;
-        case "price_high":
-          return b.down_payment - a.down_payment;
-        default: // newest
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-      }
-    });
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
