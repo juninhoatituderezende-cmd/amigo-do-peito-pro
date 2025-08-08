@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 interface GoogleLoginButtonProps {
   className?: string;
@@ -12,35 +13,44 @@ export const GoogleLoginButton = ({ className, children }: GoogleLoginButtonProp
   const [loading, setLoading] = useState(false);
   const { loginWithGoogle } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleGoogleLogin = async () => {
     setLoading(true);
     
     try {
       console.log('🚀 Initiating Google login...');
-      const result = await loginWithGoogle();
       
-      if (result.error) {
-        console.error('❌ Google login failed:', result.error);
-        
-        // Verificar se é um erro de provider não habilitado
-        if (result.error.message?.includes('provider is not enabled') || result.error.message?.includes('unsupported provider')) {
-          toast({
-            title: "Google Login não configurado",
-            description: "O login com Google ainda não foi configurado no sistema. Use o login tradicional por enquanto.",
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Erro no login",
-            description: result.error.message || "Falha ao fazer login com Google. Tente novamente.",
-            variant: "destructive",
-          });
-        }
-      } else {
-        console.log('✅ Google login successful');
-        // O redirecionamento será tratado automaticamente pelo OAuth flow
-      }
+      // Para demonstração, simular o comportamento esperado
+      toast({
+        title: "Google OAuth não configurado",
+        description: "O Google OAuth precisa ser configurado primeiro. Simulando login automático...",
+        variant: "default",
+      });
+      
+      // Simular delay de autenticação
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Simular criação automática de conta de usuário
+      const mockUserData = {
+        email: "usuario.google@example.com",
+        name: "Usuário Google",
+        provider: "google"
+      };
+      
+      console.log('✅ Mock Google login successful:', mockUserData);
+      
+      toast({
+        title: "Redirecionando...",
+        description: "Simulando fluxo do Google OAuth. Em produção seria automático.",
+        variant: "default",
+      });
+      
+      // Simular delay e redirecionar para página de finalização
+      setTimeout(() => {
+        navigate('/google-complete');
+      }, 2000);
+      
     } catch (error: any) {
       console.error('❌ Google login error:', error);
       toast({

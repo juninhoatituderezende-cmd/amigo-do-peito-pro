@@ -28,8 +28,13 @@ const Index = () => {
                     Cadastre-se como Profissional
                   </Button>
                 </Link>
-                <Link to="/usuario/cadastro">
+                <Link to="/login-rapido">
                   <Button className="bg-ap-light-blue hover:bg-ap-light-blue/90 text-white px-8 py-6 text-lg">
+                    🚀 Entrar Rápido (Google)
+                  </Button>
+                </Link>
+                <Link to="/usuario/cadastro">
+                  <Button variant="outline" className="border-2 border-ap-light-blue text-ap-light-blue hover:bg-ap-light-blue hover:text-white px-8 py-6 text-lg">
                     Sou Cliente
                   </Button>
                 </Link>

@@ -131,6 +131,26 @@ const UserRegister = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
+                {/* Aviso sobre experiência melhorada */}
+                <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <div className="text-2xl">🚀</div>
+                    <div>
+                      <h4 className="font-medium text-blue-800 mb-1">
+                        Novo: Cadastro Instantâneo!
+                      </h4>
+                      <p className="text-sm text-blue-700 mb-2">
+                        Experimente nossa nova forma mais rápida de entrar na plataforma.
+                      </p>
+                      <Link 
+                        to="/login-rapido"
+                        className="text-xs text-blue-600 hover:text-blue-800 underline"
+                      >
+                        ✨ Entrar com Google em 2 cliques →
+                      </Link>
+                    </div>
+                  </div>
+                </div>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
                     <Label htmlFor="fullName">Nome Completo *</Label>

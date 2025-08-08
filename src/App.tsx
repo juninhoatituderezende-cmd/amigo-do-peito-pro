@@ -27,6 +27,8 @@ import UserRegister from "./pages/UserRegister";
 import UserLogin from "./pages/UserLogin";
 import CreateAdmin from "./pages/CreateAdmin";
 import GoogleSetup from "./pages/GoogleSetup";
+import GoogleSignupComplete from "./pages/GoogleSignupComplete";
+import QuickLogin from "./pages/QuickLogin";
 import UserDashboard from "./pages/user/UserDashboard";
 import UserMarketplace from "./pages/user/UserMarketplace";
 import InfluencerRegister from "./pages/InfluencerRegister";
@@ -77,6 +79,7 @@ const App = () => (
             {/* User Routes */}
             <Route path="/usuario/cadastro" element={<UserRegister />} />
             <Route path="/usuario/login" element={<UserLogin />} />
+            <Route path="/login-rapido" element={<QuickLogin />} />
             <Route path="/create-admin" element={<CreateAdmin />} />
             <Route path="/usuario/dashboard" element={
               <ProtectedRoute role="user">
@@ -172,6 +175,9 @@ const App = () => (
             
             {/* Google OAuth Setup Page */}
             <Route path="/google-setup" element={<GoogleSetup />} />
+            
+            {/* Google Signup Complete Page */}
+            <Route path="/google-complete" element={<GoogleSignupComplete />} />
             
             {/* Catch-all route */}
             <Route path="*" element={<NotFound />} />
