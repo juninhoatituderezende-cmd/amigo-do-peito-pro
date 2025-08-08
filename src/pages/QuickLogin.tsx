@@ -2,6 +2,7 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { GoogleLoginButton } from "@/components/GoogleLoginButton";
+import { GoogleCredentialsSetup } from "@/components/GoogleCredentialsSetup";
 import { AdvancedOAuthDiagnostic } from "@/components/AdvancedOAuthDiagnostic";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -87,14 +88,15 @@ const QuickLogin = () => {
                     onClick={() => setShowDebug(!showDebug)}
                     className="text-xs"
                   >
-                    {showDebug ? '🔼 Ocultar Debug' : '🔍 Debug OAuth'}
+                    {showDebug ? '🔼 Ocultar Setup' : '🔧 Setup OAuth'}
                   </Button>
                 </div>
               </CardContent>
             </Card>
             
             {showDebug && (
-              <div className="mt-6">
+              <div className="mt-6 space-y-6">
+                <GoogleCredentialsSetup />
                 <AdvancedOAuthDiagnostic />
               </div>
             )}
