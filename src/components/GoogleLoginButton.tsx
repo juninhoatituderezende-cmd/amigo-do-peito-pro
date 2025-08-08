@@ -32,7 +32,7 @@ export const GoogleLoginButton = ({ className, children }: GoogleLoginButtonProp
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/usuario/dashboard`
+          redirectTo: `${window.location.origin}/`
         }
       });
 

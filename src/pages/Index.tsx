@@ -1,12 +1,61 @@
 
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
+  const navigate = useNavigate();
+  const { user, session, loading } = useAuth();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    // Detectar se o usuário acabou de fazer login via OAuth
+    if (!loading && session && user) {
+      console.log('🔄 OAuth return detected, redirecting user...');
+      
+      // Mostrar toast de sucesso
+      toast({
+        title: "Login realizado com sucesso!",
+        description: "Redirecionando para seu dashboard...",
+        variant: "default",
+      });
+      
+      // Redirecionar baseado no role do usuário
+      setTimeout(() => {
+        switch (user.role) {
+          case 'admin':
+            navigate('/admin');
+            break;
+          case 'professional':
+            navigate('/profissional/dashboard');
+            break;
+          case 'influencer':
+            navigate('/influenciador/dashboard');
+            break;
+          default:
+            navigate('/usuario/dashboard');
+        }
+      }, 1500);
+    }
+  }, [loading, session, user, navigate, toast]);
+
+  // Show loading state during OAuth callback processing
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ap-orange mx-auto mb-4"></div>
+          <p className="text-lg">Processando login...</p>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
