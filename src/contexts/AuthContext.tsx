@@ -22,6 +22,7 @@ interface AuthContextType {
   supabaseUser: SupabaseUser | null;
   session: Session | null;
   login: (email: string, password: string, role?: UserRole) => Promise<{ data: any; error: any }>;
+  loginWithGoogle: () => Promise<{ data: any; error: any }>;
   register: (
     email: string, 
     password: string, 
@@ -132,6 +133,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { data, error: null };
     } catch (error: any) {
       console.error('Erro no login:', error);
+      return { data: null, error };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loginWithGoogle = async () => {
+    try {
+      setLoading(true);
+      
+      console.log('🚀 Starting Google OAuth login...');
+      
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/`,
+        }
+      });
+
+      if (error) throw error;
+
+      console.log('✅ Google OAuth initiated successfully');
+      return { data, error: null };
+    } catch (error: any) {
+      console.error('❌ Google OAuth failed:', error);
       return { data: null, error };
     } finally {
       setLoading(false);
@@ -296,7 +322,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         user, 
         supabaseUser, 
         session, 
-        login, 
+        login,
+        loginWithGoogle, 
         register, 
         adminLogin, 
         logout, 
