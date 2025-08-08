@@ -19,7 +19,7 @@ export function CreateAdminUser() {
       const { data, error } = await supabase.functions.invoke("create-admin-user", {
         body: {
           email: "charlesink1996@gmail.com",
-          password: "Arthur123#",
+          password: "Arthur1234!",
           full_name: "Charles Administrador",
           phone: null
         }
@@ -82,7 +82,7 @@ export function CreateAdminUser() {
                 <Input 
                   id="password"
                   type="password"
-                  value="Arthur123#"
+                  value="Arthur1234!"
                   disabled
                   className="bg-gray-50"
                 />
