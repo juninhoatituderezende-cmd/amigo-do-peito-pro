@@ -1,26 +1,35 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import type { User as SupabaseUser } from "@supabase/supabase-js";
+import type { User as SupabaseUser, Session } from "@supabase/supabase-js";
 
-type UserRole = "admin" | "professional" | "influencer" | null;
+// Types
+type UserRole = 'admin' | 'professional' | 'influencer' | 'user';
 
 interface User {
   id: string;
-  name: string;
   email: string;
+  full_name?: string;
+  name?: string; // Compatibility with existing code
+  phone?: string;
   role: UserRole;
-  category?: string;
-  approved?: boolean;
+  avatar_url?: string;
+  category?: string; // For professionals
+  approved?: boolean; // For professionals/influencers
 }
 
 interface AuthContextType {
   user: User | null;
   supabaseUser: SupabaseUser | null;
-  login: (email: string, password: string, role: UserRole) => Promise<void>;
-  register: (email: string, password: string, userData: any, role: UserRole) => Promise<void>;
-  adminLogin: (email: string, password: string) => Promise<void>;
-  logout: () => void;
+  session: Session | null;
+  login: (email: string, password: string, role?: UserRole) => Promise<{ data: any; error: any }>;
+  register: (
+    email: string, 
+    password: string, 
+    userData: any, 
+    role?: UserRole
+  ) => Promise<{ data: any; error: any }>;
+  adminLogin: (email: string, password: string) => Promise<{ data: any; error: any }>;
+  logout: () => Promise<void>;
   loading: boolean;
 }
 
@@ -29,31 +38,37 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [supabaseUser, setSupabaseUser] = useState<SupabaseUser | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
-    const getInitialSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session?.user) {
-        setSupabaseUser(session.user);
-        await loadUserProfile(session.user.id, session.user.email!);
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setSession(session);
+        setSupabaseUser(session?.user ?? null);
+        
+        // Defer profile loading to prevent deadlocks
+        if (session?.user) {
+          setTimeout(() => {
+            loadUserProfile(session.user.id);
+          }, 0);
+        } else {
+          setUser(null);
+        }
+        setLoading(false);
       }
+    );
+
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setSupabaseUser(session?.user ?? null);
       
-      setLoading(false);
-    };
-
-    getInitialSession();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
-        setSupabaseUser(session.user);
-        await loadUserProfile(session.user.id, session.user.email!);
-      } else {
-        setSupabaseUser(null);
-        setUser(null);
+        setTimeout(() => {
+          loadUserProfile(session.user.id);
+        }, 0);
       }
       setLoading(false);
     });
@@ -61,241 +76,192 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
-  const loadUserProfile = async (id: string, email: string) => {
+  const loadUserProfile = async (userId: string) => {
     try {
-      console.log('Loading user profile for:', { id, email });
-      
-      // Get user data with metadata
-      const authUser = (await supabase.auth.getUser()).data.user;
-      console.log('Auth user:', authUser);
-      
-      // SECURITY FIX: Only check admin_configs table - no hardcoded emails or metadata
-      const { data: adminConfig } = await supabase
-        .from('admin_configs')
-        .select('is_active')
-        .eq('admin_email', email)
-        .single();
-      
-      const isAdminByConfig = adminConfig?.is_active === true;
-      
-      if (isAdminByConfig) {
-        console.log('Setting admin user');
-        setUser({
-          id,
-          name: authUser?.user_metadata?.full_name || "Administrador",
-          email,
-          role: "admin"
-        });
-        return;
-      }
-
-      // Check professionals table
-      const { data: professional } = await supabase
-        .from('professionals')
+      // Buscar perfil na nova tabela centralizada
+      const { data: profileData, error } = await supabase
+        .from('profiles')
         .select('*')
-        .eq('id', id)
+        .eq('id', userId)
         .single();
 
-      if (professional) {
-        console.log('Setting professional user:', professional);
-        setUser({
-          id: professional.id,
-          name: professional.full_name,
-          email: professional.email,
-          role: "professional",
-          category: professional.category,
-          approved: professional.approved
-        });
+      if (error) {
+        console.error('Erro ao carregar perfil:', error);
         return;
       }
 
-      // Check influencers table
-      const { data: influencer } = await supabase
-        .from('influencers')
-        .select('*')
-        .eq('id', id)
-        .single();
+      if (profileData) {
+        // Para profissionais, buscar dados adicionais
+        let additionalData = {};
+        if (profileData.role === 'professional') {
+          const { data: profData } = await supabase
+            .from('professionals')
+            .select('category, approved')
+            .eq('user_id', userId)
+            .single();
+          additionalData = { category: profData?.category, approved: profData?.approved };
+        }
 
-      if (influencer) {
-        console.log('Setting influencer user:', influencer);
         setUser({
-          id: influencer.id,
-          name: influencer.full_name,
-          email: influencer.email,
-          role: "influencer"
+          id: userId,
+          email: profileData.email || supabaseUser?.email || '',
+          full_name: profileData.full_name,
+          name: profileData.full_name, // Compatibility
+          phone: profileData.phone,
+          role: profileData.role as UserRole,
+          avatar_url: profileData.avatar_url,
+          ...additionalData
         });
-        return;
-      }
-
-      // Check users table for regular users
-      const { data: regularUser } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (regularUser) {
-        console.log('Setting regular user from users table:', regularUser);
-        setUser({
-          id: regularUser.id,
-          name: regularUser.nome || authUser?.user_metadata?.full_name || authUser?.email?.split('@')[0] || 'Usuário',
-          email: regularUser.email,
-          role: null
-        });
-        return;
-      }
-
-      // Fallback: usar dados básicos do auth para usuários regulares
-      if (authUser) {
-        console.log('Setting fallback user from auth data');
-        setUser({
-          id: authUser.id,
-          name: authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || 'Usuário',
-          email: authUser.email || '',
-          role: null
-        });
-        return;
       }
     } catch (error) {
-      console.error('Error loading user profile:', error);
+      console.error('Erro ao carregar perfil:', error);
     }
   };
 
-  const login = async (email: string, password: string, role: UserRole) => {
-    setLoading(true);
-    
+  const login = async (email: string, password: string, role?: UserRole) => {
     try {
+      setLoading(true);
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
-        password
+        password,
       });
 
-      if (error) {
-        throw new Error(error.message);
-      }
+      if (error) throw error;
 
-      if (data.user) {
-        setSupabaseUser(data.user);
-        await loadUserProfile(data.user.id, data.user.email!);
-      }
+      return { data, error: null };
     } catch (error: any) {
-      console.error("Login failed:", error);
-      throw new Error(error.message || "Falha no login. Por favor, tente novamente.");
+      console.error('Erro no login:', error);
+      return { data: null, error };
     } finally {
       setLoading(false);
     }
   };
 
-  const register = async (email: string, password: string, userData: any, role: UserRole) => {
-    setLoading(true);
-    
+  const register = async (
+    email: string, 
+    password: string, 
+    userData: any, 
+    role: UserRole = 'user'
+  ) => {
     try {
+      setLoading(true);
+      const redirectUrl = `${window.location.origin}/`;
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
+          emailRedirectTo: redirectUrl,
           data: {
-            full_name: userData.full_name
+            full_name: userData.full_name || userData.name,
+            phone: userData.phone,
+            role
           }
         }
       });
 
-      if (error) {
-        throw new Error(error.message);
+      // Se for profissional, criar registro na tabela professionals
+      if (error) throw error;
+      
+      if (data.user && role === 'professional') {
+        const { error: profError } = await supabase
+          .from('professionals')
+          .insert({
+            user_id: data.user.id,
+            email: userData.email,
+            full_name: userData.full_name,
+            phone: userData.phone,
+            category: userData.category || '',
+            location: userData.location || '',
+            cep: userData.cep || '',
+            instagram: userData.instagram || '',
+            cpf: userData.cpf || '',
+            description: userData.description || '',
+            experience: userData.experience || '',
+            approved: false
+          });
+        
+        if (profError) console.warn('Erro ao criar perfil profissional:', profError);
       }
 
-      if (data.user) {
-        // Insert user data into appropriate table based on role
-        if (role === "professional") {
-          const { error: insertError } = await supabase
-            .from('professionals')
-            .insert({
-              id: data.user.id,
-              user_id: data.user.id,
-              ...userData
-            });
+      if (error) throw error;
 
-          if (insertError) {
-            throw new Error(insertError.message);
-          }
-        } else if (role === null) {
-          // For regular users, insert into users table
-          const { error: insertError } = await supabase
-            .from('users')
-            .insert({
-              id: data.user.id,
-              nome: userData.full_name,
-              email: userData.email,
-              telefone: userData.phone
-            });
-
-          if (insertError) {
-            throw new Error(insertError.message);
-          }
-        }
-
-        // For regular users, don't auto-login, redirect to login page
-        if (role === null) {
-          return; // Don't set user state, let them login manually
-        }
-
-        setSupabaseUser(data.user);
-        await loadUserProfile(data.user.id, data.user.email!);
-      }
+      // O perfil será criado automaticamente pelo trigger
+      return { data, error: null };
     } catch (error: any) {
-      console.error("Registration failed:", error);
-      throw new Error(error.message || "Falha no cadastro. Por favor, tente novamente.");
+      console.error('Erro no cadastro:', error);
+      return { data: null, error };
     } finally {
       setLoading(false);
     }
   };
 
   const adminLogin = async (email: string, password: string) => {
-    setLoading(true);
-    
     try {
-      // Use Supabase Auth for admin login
+      setLoading(true);
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
-        password
+        password,
       });
 
-      if (error) {
-        throw new Error(error.message);
-      }
+      if (error) throw error;
 
-      // SECURITY FIX: Verify admin permissions only through admin_configs table
-      const { data: adminConfig } = await supabase
-        .from('admin_configs')
-        .select('is_active')
-        .eq('admin_email', data.user.email!)
-        .single();
-      
-      if (!adminConfig?.is_active) {
-        await supabase.auth.signOut();
-        throw new Error("Usuário não possui permissões administrativas");
-      }
-
+      // Verificar se é admin via profiles
       if (data.user) {
-        setSupabaseUser(data.user);
-        await loadUserProfile(data.user.id, data.user.email!);
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', data.user.id)
+          .eq('role', 'admin')
+          .single();
+
+        if (!profileData) {
+          await supabase.auth.signOut();
+          throw new Error('Usuário não é administrador');
+        }
       }
+
+      return { data, error: null };
     } catch (error: any) {
-      console.error("Admin login failed:", error);
-      throw new Error(error.message || "Falha no login administrativo");
+      console.error('Erro no login admin:', error);
+      return { data: null, error };
     } finally {
       setLoading(false);
     }
   };
 
   const logout = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setSupabaseUser(null);
+    try {
+      // Clean up auth state
+      setUser(null);
+      setSupabaseUser(null);
+      setSession(null);
+      
+      // Sign out from Supabase
+      await supabase.auth.signOut({ scope: 'global' });
+      
+      // Force page reload for clean state
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Erro no logout:', error);
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, supabaseUser, login, register, adminLogin, logout, loading }}>
+    <AuthContext.Provider 
+      value={{ 
+        user, 
+        supabaseUser, 
+        session, 
+        login, 
+        register, 
+        adminLogin, 
+        logout, 
+        loading 
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -303,10 +269,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  
   if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
+    throw new Error('useAuth deve ser usado dentro de um AuthProvider');
   }
-  
   return context;
 };
