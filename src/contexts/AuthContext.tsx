@@ -47,48 +47,73 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('🔄 Auth state changed:', { event, userId: session?.user?.id });
-        setSession(session);
-        setSupabaseUser(session?.user ?? null);
         
-        // Handle OAuth sign-in events
-        if (event === 'SIGNED_IN' && session?.user) {
-          // Check if this is an OAuth login (Google, etc.)
-          const isOAuthLogin = session.user.app_metadata?.providers?.includes('google');
+        try {
+          setSession(session);
+          setSupabaseUser(session?.user ?? null);
           
-          if (isOAuthLogin) {
-            console.log('🚀 OAuth login detected, checking for existing profile...');
+          // Handle OAuth sign-in events
+          if (event === 'SIGNED_IN' && session?.user) {
+            console.log('🚀 User signed in successfully');
             
-            // Check if profile exists
-            const { data: existingProfile } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', session.user.id)
-              .single();
+            // Check if this is an OAuth login (Google, etc.)
+            const isOAuthLogin = session.user.app_metadata?.providers?.includes('google');
             
-            if (!existingProfile) {
-              console.log('✨ Creating new profile for OAuth user...');
+            if (isOAuthLogin) {
+              console.log('🔍 OAuth login detected, processing profile...');
               
-              // Create profile automatically for OAuth users as regular users
-              await supabase
-                .from('profiles')
-                .insert({
-                  id: session.user.id,
-                  email: session.user.email,
-                  full_name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || '',
-                  role: 'user', // Default role for OAuth signups
-                });
-              
-              console.log('✅ Profile created successfully for OAuth user');
+              try {
+                // Check if profile exists
+                const { data: existingProfile, error: profileError } = await supabase
+                  .from('profiles')
+                  .select('*')
+                  .eq('id', session.user.id)
+                  .single();
+                
+                if (profileError && profileError.code !== 'PGRST116') {
+                  console.error('❌ Error checking profile:', profileError);
+                }
+                
+                if (!existingProfile) {
+                  console.log('✨ Creating new profile for OAuth user...');
+                  
+                  // Create profile automatically for OAuth users as regular users
+                  const { error: insertError } = await supabase
+                    .from('profiles')
+                    .insert({
+                      id: session.user.id,
+                      email: session.user.email,
+                      full_name: session.user.user_metadata?.full_name || 
+                                session.user.user_metadata?.name || 
+                                session.user.email?.split('@')[0] || '',
+                      role: 'user', // Default role for OAuth signups
+                    });
+                  
+                  if (insertError) {
+                    console.error('❌ Error creating profile:', insertError);
+                  } else {
+                    console.log('✅ Profile created successfully for OAuth user');
+                  }
+                } else {
+                  console.log('✅ Existing profile found for OAuth user');
+                }
+              } catch (profileErr) {
+                console.error('❌ Profile processing error:', profileErr);
+              }
             }
+            
+            // Defer profile loading to prevent deadlocks
+            setTimeout(() => {
+              loadUserProfile(session.user.id);
+            }, 100);
+          } else if (!session?.user) {
+            console.log('👋 User signed out');
+            setUser(null);
           }
-          
-          // Defer profile loading to prevent deadlocks
-          setTimeout(() => {
-            loadUserProfile(session.user.id);
-          }, 0);
-        } else if (!session?.user) {
-          setUser(null);
+        } catch (error) {
+          console.error('❌ Auth state change error:', error);
         }
+        
         setLoading(false);
       }
     );
@@ -111,6 +136,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loadUserProfile = async (userId: string) => {
     try {
+      console.log('🔍 Loading user profile for:', userId);
+      
       // Buscar perfil na nova tabela centralizada
       const { data: profileData, error } = await supabase
         .from('profiles')
@@ -119,11 +146,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .single();
 
       if (error) {
-        console.error('Erro ao carregar perfil:', error);
+        console.error('❌ Error loading profile:', error);
+        
+        // If profile doesn't exist and user is authenticated, create a basic one
+        if (error.code === 'PGRST116' && supabaseUser) {
+          console.log('🔧 Profile not found, creating basic profile...');
+          
+          const { error: createError } = await supabase
+            .from('profiles')
+            .insert({
+              id: userId,
+              email: supabaseUser.email || '',
+              full_name: supabaseUser.user_metadata?.full_name || 
+                        supabaseUser.user_metadata?.name || 
+                        supabaseUser.email?.split('@')[0] || '',
+              role: 'user',
+            });
+          
+          if (createError) {
+            console.error('❌ Error creating basic profile:', createError);
+            return;
+          }
+          
+          // Retry loading after creation
+          return loadUserProfile(userId);
+        }
         return;
       }
 
       if (profileData) {
+        console.log('✅ Profile loaded successfully:', profileData);
+        
         // Para profissionais, buscar dados adicionais
         let additionalData = {};
         if (profileData.role === 'professional') {
@@ -147,7 +200,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
       }
     } catch (error) {
-      console.error('Erro ao carregar perfil:', error);
+      console.error('❌ Unexpected error loading profile:', error);
     }
   };
 
