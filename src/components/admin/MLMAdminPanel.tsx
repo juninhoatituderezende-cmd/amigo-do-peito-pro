@@ -64,16 +64,14 @@ interface MLMCommissions {
 }
 
 interface MLMStatistics {
-  total_users_in_network: number;
+  total_users: number;
   active_users: number;
-  level_1_users: number;
-  total_referrals_network: number;
-  total_network_earnings: number;
-  total_referrals_processed: number;
-  confirmed_referrals: number;
-  pending_referrals: number;
-  pending_commissions_total: number;
-  paid_commissions_total: number;
+  total_referrals: number;
+  total_commissions: number;
+  pending_commissions: number;
+  paid_commissions: number;
+  top_performers: any[];
+  recent_activity: any[];
 }
 
 export const MLMAdminPanel = () => {
@@ -127,13 +125,24 @@ export const MLMAdminPanel = () => {
   };
 
   const loadStatistics = async () => {
-    const { data, error } = await supabase
-      .from('mlm_statistics')
-      .select('*')
-      .single();
-    
-    if (!error && data) {
-      setStatistics(data);
+    try {
+      const { data, error } = await supabase.rpc('get_mlm_statistics');
+      
+      if (!error && data && data.length > 0) {
+        const stats = data[0];
+        setStatistics({
+          total_users: Number(stats.total_users) || 0,
+          active_users: Number(stats.active_users) || 0,
+          total_referrals: Number(stats.total_referrals) || 0,
+          total_commissions: Number(stats.total_commissions) || 0,
+          pending_commissions: Number(stats.pending_commissions) || 0,
+          paid_commissions: Number(stats.paid_commissions) || 0,
+          top_performers: Array.isArray(stats.top_performers) ? stats.top_performers : [],
+          recent_activity: Array.isArray(stats.recent_activity) ? stats.recent_activity : []
+        });
+      }
+    } catch (error) {
+      console.error('Error loading MLM statistics:', error);
     }
   };
 
@@ -293,7 +302,7 @@ export const MLMAdminPanel = () => {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Usuários na Rede</p>
-                  <p className="text-2xl font-bold text-blue-600">{statistics.total_users_in_network}</p>
+                  <p className="text-2xl font-bold text-blue-600">{statistics.total_users}</p>
                   <p className="text-xs text-green-600">{statistics.active_users} ativos</p>
                 </div>
               </div>
@@ -309,7 +318,7 @@ export const MLMAdminPanel = () => {
                 <div>
                   <p className="text-sm text-muted-foreground">Ganhos Totais</p>
                   <p className="text-2xl font-bold text-green-600">
-                    {formatCurrency(statistics.total_network_earnings)}
+                    {formatCurrency(statistics.total_commissions)}
                   </p>
                   <p className="text-xs text-green-600">Rede completa</p>
                 </div>
@@ -325,8 +334,8 @@ export const MLMAdminPanel = () => {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Indicações</p>
-                  <p className="text-2xl font-bold text-orange-600">{statistics.total_referrals_processed}</p>
-                  <p className="text-xs text-green-600">{statistics.confirmed_referrals} confirmadas</p>
+                  <p className="text-2xl font-bold text-orange-600">{statistics.total_referrals}</p>
+                  <p className="text-xs text-green-600">{statistics.total_referrals} processadas</p>
                 </div>
               </div>
             </CardContent>
@@ -341,9 +350,9 @@ export const MLMAdminPanel = () => {
                 <div>
                   <p className="text-sm text-muted-foreground">Comissões Pendentes</p>
                   <p className="text-2xl font-bold text-purple-600">
-                    {formatCurrency(statistics.pending_commissions_total)}
+                    {formatCurrency(statistics.pending_commissions)}
                   </p>
-                  <p className="text-xs text-gray-600">{statistics.pending_referrals} pendentes</p>
+                  <p className="text-xs text-gray-600">Aguardando pagamento</p>
                 </div>
               </div>
             </CardContent>

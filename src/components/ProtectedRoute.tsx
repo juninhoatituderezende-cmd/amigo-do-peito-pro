@@ -13,13 +13,17 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, role }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    console.log('ProtectedRoute Debug:', { loading, user, requiredRole: role });
+    
     if (!loading && !user) {
+      console.log('User not logged in, redirecting to home');
       // User not logged in, redirect to login
       navigate("/");
     } else if (!loading && user && user.role !== role) {
+      console.log('User role mismatch:', { userRole: user.role, requiredRole: role });
       // User doesn't have the required role
       if (user.role === "admin") {
-        navigate("/admin/dashboard");
+        navigate("/admin");
       } else if (user.role === "professional") {
         navigate("/profissional/dashboard");
       } else if (user.role === "influencer") {

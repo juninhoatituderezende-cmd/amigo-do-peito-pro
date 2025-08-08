@@ -7,48 +7,26 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useNavigate } from "react-router-dom";
 import { Loader2, Shield } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const AdminLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { adminLogin, loading } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const { data, error } = await adminLogin(email, password);
 
       if (error) {
-        throw new Error(error.message);
-      }
-
-      // Verificar se o usuário tem permissões de admin
-      const isAdminByMetadata = data.user?.user_metadata?.is_admin === true;
-      const isAdminByEmail = data.user?.email === "admin@amigodopeito.com" || data.user?.email?.includes("admin");
-      
-      // Verificar na tabela admin_configs
-      const { data: adminConfig } = await supabase
-        .from('admin_configs')
-        .select('is_active')
-        .eq('admin_email', data.user?.email)
-        .single();
-      
-      const isAdminByConfig = adminConfig?.is_active === true;
-      
-      if (!isAdminByMetadata && !isAdminByEmail && !isAdminByConfig) {
-        await supabase.auth.signOut();
-        throw new Error("Usuário não possui permissões administrativas");
+        throw error;
       }
 
       toast({
@@ -60,8 +38,6 @@ const AdminLogin = () => {
     } catch (error: any) {
       console.error("Admin login error:", error);
       setError(error.message || "Erro ao fazer login. Verifique suas credenciais.");
-    } finally {
-      setLoading(false);
     }
   };
 
