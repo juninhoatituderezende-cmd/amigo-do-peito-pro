@@ -386,6 +386,68 @@ export type Database = {
           },
         ]
       }
+      influencer_commissions: {
+        Row: {
+          client_id: string
+          commission_amount: number
+          commission_percentage: number
+          created_at: string
+          entry_percentage: number
+          entry_value: number
+          id: string
+          influencer_id: string
+          payment_date: string | null
+          payment_proof_url: string | null
+          product_id: string | null
+          product_total_value: number
+          referral_code: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          commission_amount: number
+          commission_percentage?: number
+          created_at?: string
+          entry_percentage?: number
+          entry_value: number
+          id?: string
+          influencer_id: string
+          payment_date?: string | null
+          payment_proof_url?: string | null
+          product_id?: string | null
+          product_total_value: number
+          referral_code: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          commission_amount?: number
+          commission_percentage?: number
+          created_at?: string
+          entry_percentage?: number
+          entry_value?: number
+          id?: string
+          influencer_id?: string
+          payment_date?: string | null
+          payment_proof_url?: string | null
+          product_id?: string | null
+          product_total_value?: number
+          referral_code?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "influencer_commissions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "custom_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       influencers: {
         Row: {
           approved: boolean
@@ -1359,6 +1421,14 @@ export type Database = {
         Args: { referral_id: string; new_status: string; admin_notes?: string }
         Returns: boolean
       }
+      calculate_influencer_commission: {
+        Args: {
+          p_product_total_value: number
+          p_entry_percentage?: number
+          p_commission_percentage?: number
+        }
+        Returns: number
+      }
       calculate_mlm_level: {
         Args: { referred_by: string }
         Returns: number
@@ -1366,6 +1436,16 @@ export type Database = {
       clean_old_logs: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      create_influencer_commission: {
+        Args: {
+          p_influencer_id: string
+          p_client_id: string
+          p_product_id: string
+          p_referral_code: string
+          p_product_total_value: number
+        }
+        Returns: string
       }
       generate_plan_code: {
         Args: Record<PropertyKey, never>
@@ -1442,6 +1522,14 @@ export type Database = {
           ip_address?: unknown
           user_agent?: string
           details?: Json
+        }
+        Returns: undefined
+      }
+      process_influencer_commission: {
+        Args: {
+          p_client_id: string
+          p_referral_code: string
+          p_product_total_value: number
         }
         Returns: undefined
       }

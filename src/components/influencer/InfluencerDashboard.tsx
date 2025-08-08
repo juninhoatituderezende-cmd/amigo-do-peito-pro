@@ -105,21 +105,20 @@ export function InfluencerDashboard() {
 
       // Carregar comissões usando credit_transactions
       const { data: commissionsData } = await supabase
-        .from('credit_transactions')
+        .from('influencer_commissions')
         .select('*')
-        .eq('type', 'influencer_commission')
-        .eq('user_id', influencerData.id)
+        .eq('influencer_id', influencerData.id)
         .order('created_at', { ascending: false });
 
       if (commissionsData) {
         const formattedCommissions: Commission[] = commissionsData.map(commission => ({
           id: commission.id,
           client_name: 'Cliente Desconhecido',
-          participation_amount: commission.amount,
-          commission_amount: commission.amount * 0.25,
-          status: 'pending',
+          participation_amount: commission.entry_value, // Valor de entrada (10% do total)
+          commission_amount: commission.commission_amount, // Comissão já calculada (25% da entrada)
+          status: commission.status,
           created_at: commission.created_at,
-          plan_name: commission.description || 'Plano'
+          plan_name: `Produto R$ ${commission.product_total_value.toFixed(2)}`
         }));
 
         setCommissions(formattedCommissions);

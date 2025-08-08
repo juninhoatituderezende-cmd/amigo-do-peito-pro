@@ -137,7 +137,7 @@ serve(async (req) => {
       position 
     });
 
-    // If there was a referral, confirm it
+    // If there was a referral, confirm it and update commission
     if (referral_code && !isCreator) {
       const { error: referralUpdateError } = await supabase
         .from("referrals")
@@ -153,6 +153,19 @@ serve(async (req) => {
         logStep("Erro ao confirmar referral", referralUpdateError);
       } else {
         logStep("Referral confirmado", { referral_code });
+        
+        // Confirmar comissão do influenciador
+        const { error: commissionUpdateError } = await supabase
+          .from("influencer_commissions")
+          .update({ status: 'confirmed' })
+          .eq("referral_code", referral_code)
+          .eq("client_id", user_id);
+          
+        if (commissionUpdateError) {
+          logStep("Erro ao confirmar comissão", commissionUpdateError);
+        } else {
+          logStep("Comissão confirmada");
+        }
       }
     }
 

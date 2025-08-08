@@ -152,11 +152,10 @@ export const PaymentManagement = () => {
   };
 
   const loadInfluencerCommissions = async () => {
-    // Use credit_transactions for influencer commissions since comissoes_influenciadores doesn't exist
+    // Use new influencer_commissions table with correct calculation logic
     const { data, error } = await supabase
-      .from('credit_transactions')
+      .from('influencer_commissions')
       .select('*')
-      .eq('type', 'influencer_commission')
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -166,14 +165,17 @@ export const PaymentManagement = () => {
 
     const commissionsWithNames = data?.map(commission => ({
       id: commission.id,
-      influencer_id: commission.user_id,
-      client_id: commission.user_id,
-      referral_code: commission.related_order_id || 'REF001',
-      entry_value: commission.amount,
-      commission_value: commission.amount * 0.25,
-      commission_percentage: 25,
-      payment_status: 'pending',
+      influencer_id: commission.influencer_id,
+      client_id: commission.client_id,
+      referral_code: commission.referral_code,
+      entry_value: commission.entry_value, // Valor de entrada (10% do total)
+      commission_amount: commission.commission_amount, // Comissão já calculada corretamente (25% da entrada)
+      commission_percentage: commission.commission_percentage,
+      status: commission.status,
       created_at: commission.created_at,
+      product_total_value: commission.product_total_value,
+      payment_date: commission.payment_date,
+      payment_proof_url: commission.payment_proof_url,
       influencer_name: 'Influenciador',
       client_name: 'Cliente'
     })) || [];

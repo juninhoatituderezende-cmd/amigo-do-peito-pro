@@ -194,6 +194,21 @@ serve(async (req) => {
         });
 
       if (referralError) logStep("Erro ao criar referral", referralError);
+      
+      // Criar comissão de influenciador com cálculo correto
+      logStep("Criando comissão de influenciador");
+      try {
+        await supabase.rpc('create_influencer_commission', {
+          p_influencer_id: groupToJoin.buyer_id,
+          p_client_id: user.id,
+          p_product_id: product.id,
+          p_referral_code: referral_code,
+          p_product_total_value: product.total_price
+        });
+        logStep("Comissão criada com sucesso");
+      } catch (commissionError) {
+        logStep("Erro ao criar comissão", commissionError);
+      }
     }
 
     logStep("Processo concluído com sucesso", { 
