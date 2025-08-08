@@ -56,6 +56,7 @@ import { ServicePlansManager } from "@/components/admin/ServicePlansManager";
 import { UserMarketplaceManager } from "@/components/admin/UserMarketplaceManager";
 import { ProfessionalMarketplaceManager } from "@/components/admin/ProfessionalMarketplaceManager";
 import { SalesManager } from "@/components/admin/SalesManager";
+import { ReportsAnalytics } from "@/components/admin/ReportsAnalytics";
 
 interface Professional {
   id: string;
@@ -148,62 +149,99 @@ const AdminDashboard = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [influencers, setInfluencers] = useState<Influencer[]>([]);
   
-  // Load data from Supabase
+  // Load data from Supabase with retry logic
   useEffect(() => {
-    const loadData = async () => {
+    const loadData = async (retryCount = 0) => {
       try {
         setLoading(true);
         
-        // Load professionals
-        const { data: professionalsData, error: professionalsError } = await supabase
-          .from('professionals')
-          .select('*')
-          .order('created_at', { ascending: false });
+        // Load professionals with retry
+        const loadProfessionals = async () => {
+          try {
+            const { data, error } = await supabase
+              .from('professionals')
+              .select('*')
+              .order('created_at', { ascending: false });
+            
+            if (error) throw error;
+            setProfessionals(data || []);
+          } catch (error) {
+            console.error('Error loading professionals:', error);
+            if (retryCount < 2) {
+              console.log('Retrying professionals load...');
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              return loadProfessionals();
+            }
+          }
+        };
         
-        if (professionalsError) {
-          console.error('Error loading professionals:', professionalsError);
-        } else {
-          setProfessionals(professionalsData || []);
-        }
+        // Load users with retry
+        const loadUsers = async () => {
+          try {
+            const { data, error } = await supabase
+              .from('users')
+              .select('*')
+              .order('created_at', { ascending: false });
+            
+            if (error) throw error;
+            const transformedUsers = (data || []).map(user => ({
+              id: user.id,
+              name: user.nome,
+              email: user.email,
+              full_name: user.nome,
+              phone: user.telefone,
+              created_at: user.created_at,
+              referral_code: `REF-${user.id.slice(-4).toUpperCase()}`
+            }));
+            setUsers(transformedUsers);
+          } catch (error) {
+            console.error('Error loading users:', error);
+            if (retryCount < 2) {
+              console.log('Retrying users load...');
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              return loadUsers();
+            }
+          }
+        };
         
-        // Load users
-        const { data: usersData, error: usersError } = await supabase
-          .from('users')
-          .select('*')
-          .order('created_at', { ascending: false });
+        // Load influencers with retry
+        const loadInfluencers = async () => {
+          try {
+            const { data, error } = await supabase
+              .from('influencers')
+              .select('*')
+              .order('created_at', { ascending: false });
+            
+            if (error) throw error;
+            setInfluencers(data || []);
+          } catch (error) {
+            console.error('Error loading influencers:', error);
+            if (retryCount < 2) {
+              console.log('Retrying influencers load...');
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              return loadInfluencers();
+            }
+          }
+        };
         
-        if (usersError) {
-          console.error('Error loading users:', usersError);
-        } else {
-          const transformedUsers = (usersData || []).map(user => ({
-            id: user.id,
-            name: user.nome,
-            email: user.email,
-            full_name: user.nome,
-            phone: user.telefone,
-            created_at: user.created_at,
-            referral_code: `REF-${user.id.slice(-4).toUpperCase()}`
-          }));
-          setUsers(transformedUsers);
-        }
-        
-        // Load influencers
-        const { data: influencersData, error: influencersError } = await supabase
-          .from('influencers')
-          .select('*')
-          .order('created_at', { ascending: false });
-        
-        if (influencersError) {
-          console.error('Error loading influencers:', influencersError);
-        } else {
-          setInfluencers(influencersData || []);
-        }
+        // Execute all loads in parallel
+        await Promise.all([
+          loadProfessionals(),
+          loadUsers(),
+          loadInfluencers()
+        ]);
         
       } catch (error) {
         console.error('Error loading data:', error);
+        if (retryCount < 2) {
+          console.log(`Retrying data load... Attempt ${retryCount + 1}`);
+          setTimeout(() => loadData(retryCount + 1), 2000);
+          return;
+        }
+        
         toast({
           title: "Erro",
-          description: "Erro ao carregar dados do dashboard.",
+          description: "Erro ao carregar dados do dashboard. Tente atualizar a página.",
           variant: "destructive",
         });
       } finally {
@@ -214,7 +252,7 @@ const AdminDashboard = () => {
     loadData();
     
     // Refresh data every 30 seconds
-    const interval = setInterval(loadData, 30000);
+    const interval = setInterval(() => loadData(), 30000);
     
     return () => clearInterval(interval);
   }, [toast]);
@@ -461,6 +499,75 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleExportData = async () => {
+    try {
+      const headers = [
+        'Tipo',
+        'Nome',
+        'Email',
+        'Telefone',
+        'Status',
+        'Data de Cadastro',
+        'Categoria/Instagram',
+        'Localização/Seguidores'
+      ].join(',');
+
+      const professionalRows = professionals.map(p => [
+        'Profissional',
+        `"${p.full_name}"`,
+        p.email,
+        p.phone,
+        p.approved ? 'Aprovado' : 'Pendente',
+        new Date(p.created_at).toLocaleDateString('pt-BR'),
+        p.category,
+        `"${p.location}"`
+      ].join(','));
+
+      const userRows = users.map(u => [
+        'Usuário',
+        `"${u.full_name}"`,
+        u.email,
+        u.phone || '',
+        'Ativo',
+        new Date(u.created_at).toLocaleDateString('pt-BR'),
+        u.referral_code,
+        ''
+      ].join(','));
+
+      const influencerRows = influencers.map(i => [
+        'Influenciador',
+        `"${i.full_name}"`,
+        i.email,
+        i.phone,
+        i.approved ? 'Aprovado' : 'Pendente',
+        new Date(i.created_at).toLocaleDateString('pt-BR'),
+        i.instagram,
+        i.followers
+      ].join(','));
+
+      const csv = [headers, ...professionalRows, ...userRows, ...influencerRows].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `admin-export-${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Exportação concluída!",
+        description: "Dados exportados com sucesso para CSV.",
+      });
+    } catch (error) {
+      console.error('Error exporting data:', error);
+      toast({
+        title: "Erro na exportação",
+        description: "Não foi possível exportar os dados.",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Calculate real statistics
   const stats = {
     totalProfessionals: professionals.length,
@@ -548,7 +655,11 @@ const AdminDashboard = () => {
                 <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
                 Atualizar
               </Button>
-              <Button className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2">
+              <Button 
+                onClick={handleExportData}
+                className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2"
+                disabled={loading}
+              >
                 <Download className="h-4 w-4" />
                 Exportar
               </Button>
@@ -1022,7 +1133,13 @@ const AdminDashboard = () => {
                           {new Date(user.created_at).toLocaleDateString('pt-BR')}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <Button size="sm" variant="outline">Ver Perfil</Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleProfileView(user, 'user')}
+                          >
+                            Ver Perfil
+                          </Button>
                         </td>
                       </tr>
                     ))}
@@ -1088,7 +1205,12 @@ const AdminDashboard = () => {
                           </>
                         )}
                         {inf.approved && (
-                          <Button size="sm" variant="outline" className="w-full">
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="w-full"
+                            onClick={() => handleProfileView(inf, 'influencer')}
+                          >
                             Ver Detalhes
                           </Button>
                         )}
@@ -1352,6 +1474,11 @@ const AdminDashboard = () => {
               <MaterialUploadPanel />
             </TabsContent>
 
+            {/* RELATÓRIOS E ANALYTICS */}
+            <TabsContent value="reports" className="space-y-6">
+              <ReportsAnalytics />
+            </TabsContent>
+
             {/* GESTÃO DE PAGAMENTOS */}
             <TabsContent value="payments" className="space-y-6">
               <PaymentManagement />
@@ -1389,6 +1516,88 @@ const AdminDashboard = () => {
           </Tabs>
         </div>
       </div>
+
+      {/* Dialog para visualização de perfis */}
+      <Dialog open={profileDialogOpen} onOpenChange={setProfileDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              Detalhes do {selectedProfile?.type === 'professional' ? 'Profissional' : 
+                         selectedProfile?.type === 'influencer' ? 'Influenciador' : 'Usuário'}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedProfile && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <strong>Nome:</strong> {selectedProfile.full_name || selectedProfile.name}
+                </div>
+                <div>
+                  <strong>Email:</strong> {selectedProfile.email}
+                </div>
+                <div>
+                  <strong>Telefone:</strong> {selectedProfile.phone || selectedProfile.telefone || 'N/A'}
+                </div>
+                <div>
+                  <strong>Data de Cadastro:</strong> {new Date(selectedProfile.created_at).toLocaleDateString('pt-BR')}
+                </div>
+                
+                {selectedProfile.type === 'professional' && (
+                  <>
+                    <div>
+                      <strong>Categoria:</strong> {selectedProfile.category}
+                    </div>
+                    <div>
+                      <strong>Localização:</strong> {selectedProfile.location}
+                    </div>
+                    <div>
+                      <strong>Instagram:</strong> @{selectedProfile.instagram}
+                    </div>
+                    <div>
+                      <strong>Status:</strong> {selectedProfile.approved ? 'Aprovado' : 'Pendente'}
+                    </div>
+                  </>
+                )}
+                
+                {selectedProfile.type === 'influencer' && (
+                  <>
+                    <div>
+                      <strong>Instagram:</strong> @{selectedProfile.instagram}
+                    </div>
+                    <div>
+                      <strong>Seguidores:</strong> {selectedProfile.followers}
+                    </div>
+                    <div>
+                      <strong>Status:</strong> {selectedProfile.approved ? 'Aprovado' : 'Pendente'}
+                    </div>
+                  </>
+                )}
+                
+                {selectedProfile.type === 'user' && (
+                  <div>
+                    <strong>Código de Referência:</strong> {selectedProfile.referral_code}
+                  </div>
+                )}
+              </div>
+              
+              {selectedProfile.description && (
+                <div>
+                  <strong>Descrição:</strong>
+                  <p className="mt-1 text-sm text-gray-600">{selectedProfile.description}</p>
+                </div>
+              )}
+              
+              {selectedProfile.experience && (
+                <div>
+                  <strong>Experiência:</strong>
+                  <p className="mt-1 text-sm text-gray-600">{selectedProfile.experience}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
       
       <Footer />
     </div>

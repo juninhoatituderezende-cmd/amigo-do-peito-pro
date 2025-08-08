@@ -124,7 +124,8 @@ export const MarketplaceReports = () => {
   };
 
   const exportToCSV = () => {
-    const csvContent = [
+    try {
+      const csvContent = [
       ['Produto', 'Cliente', 'Valor', 'Método Pagamento', 'Tipo Comprador', 'Tipo Produto', 'Data', 'Profissional'],
       ...filteredSales.map(sale => [
         sale.product_title,
@@ -148,10 +149,17 @@ export const MarketplaceReports = () => {
     document.body.removeChild(a);
     window.URL.revokeObjectURL(url);
 
-    toast({
-      title: "Exportação concluída",
-      description: "Arquivo CSV baixado com sucesso."
-    });
+      toast({
+        title: "Exportação concluída",
+        description: "Arquivo CSV baixado com sucesso."
+      });
+    } catch (error) {
+      toast({
+        title: "Erro na exportação",
+        description: "Não foi possível exportar os dados.",
+        variant: "destructive"
+      });
+    }
   };
 
   const filteredSales = sales.filter(sale => {

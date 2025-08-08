@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { BarChart3, Download, Filter, Calendar } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface ReportData {
   period: string;
@@ -72,12 +73,60 @@ const mockInfluencerReports: InfluencerReport[] = [
 ];
 
 export const ReportsAnalytics = () => {
+  const { toast } = useToast();
   const currentPeriod = mockReports[0];
   const previousPeriod = mockReports[1];
 
   const calculateGrowth = (current: number, previous: number) => {
     const growth = ((current - previous) / previous) * 100;
     return growth.toFixed(1);
+  };
+
+  const handleFilters = () => {
+    toast({
+      title: "Filtros",
+      description: "Funcionalidade de filtros será implementada em breve.",
+    });
+  };
+
+  const handleExportReports = () => {
+    try {
+      const headers = [
+        'Período',
+        'Novos Membros',
+        'Receita (R$)',
+        'Grupos Finalizados',
+        'Taxa de Conversão (%)'
+      ].join(',');
+
+      const rows = mockReports.map(report => [
+        `"${report.period}"`,
+        report.newMembers,
+        report.revenue,
+        report.completedGroups,
+        report.conversionRate
+      ].join(','));
+
+      const csv = [headers, ...rows].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `relatorios-analytics-${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Exportação concluída!",
+        description: "Relatórios exportados com sucesso.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro na exportação",
+        description: "Não foi possível exportar os relatórios.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -142,11 +191,11 @@ export const ReportsAnalytics = () => {
               Relatórios Mensais
             </CardTitle>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={handleFilters}>
                 <Filter className="h-4 w-4 mr-2" />
                 Filtros
               </Button>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={handleExportReports}>
                 <Download className="h-4 w-4 mr-2" />
                 Exportar
               </Button>
