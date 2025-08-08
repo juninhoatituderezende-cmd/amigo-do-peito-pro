@@ -1400,21 +1400,7 @@ export type Database = {
       }
     }
     Views: {
-      mlm_statistics: {
-        Row: {
-          active_users: number | null
-          confirmed_referrals: number | null
-          level_1_users: number | null
-          paid_commissions_total: number | null
-          pending_commissions_total: number | null
-          pending_referrals: number | null
-          total_network_earnings: number | null
-          total_referrals_network: number | null
-          total_referrals_processed: number | null
-          total_users_in_network: number | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       admin_update_referral_status: {
@@ -1471,6 +1457,19 @@ export type Database = {
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_mlm_statistics: {
+        Args: { target_user_id?: string }
+        Returns: {
+          total_users: number
+          active_users: number
+          total_referrals: number
+          total_commissions: number
+          pending_commissions: number
+          paid_commissions: number
+          top_performers: Json
+          recent_activity: Json
+        }[]
       }
       get_referrals_by_status: {
         Args: { filter_status?: string }
