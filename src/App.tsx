@@ -46,6 +46,7 @@ import MLMCancel from "./pages/MLMCancel";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import About from "./pages/About";
+import EmailConfirmationHelp from "./pages/EmailConfirmationHelp";
 import Todos from "./pages/Todos";
 
 // Initialize diagnostics
@@ -78,6 +79,7 @@ const App = () => (
               {/* Public Routes */}
               <Route path="/" element={<Index />} />
               <Route path="/sobre" element={<About />} />
+              <Route path="/confirmacao-email" element={<EmailConfirmationHelp />} />
               <Route path="/todos" element={<Todos />} />
               <Route path="/cadastro" element={<Register />} />
               <Route path="/confirmacao" element={<Confirmation />} />

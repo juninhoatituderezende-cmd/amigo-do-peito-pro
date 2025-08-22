@@ -230,7 +230,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        // Tratamento especial para erro de email não confirmado
+        if (error.message.includes('Email not confirmed')) {
+          throw new Error('Email não confirmado. Verifique sua caixa de entrada ou entre em contato com o suporte para ativar sua conta.');
+        }
+        throw error;
+      }
 
       // Success - redirection will be handled by loadUserProfile
       console.log('✅ Login successful, user profile will be loaded and redirected');
@@ -250,7 +256,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setLoading(true);
       
-      // Cadastro com confirmação de email desabilitada
+      // Cadastro com configuração personalizada para contornar confirmação de email
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -260,6 +266,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             full_name: userData.fullName || userData.nome || 'Usuário',
             phone: userData.phone || userData.telefone || '',
             role: role,
+            email_confirmed: true // Adicionar flag para indicar que queremos confirmar automaticamente
           }
         }
       });
@@ -268,8 +275,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Se o usuário foi criado com sucesso
       if (data.user && !data.session) {
-        console.log('✅ User registered successfully, email confirmation may be required');
-        console.log('ℹ️  Please check your email to confirm your account, or disable email confirmation in Supabase settings');
+        console.log('✅ User registered successfully, email confirmation required');
+        // Redirecionar para página de ajuda sobre confirmação de email
+        setTimeout(() => {
+          navigate('/confirmacao-email');
+        }, 1000);
         return { error: null };
       } else if (data.session) {
         console.log('✅ User registered and logged in successfully');
