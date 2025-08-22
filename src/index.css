@@ -153,7 +153,11 @@
 }
 
 .card-premium {
-  @apply bg-card border border-primary/20 rounded-lg shadow-lg hover:shadow-gold transition-all;
+  @apply bg-card border border-primary/20 rounded-lg shadow-lg transition-all;
+}
+
+.card-premium:hover {
+  box-shadow: 0 4px 20px rgba(212, 175, 55, 0.3);
 }
 
 .gradient-dark {

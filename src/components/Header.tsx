@@ -18,7 +18,7 @@ const Header = () => {
     <header className="gradient-dark text-white shadow-xl sticky top-0 z-50 border-b border-primary/20">
       <div className="ap-container py-4 flex justify-between items-center">
         <Link to="/" className="flex items-center space-x-2">
-          <span className="text-xl font-bold text-primary animate-gold-pulse">Amigo do Peito</span>
+          <span className="text-xl font-bold text-primary">Amigo do Peito</span>
         </Link>
 
         {/* Desktop Navigation */}
@@ -38,8 +38,7 @@ const Header = () => {
           {!user && (
             <Button 
               onClick={() => navigate("/cadastro")}
-              variant="gold"
-              className="shadow-gold"
+              className="bg-primary text-black font-semibold hover:bg-primary/90 shadow-lg"
             >
               Cadastrar
             </Button>
@@ -94,7 +93,7 @@ const Header = () => {
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-black-soft/95 backdrop-blur-sm py-4 px-6 border-t border-primary/20">
+        <div className="md:hidden bg-black/95 backdrop-blur-sm py-4 px-6 border-t border-primary/20">
           <div className="flex flex-col space-y-4">
             <Link to="/" 
               className="text-white hover:text-primary transition-all hover-gold"

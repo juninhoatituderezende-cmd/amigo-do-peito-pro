@@ -18,8 +18,8 @@ const buttonVariants = cva(
           "bg-secondary text-secondary-foreground hover:bg-secondary/80 border border-primary/20 hover:border-primary/40 transition-all",
         ghost: "hover:bg-primary/10 hover:text-primary transition-all",
         link: "text-primary underline-offset-4 hover:underline hover:text-primary/80",
-        gold: "bg-gradient-to-r from-primary to-gold-light text-black font-semibold shadow-lg transition-all animate-gold-pulse",
-        premium: "bg-gradient-to-r from-black-deep to-black-soft text-primary border border-primary/30 hover:border-primary shadow-md transition-all",
+        gold: "bg-primary text-black font-semibold shadow-lg transition-all",
+        premium: "bg-black-soft text-primary border border-primary/30 hover:border-primary shadow-md transition-all",
       },
       size: {
         default: "h-10 px-4 py-2",

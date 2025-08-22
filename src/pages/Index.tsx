@@ -98,12 +98,12 @@ const Index = () => {
       <Header />
       
       {/* Hero Section */}
-      <section className="py-16 md:py-24 bg-gradient-to-br from-black-deep via-black-soft to-primary/20 text-white">
+      <section className="py-16 md:py-24 gradient-dark text-white">
         <div className="ap-container">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
               <h1 className="text-4xl md:text-5xl font-bold mb-6 text-white animate-fade-in">
-                <span className="bg-gradient-to-r from-primary to-gold-light bg-clip-text text-transparent">
+                <span className="text-primary">
                   Amigo do Peito
                 </span>
               </h1>
@@ -112,9 +112,9 @@ const Index = () => {
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link to="/cadastro">
-                  <Button className="bg-primary hover:bg-primary/90 text-black font-semibold px-8 py-6 text-lg shadow-gold hover:shadow-gold-glow transition-all animate-gold-pulse">
-                    Cadastre-se como Profissional
-                  </Button>
+                <Button className="bg-primary text-black font-semibold px-8 py-6 text-lg shadow-lg">
+                  Cadastre-se como Profissional
+                </Button>
                 </Link>
                 <Link to="/login-rapido">
                   <Button className="bg-white/10 border border-primary/30 hover:bg-primary/20 text-white px-8 py-6 text-lg backdrop-blur-sm transition-all hover:border-primary/60">
@@ -129,9 +129,9 @@ const Index = () => {
               </div>
             </div>
             <div className="flex justify-center">
-              <div className="relative animate-luxury-float">
-                <div className="absolute -inset-1 rounded-lg bg-gradient-to-r from-primary to-gold-light blur-md opacity-75"></div>
-                <div className="relative bg-black-soft/80 backdrop-blur-sm p-6 rounded-lg shadow-gold border border-primary/20">
+              <div className="relative">
+                <div className="absolute -inset-1 rounded-lg bg-gradient-to-r from-primary to-primary/60 blur-md opacity-75"></div>
+                <div className="relative bg-black/80 backdrop-blur-sm p-6 rounded-lg shadow-lg border border-primary/20">
                   <img 
                     src="/lovable-uploads/07ee9a5d-7ae4-498b-be27-a07561f8c0bb.png" 
                     alt="Renaldo Rezende - Fundador"
@@ -156,8 +156,8 @@ const Index = () => {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
             <div>
-              <Card className="overflow-hidden transition-all duration-300 hover:shadow-gold border-primary/20 bg-white">
-                <CardContent className="p-0">
+               <Card className="overflow-hidden transition-all duration-300 card-premium bg-white">
+                 <CardContent className="p-0">
                   <img 
                     src="/lovable-uploads/910e3e91-4363-4ada-849c-1b2d717d404a.png" 
                     alt="Charles Ferreira - Tatuador" 
@@ -173,8 +173,8 @@ const Index = () => {
             </div>
             
             <div>
-              <Card className="overflow-hidden transition-all duration-300 hover:shadow-gold border-primary/20 bg-white">
-                <CardContent className="p-0">
+               <Card className="overflow-hidden transition-all duration-300 card-premium bg-white">
+                 <CardContent className="p-0">
                   <img 
                     src="/lovable-uploads/91e2caa6-e4d2-4fbd-9cb8-646d49d0827f.png" 
                     alt="Chaele Ferreira - Dentista" 
@@ -248,7 +248,7 @@ const Index = () => {
             ].map((step, index) => (
               <div 
                 key={index}
-                className="bg-white/5 backdrop-blur-sm border border-primary/20 p-6 rounded-lg shadow-lg hover:shadow-gold flex flex-col items-center transition-all duration-300 hover:bg-white/10"
+                className="bg-white/5 backdrop-blur-sm border border-primary/20 p-6 rounded-lg shadow-lg card-premium flex flex-col items-center transition-all duration-300 hover:bg-white/10"
               >
                 <div className="mb-4">
                   {step.icon}
@@ -281,9 +281,9 @@ const Index = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/cadastro">
-                <Button className="bg-primary hover:bg-primary/90 text-black font-semibold px-8 py-4 text-lg shadow-gold hover:shadow-gold-glow transition-all animate-gold-pulse">
-                  Começar Agora
-                </Button>
+              <Button className="bg-primary text-black font-semibold hover:bg-primary/90 shadow-lg">
+                Começar Agora
+              </Button>
               </Link>
               <Link to="/sobre">
                 <Button variant="outline" className="border-2 border-primary text-primary bg-white/10 hover:bg-primary hover:text-black px-8 py-4 text-lg backdrop-blur-sm transition-all">
