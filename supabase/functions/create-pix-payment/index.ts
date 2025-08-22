@@ -1,333 +1,222 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const logStep = (step: string, details?: any) => {
-  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
-  console.log(`[CREATE-PIX-PAYMENT-SPLIT] ${step}${detailsStr}`);
-};
+interface PixPaymentRequest {
+  serviceId: string;
+  amount: number;
+  description: string;
+  customerName: string;
+  customerEmail: string;
+  customerCpf: string;
+  referrerId?: string;
+  groupParticipation?: boolean;
+}
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
   }
 
   try {
-    logStep("Function started");
-
-    const { plan_id, user_id, product_code, service_id, referral_code, professional_id } = await req.json();
-    logStep("Request data received", { plan_id, user_id, product_code, service_id, referral_code, professional_id });
-
-    // Initialize Supabase client
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      { auth: { persistSession: false } }
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Get authenticated user
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No authorization header provided");
-    
-    const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError) throw new Error(`Authentication error: ${userError.message}`);
-    
-    const user = userData.user;
-    if (!user?.email) throw new Error("User not authenticated or email not available");
-    logStep("User authenticated", { userId: user.id, email: user.email });
+    const { data: { user } } = await supabase.auth.getUser(
+      req.headers.get('Authorization')?.replace('Bearer ', '') ?? ''
+    );
 
-    // Get payment details and calculate split
-    let amount = 40000; // R$ 400.00 padrão em centavos
-    let description = "Plano MIN - Sistema MLM";
-    let productId = null;
-    let serviceIdForSplit = null;
-    let professionalForSplit = null;
-    
-    if (plan_id) {
-      const { data: plan, error: planError } = await supabaseClient
-        .from("custom_plans")
-        .select("*")
-        .eq("id", plan_id)
-        .single();
-      
-      if (!planError && plan) {
-        amount = Math.round(plan.entry_price * 100);
-        description = plan.name;
-        if (plan.professional_id) {
-          professionalForSplit = plan.professional_id;
-        }
-      }
-    } else if (product_code) {
-      // Buscar produto no marketplace
-      const { data: product, error: productError } = await supabaseClient
-        .from("marketplace_products")
-        .select("*")
-        .eq("id", product_code)
-        .single();
-      
-      if (!productError && product) {
-        amount = Math.round(product.valor_total * (product.percentual_entrada / 100) * 100);
-        description = product.name;
-        productId = product.id;
-        professionalForSplit = product.professional_id;
-      }
-    } else if (service_id) {
-      const { data: service, error: serviceError } = await supabaseClient
-        .from("services")
-        .select("*")
-        .eq("id", service_id)
-        .single();
-      
-      if (!serviceError && service) {
-        amount = Math.round(service.price * 0.1 * 100); // 10% de entrada
-        description = service.name;
-        serviceIdForSplit = service.id;
-        professionalForSplit = service.professional_id;
-      }
+    if (!user) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    // Se professional_id foi fornecido diretamente, usar ele
-    if (professional_id) {
-      professionalForSplit = professional_id;
+    const body: PixPaymentRequest = await req.json();
+    const asaasApiKey = Deno.env.get('ASAAS_API_KEY');
+
+    if (!asaasApiKey) {
+      throw new Error('ASAAS_API_KEY não configurada');
     }
 
-    logStep("Payment details calculated", { amount, description, professionalForSplit, productId, serviceIdForSplit });
+    // 1. Criar/buscar cliente no Asaas
+    let customerId = await getOrCreateAsaasCustomer(asaasApiKey, {
+      name: body.customerName,
+      email: body.customerEmail,
+      cpfCnpj: body.customerCpf
+    });
 
-    // Create payment record first
-    const { data: payment, error: paymentError } = await supabaseClient
-      .from("payments")
+    // 2. Criar cobrança PIX
+    const pixPayment = await createAsaasPixPayment(asaasApiKey, {
+      customer: customerId,
+      value: body.amount,
+      description: body.description,
+      externalReference: body.serviceId,
+      dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    });
+
+    // 3. Buscar QR Code
+    const pixQrCode = await getPixQrCode(asaasApiKey, pixPayment.id);
+
+    // 4. Registrar venda no marketplace
+    const { data: sale } = await supabase
+      .from('marketplace_sales')
       .insert({
-        user_id: user.id,
-        plan_id: plan_id || null,
-        amount: amount / 100,
-        currency: "BRL",
-        payment_method: "pix",
-        status: "pending",
-        influencer_code: referral_code || null,
-        created_at: new Date().toISOString(),
+        buyer_id: user.id,
+        seller_id: body.serviceId, // Será corrigido depois
+        service_id: body.serviceId,
+        payment_method: 'pix',
+        total_amount: body.amount,
+        payment_id: pixPayment.id,
+        status: 'pending',
+        referrer_id: body.referrerId
       })
       .select()
       .single();
 
-    if (paymentError) {
-      logStep("Error creating payment record", paymentError);
-      throw new Error("Erro ao criar registro de pagamento");
+    // 5. Se for participação em grupo, processar
+    if (body.groupParticipation) {
+      await processGroupJoin(supabase, user.id, body.serviceId, body.amount, body.referrerId);
     }
 
-    logStep("Payment record created", { paymentId: payment.id });
-
-    // Get split rules and subaccount info
-    let splitInfo = null;
-    let receiverAccountId = null;
-    
-    if (professionalForSplit) {
-      // Buscar regras de split
-      const { data: splitRules } = await supabaseClient
-        .rpc("get_split_rules", { 
-          p_product_id: productId, 
-          p_service_id: serviceIdForSplit 
-        });
-      
-      if (splitRules && splitRules.length > 0) {
-        const rules = splitRules[0];
-        
-        // Buscar subconta do profissional
-        const { data: subaccount } = await supabaseClient
-          .from("asaas_subaccounts")
-          .select("asaas_account_id, status, verification_status")
-          .eq("professional_id", professionalForSplit)
-          .eq("status", "active")
-          .eq("verification_status", "approved")
-          .single();
-        
-        if (subaccount) {
-          receiverAccountId = subaccount.asaas_account_id;
-          
-          // Calcular valores do split
-          const totalAmountInReais = amount / 100;
-          const professionalAmount = Math.round(totalAmountInReais * (rules.professional_percentage / 100) * 100) / 100;
-          const platformAmount = Math.round(totalAmountInReais * (rules.platform_percentage / 100) * 100) / 100;
-          const influencerAmount = referral_code ? Math.round(totalAmountInReais * (rules.influencer_percentage / 100) * 100) / 100 : 0;
-          
-          splitInfo = {
-            professional_percentage: rules.professional_percentage,
-            platform_percentage: rules.platform_percentage,
-            influencer_percentage: rules.influencer_percentage,
-            professional_amount: professionalAmount,
-            platform_amount: platformAmount,
-            influencer_amount: influencerAmount,
-            receiver_account_id: receiverAccountId
-          };
-          
-          logStep("Split calculated", splitInfo);
-        } else {
-          logStep("Professional subaccount not ready for split", { professionalForSplit });
-        }
-      }
-    }
-
-    // Create PIX payment with Asaas API (with split if applicable)
-    const asaasApiKey = Deno.env.get("ASAAS_API_KEY");
-    if (!asaasApiKey) {
-      throw new Error("ASAAS_API_KEY não configurada");
-    }
-
-    const asaasPayload: any = {
-      customer: user.email,
-      billingType: "PIX",
-      value: amount / 100,
-      dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 24h
-      description: description,
-      externalReference: payment.id,
-      postalService: false,
-    };
-
-    // Adicionar split se configurado
-    if (splitInfo && receiverAccountId) {
-      asaasPayload.split = [
-        {
-          walletId: receiverAccountId,
-          fixedValue: splitInfo.professional_amount,
-          percentualValue: null
-        }
-      ];
-      logStep("Split configuration added to payment", asaasPayload.split);
-    }
-
-    logStep("Creating PIX with Asaas", asaasPayload);
-
-    const asaasResponse = await fetch("https://www.asaas.com/api/v3/payments", {
-      method: "POST",
-      headers: {
-        "access_token": asaasApiKey,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(asaasPayload),
-    });
-
-    if (!asaasResponse.ok) {
-      const errorText = await asaasResponse.text();
-      logStep("Asaas API error", { status: asaasResponse.status, error: errorText });
-      throw new Error(`Erro na API Asaas: ${asaasResponse.status} - ${errorText}`);
-    }
-
-    const asaasData = await asaasResponse.json();
-    logStep("Asaas PIX created", asaasData);
-
-    // Get PIX QR Code and copy-paste code
-    const pixResponse = await fetch(`https://www.asaas.com/api/v3/payments/${asaasData.id}/pixQrCode`, {
-      headers: {
-        "access_token": asaasApiKey,
-      },
-    });
-
-    let pixQrCode = null;
-    let pixCopyPaste = null;
-
-    if (pixResponse.ok) {
-      const pixData = await pixResponse.json();
-      pixQrCode = pixData.qrCode.encodedImage;
-      pixCopyPaste = pixData.qrCode.payload;
-      logStep("PIX QR Code retrieved", { hasQrCode: !!pixQrCode, hasCopyPaste: !!pixCopyPaste });
-    }
-
-    // Update payment record with Asaas data
-    const { error: updateError } = await supabaseClient
-      .from("payments")
-      .update({
-        pix_code: pixCopyPaste,
-        stripe_session_id: asaasData.id, // Reutilizando campo para ID do Asaas
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", payment.id);
-
-    if (updateError) {
-      logStep("Error updating payment with PIX data", updateError);
-    }
-
-    // Criar registro de split se configurado
-    if (splitInfo) {
-      const { error: splitError } = await supabaseClient
-        .from("payment_splits")
-        .insert({
-          payment_id: payment.id,
-          asaas_payment_id: asaasData.id,
-          professional_id: professionalForSplit,
-          total_amount: amount / 100,
-          professional_amount: splitInfo.professional_amount,
-          platform_amount: splitInfo.platform_amount,
-          influencer_amount: splitInfo.influencer_amount,
-          split_executed: !!receiverAccountId
-        });
-
-      if (splitError) {
-        logStep("Error creating split record", splitError);
-      } else {
-        logStep("Split record created successfully");
-      }
-    }
-
-    // Process referral if exists
-    if (referral_code) {
-      logStep("Processing referral", { referral_code });
-      
-      const { data: referrer, error: referrerError } = await supabaseClient
-        .from("mlm_network")
-        .select("user_id")
-        .eq("referral_code", referral_code)
-        .single();
-
-      if (!referrerError && referrer) {
-        // Insert referral record
-        await supabaseClient
-          .from("mlm_referrals")
-          .insert({
-            referrer_id: referrer.user_id,
-            referred_id: user.id,
-            referral_code_used: referral_code,
-            commission_earned: (amount / 100) * 0.1, // 10% commission
-            status: "pending",
-          });
-
-        logStep("Referral processed", { referrerId: referrer.user_id });
-      }
-    }
-
-    const result = {
-      success: true,
-      payment_id: payment.id,
-      asaas_payment_id: asaasData.id,
-      amount: amount / 100,
-      pix_qr_code: pixQrCode ? `data:image/png;base64,${pixQrCode}` : null,
-      pix_copy_paste: pixCopyPaste,
-      status: asaasData.status,
-      due_date: asaasData.dueDate,
-      split_configured: !!splitInfo,
-      split_details: splitInfo || null,
-    };
-
-    logStep("Payment created successfully", result);
-
-    return new Response(JSON.stringify(result), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
-    });
+    return new Response(
+      JSON.stringify({
+        success: true,
+        payment: {
+          id: pixPayment.id,
+          status: pixPayment.status,
+          amount: body.amount,
+          qrCode: pixQrCode.encodedImage,
+          pixCopyPaste: pixQrCode.payload,
+          expiresAt: pixPayment.dueDate
+        },
+        sale: sale
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
 
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    logStep("ERROR in create-pix-payment", { message: errorMessage });
-    
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: errorMessage 
-    }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
-    });
+    console.error('Erro ao criar PIX:', error);
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   }
 });
+
+async function getOrCreateAsaasCustomer(apiKey: string, customerData: any) {
+  // Tentar buscar cliente existente
+  const searchResponse = await fetch(`https://www.asaas.com/api/v3/customers?email=${customerData.email}`, {
+    headers: { 'access_token': apiKey }
+  });
+
+  if (searchResponse.ok) {
+    const searchResult = await searchResponse.json();
+    if (searchResult.data && searchResult.data.length > 0) {
+      return searchResult.data[0].id;
+    }
+  }
+
+  // Criar novo cliente
+  const createResponse = await fetch('https://www.asaas.com/api/v3/customers', {
+    method: 'POST',
+    headers: {
+      'access_token': apiKey,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(customerData)
+  });
+
+  if (!createResponse.ok) {
+    const error = await createResponse.text();
+    throw new Error(`Erro ao criar cliente: ${error}`);
+  }
+
+  const customer = await createResponse.json();
+  return customer.id;
+}
+
+async function createAsaasPixPayment(apiKey: string, paymentData: any) {
+  const response = await fetch('https://www.asaas.com/api/v3/payments', {
+    method: 'POST',
+    headers: {
+      'access_token': apiKey,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      ...paymentData,
+      billingType: 'PIX'
+    })
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Erro ao criar cobrança PIX: ${error}`);
+  }
+
+  return await response.json();
+}
+
+async function getPixQrCode(apiKey: string, paymentId: string) {
+  const response = await fetch(`https://www.asaas.com/api/v3/payments/${paymentId}/pixQrCode`, {
+    headers: { 'access_token': apiKey }
+  });
+
+  if (!response.ok) {
+    throw new Error('Erro ao buscar QR Code PIX');
+  }
+
+  return await response.json();
+}
+
+async function processGroupJoin(supabase: any, userId: string, serviceId: string, amount: number, referrerId?: string) {
+  // Buscar grupo ativo ou criar novo
+  let { data: activeGroup } = await supabase
+    .from('plan_groups')
+    .select('*')
+    .eq('service_id', serviceId)
+    .eq('status', 'forming')
+    .lt('current_participants', 10)
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .single();
+
+  if (!activeGroup) {
+    // Criar novo grupo
+    const { data: newGroup } = await supabase
+      .from('plan_groups')
+      .insert({
+        service_id: serviceId,
+        group_number: Math.floor(Math.random() * 10000),
+        target_amount: amount * 10,
+        current_amount: 0,
+        current_participants: 0,
+        max_participants: 10,
+        status: 'forming'
+      })
+      .select()
+      .single();
+
+    activeGroup = newGroup;
+  }
+
+  // Adicionar participante (será confirmado via webhook)
+  await supabase
+    .from('group_participants')
+    .insert({
+      group_id: activeGroup.id,
+      user_id: userId,
+      amount_paid: amount,
+      referrer_id: referrerId,
+      status: 'pending'
+    });
+
+  return activeGroup;
+}
