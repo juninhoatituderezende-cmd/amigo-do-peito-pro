@@ -27,6 +27,7 @@ import ProServices from "./pages/pro/ProServices";
 import UserRegister from "./pages/UserRegister";
 import UserLogin from "./pages/UserLogin";
 import CreateAdmin from "./pages/CreateAdmin";
+import CreateAdmins from "./pages/CreateAdmins";
 import QuickLogin from "./pages/QuickLogin";
 import UserDashboard from "./pages/user/UserDashboard";
 import UserMarketplace from "./pages/user/UserMarketplace";
@@ -86,6 +87,7 @@ const App = () => (
               <Route path="/usuario/login" element={<UserLogin />} />
               <Route path="/login-rapido" element={<QuickLogin />} />
               <Route path="/create-admin" element={<CreateAdmin />} />
+              <Route path="/create-admins" element={<CreateAdmins />} />
               <Route path="/usuario/dashboard" element={
                 <ProtectedRoute role="user">
                   <UserDashboard />
