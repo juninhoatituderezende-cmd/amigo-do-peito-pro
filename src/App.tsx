@@ -11,7 +11,6 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
-import MLMAdmin from "./pages/admin/MLMAdmin";
 import AdminUsuarios from "./pages/admin/AdminUsuarios";
 import AdminPlanos from "./pages/admin/AdminPlanos";
 import AdminPagamentos from "./pages/admin/AdminPagamentos";

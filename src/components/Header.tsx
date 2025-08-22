@@ -43,13 +43,13 @@ const Header = () => {
               Cadastrar
             </Button>
           )}
-          {user && user.role === null && (
+          {user && user.role === "user" && (
             <Link to="/usuario/dashboard" className="text-white hover:text-primary transition-all hover-gold">
               Meu Painel
             </Link>
           )}
           {user && user.role === "professional" && (
-            <Link to="/profissional" className="text-white hover:text-primary transition-all hover-gold">
+            <Link to="/profissional/dashboard" className="text-white hover:text-primary transition-all hover-gold">
               Painel Profissional
             </Link>
           )}
@@ -127,7 +127,7 @@ const Header = () => {
                 Cadastrar
               </Link>
             )}
-            {user && user.role === null && (
+            {user && user.role === "user" && (
               <Link to="/usuario/dashboard" 
                 className="text-white hover:text-primary transition-all hover-gold"
                 onClick={() => setMobileMenuOpen(false)}
@@ -136,7 +136,7 @@ const Header = () => {
               </Link>
             )}
             {user && user.role === "professional" && (
-              <Link to="/profissional" 
+              <Link to="/profissional/dashboard" 
                 className="text-white hover:text-primary transition-all hover-gold"
                 onClick={() => setMobileMenuOpen(false)}
               >
