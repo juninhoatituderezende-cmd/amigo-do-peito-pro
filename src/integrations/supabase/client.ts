@@ -8,6 +8,13 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
+// Debug Supabase configuration
+console.log('🔧 Supabase Config Debug:', {
+  url: SUPABASE_URL,
+  keyPrefix: SUPABASE_PUBLISHABLE_KEY.substring(0, 20) + '...',
+  timestamp: new Date().toISOString()
+});
+
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
     storage: localStorage,
@@ -15,3 +22,9 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     autoRefreshToken: true,
   }
 });
+
+// Test connection
+supabase.from('profiles').select('count').limit(1).then(
+  (result) => console.log('✅ Supabase Connection Test:', result),
+  (error) => console.error('❌ Supabase Connection Failed:', error)
+);
