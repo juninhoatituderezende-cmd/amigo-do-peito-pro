@@ -70,6 +70,7 @@ const menuItems: MenuItem[] = [
   { title: "Marketplace", url: "/usuario/marketplace", icon: Package, roles: ["user"] },
   { title: "Saques", url: "/usuario/saques", icon: DollarSign, roles: ["user"] },
   { title: "Notificações", url: "/usuario/notificacoes", icon: Bell, roles: ["user"] },
+  { title: "Histórico", url: "/usuario/historico", icon: History, roles: ["user"] },
   { title: "Créditos", url: "/usuario/creditos", icon: Gift, roles: ["user"] },
 ];
 

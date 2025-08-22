@@ -31,6 +31,7 @@ import UserDashboard from "./pages/user/UserDashboard";
 import UserMarketplace from "./pages/user/UserMarketplace";
 import UserWithdrawals from "./pages/user/UserWithdrawals";
 import UserNotifications from "./pages/user/UserNotifications";
+import UserHistory from "./pages/user/UserHistory";
 import Marketplace from "./pages/Marketplace";
 import InfluencerRegister from "./pages/InfluencerRegister";
 import InfluencerLogin from "./pages/InfluencerLogin";
@@ -98,6 +99,11 @@ const App = () => (
             <Route path="/usuario/notificacoes" element={
               <ProtectedRoute role="user">
                 <UserNotifications />
+              </ProtectedRoute>
+            } />
+            <Route path="/usuario/historico" element={
+              <ProtectedRoute role="user">
+                <UserHistory />
               </ProtectedRoute>
             } />
             <Route path="/marketplace" element={<Marketplace />} />

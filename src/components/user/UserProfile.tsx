@@ -60,10 +60,12 @@ export const UserProfile = () => {
   const loadProfileData = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      if (!user) return;
+      
+      const { data, error } = await (supabase as any)
         .from('profiles')
         .select('*')
-        .eq('user_id', user?.id)
+        .eq('user_id', user.id)
         .single();
 
       if (error) throw error;
