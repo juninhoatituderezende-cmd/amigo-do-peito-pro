@@ -276,10 +276,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Se o usuário foi criado com sucesso
       if (data.user && !data.session) {
         console.log('✅ User registered successfully, email confirmation required');
-        // Redirecionar para página de ajuda sobre confirmação de email
+        console.log('ℹ️  User will be redirected to email confirmation help page');
+        
+        // Redirecionar para página de ajuda após um tempo
         setTimeout(() => {
           navigate('/confirmacao-email');
-        }, 1000);
+        }, 2000);
         return { error: null };
       } else if (data.session) {
         console.log('✅ User registered and logged in successfully');

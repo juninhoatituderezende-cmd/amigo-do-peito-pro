@@ -19,7 +19,6 @@ const QuickLogin = () => {
   const [phone, setPhone] = useState("");
   const { login, register } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,7 +34,7 @@ const QuickLogin = () => {
           description: "Redirecionando para seu painel...",
         });
         
-        navigate("/usuario/dashboard");
+        // Não fazer redirecionamento manual - deixar o AuthContext fazer automaticamente
       } else {
         const userData = {
           email,
@@ -43,7 +42,7 @@ const QuickLogin = () => {
           phone: phone || ""
         };
         
-        const { error } = await register(email, password, userData);
+        const { error } = await register(email, password, userData, "user");
         if (error) throw error;
         
         toast({
@@ -51,9 +50,10 @@ const QuickLogin = () => {
           description: "Sua conta foi criada. Redirecionando...",
         });
         
-        navigate("/usuario/dashboard");
+        // Não fazer redirecionamento manual - deixar o AuthContext fazer automaticamente
       }
     } catch (error: any) {
+      console.error('QuickLogin error:', error);
       toast({
         title: "Erro",
         description: error.message || "Ocorreu um erro. Tente novamente.",
@@ -185,13 +185,13 @@ const QuickLogin = () => {
                 
                 <div className="mt-6 p-4 bg-muted/50 rounded-lg">
                   <h4 className="text-sm font-medium mb-2">
-                    ✅ Sistema Simplificado:
+                    ℹ️ Informação importante:
                   </h4>
                   <ul className="text-xs text-muted-foreground space-y-1">
-                    <li>• Acesso imediato após cadastro</li>
-                    <li>• Sem verificação de e-mail</li>
-                    <li>• Campos opcionais para agilidade</li>
-                    <li>• Vai direto para o painel</li>
+                    <li>• O sistema pode exigir confirmação de email</li>
+                    <li>• Se não receber o email, aguarde alguns minutos</li>
+                    <li>• Após cadastro, aguarde o redirecionamento automático</li>
+                    <li>• Se houver problemas, entre em contato com suporte</li>
                   </ul>
                 </div>
               </CardContent>
