@@ -63,10 +63,15 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-                // Amigo do Peito custom colors
-                'ap-light-orange': '#FDE1D3',
-                'ap-orange': '#F97316',
-                'ap-light-blue': '#33C3F0',
+				// Premium Black + Gold Theme
+				'black-deep': 'hsl(var(--black-deep))',
+				'black-soft': 'hsl(var(--black-soft))',
+				'black-light': 'hsl(var(--black-light))',
+				'gold-primary': 'hsl(var(--gold-primary))',
+				'gold-light': 'hsl(var(--gold-light))',
+				'gold-dark': 'hsl(var(--gold-dark))',
+				'white-pure': 'hsl(var(--white-pure))',
+				'white-soft': 'hsl(var(--white-soft))',
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -97,13 +102,34 @@ export default {
                 'slide-in': {
                     from: { transform: 'translateY(20px)', opacity: '0' },
                     to: { transform: 'translateY(0)', opacity: '1' },
+                },
+                'gold-shimmer': {
+                    '0%': { transform: 'translateX(-100%)' },
+                    '100%': { transform: 'translateX(100%)' }
+                },
+                'gold-pulse': {
+                    '0%, 100%': { 
+                        boxShadow: '0 0 5px rgba(212, 175, 55, 0.3)',
+                        filter: 'brightness(1)'
+                    },
+                    '50%': { 
+                        boxShadow: '0 0 20px rgba(212, 175, 55, 0.6)',
+                        filter: 'brightness(1.1)'
+                    }
+                },
+                'luxury-float': {
+                    '0%, 100%': { transform: 'translateY(0px)' },
+                    '50%': { transform: 'translateY(-5px)' }
                 }
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
                 'fade-in': 'fade-in 0.5s ease-in-out',
-                'slide-in': 'slide-in 0.5s ease-out'
+                'slide-in': 'slide-in 0.5s ease-out',
+                'gold-shimmer': 'gold-shimmer 2s ease-in-out infinite',
+                'gold-pulse': 'gold-pulse 2s ease-in-out infinite',
+                'luxury-float': 'luxury-float 3s ease-in-out infinite'
 			},
             fontFamily: {
                 'inter': ['Inter', 'sans-serif'],
