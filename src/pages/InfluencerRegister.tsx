@@ -105,7 +105,7 @@ const InfluencerRegister = () => {
         email: formData.email,
         phone: formData.phone,
         instagram: instagramHandle,
-        followers: formData.followers,
+        followers_count: formData.followers,
         niche: formData.niche,
         description: formData.description,
         approved: false
@@ -115,9 +115,10 @@ const InfluencerRegister = () => {
       
       toast({
         title: "Cadastro enviado com sucesso!",
-        description: "Sua conta será analisada e aprovada em breve. Você receberá um email quando for aprovado.",
+        description: "Sua conta será analisada. Aguarde aprovação por email.",
       });
       
+      // Redirect to confirmation page instead of login
       navigate("/confirmacao");
     } catch (error: any) {
       console.error("Registration error:", error);

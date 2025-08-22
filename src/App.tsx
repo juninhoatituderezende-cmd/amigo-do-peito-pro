@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { AuthRedirect } from "@/components/AuthRedirect";
 import { ScrollToTop, ConnectionStatus } from "@/components/ui/ux-improvements";
 import { diagnostics } from "@/lib/diagnostics";
 import Index from "./pages/Index";
@@ -72,6 +73,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <AuthRedirect />
             <ScrollToTop />
             <Routes>
               {/* Public Routes */}

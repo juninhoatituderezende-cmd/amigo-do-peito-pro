@@ -45,7 +45,7 @@ const ProfessionalLogin = () => {
         description: "Bem-vindo ao painel profissional.",
       });
 
-      navigate("/profissional/dashboard");
+      // Redirection will be handled automatically by AuthContext
     } catch (error: any) {
       console.error("Professional login error:", error);
       setError(error.message || "Erro ao fazer login. Verifique suas credenciais.");

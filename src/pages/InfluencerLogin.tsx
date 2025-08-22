@@ -25,8 +25,21 @@ const InfluencerLogin = () => {
     setLoading(true);
     
     try {
-      await login(formData.email, formData.password, null);
-      navigate("/influenciador/dashboard");
+      const result = await login(formData.email, formData.password, "influencer");
+      
+      if (result.error) {
+        toast({
+          title: "Erro no login",
+          description: result.error.message || "Credenciais inválidas",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Login realizado com sucesso!",
+          description: "Bem-vindo ao dashboard de influenciador.",
+        });
+        // Redirection will be handled automatically by AuthContext
+      }
     } catch (error: any) {
       toast({
         title: "Erro no login",

@@ -1,28 +1,25 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { getDashboardRoute, shouldRedirectUser } from '@/lib/routes';
 
 export const AuthRedirect = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     if (!loading && user) {
-      console.log('Redirecting user based on role:', user.role);
+      const currentPath = location.pathname;
       
-      // Redirect based on user role
-      if (user.role === 'admin') {
-        navigate('/admin');
-      } else if (user.role === 'professional') {
-        navigate('/profissional/dashboard');
-      } else if (user.role === 'influencer') {
-        navigate('/influenciador/dashboard');
-      } else {
-        // Regular user (role === null)
-        navigate('/usuario/dashboard');
+      // Check if user should be redirected
+      if (shouldRedirectUser(currentPath, user.role)) {
+        const dashboardRoute = getDashboardRoute(user.role);
+        console.log('🔄 AuthRedirect: Redirecting user based on role:', user.role, 'to:', dashboardRoute);
+        navigate(dashboardRoute, { replace: true });
       }
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, location.pathname]);
 
   return null; // This component doesn't render anything
 };

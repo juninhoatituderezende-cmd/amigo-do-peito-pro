@@ -48,10 +48,10 @@ const UserLogin = () => {
             variant: "destructive",
           });
         }
-      } else {
-        console.log('✅ Login successful');
-        // Redirect will be handled by AuthRedirect component in the main app
-      }
+        } else {
+          console.log('✅ Login successful');
+          // Navigation will be handled by AuthContext automatically
+        }
     } catch (error: any) {
       console.error('❌ Login failed:', error);
       toast({

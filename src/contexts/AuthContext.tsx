@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import type { User as SupabaseUser, Session } from "@supabase/supabase-js";
+import { getDashboardRoute, shouldRedirectUser, ROUTES } from "@/lib/routes";
 
 // Types
 export type UserRole = 'admin' | 'professional' | 'influencer' | 'user';
@@ -35,6 +37,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [supabaseUser, setSupabaseUser] = useState<SupabaseUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -191,10 +195,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           avatar_url: null, // Not available in current schema
           ...additionalData
         });
+        
+        // Handle automatic redirection based on role
+        setTimeout(() => {
+          handleUserRedirection(profileData.role as UserRole);
+        }, 100);
       }
     } catch (error) {
       console.error('❌ Unexpected error loading profile:', error);
     }
+  };
+
+  // Handle user redirection based on role and current location
+  const handleUserRedirection = (userRole: UserRole) => {
+    const currentPath = location.pathname;
+    
+    // Skip redirection if user is already on the correct dashboard or public pages
+    if (!shouldRedirectUser(currentPath, userRole)) {
+      return;
+    }
+    
+    const dashboardRoute = getDashboardRoute(userRole);
+    console.log(`🔄 Redirecting ${userRole} user to:`, dashboardRoute);
+    
+    navigate(dashboardRoute, { replace: true });
   };
 
   const login = async (email: string, password: string, role?: UserRole) => {
@@ -208,6 +232,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) throw error;
 
+      // Success - redirection will be handled by loadUserProfile
+      console.log('✅ Login successful, user profile will be loaded and redirected');
+      
       return { error: null };
     } catch (error: any) {
       console.error('Erro no login:', error);
@@ -240,6 +267,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Se o usuário foi criado com sucesso, fazer login automático
       if (data.user) {
+        console.log('✅ User registered successfully, preparing for auto-login');
+        
         // Aguardar um pouco para garantir que o trigger foi executado
         await new Promise(resolve => setTimeout(resolve, 1000));
         
@@ -251,6 +280,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (loginError) {
           console.warn('Usuário criado mas login automático falhou:', loginError);
+          // Don't throw here - user was created successfully
+        } else {
+          console.log('✅ Auto-login successful after registration');
         }
       }
 
@@ -285,8 +317,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (!profileData) {
           await supabase.auth.signOut();
-          throw new Error('Usuário não é administrador');
+          throw new Error('Email ou senha incorretos');
         }
+        
+        // Success - redirect to admin dashboard
+        console.log('✅ Admin login successful');
+        navigate(ROUTES.ADMIN_DASHBOARD, { replace: true });
       }
 
       return { error: null };
@@ -309,7 +345,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await supabase.auth.signOut({ scope: 'global' });
       
       // Force page reload for clean state
-      window.location.href = '/';
+      window.location.href = ROUTES.HOME;
     } catch (error) {
       console.error('Erro no logout:', error);
     }
@@ -321,8 +357,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         user, 
         supabaseUser, 
         session, 
-    login,
-    register,
+        login,
+        register,
         adminLogin, 
         logout, 
         loading 

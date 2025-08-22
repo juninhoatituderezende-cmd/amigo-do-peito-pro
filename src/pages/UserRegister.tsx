@@ -100,9 +100,9 @@ const UserRegister = () => {
       } else {
         toast({
           title: "Cadastro realizado com sucesso!",
-          description: "Bem-vindo à Amigo do Peito! Você pode fazer login agora.",
+          description: "Bem-vindo! Você será redirecionado automaticamente.",
         });
-        navigate("/usuario/login");
+        // Redirection will be handled automatically by AuthContext
       }
     } catch (error: any) {
       console.error("Registration error:", error);

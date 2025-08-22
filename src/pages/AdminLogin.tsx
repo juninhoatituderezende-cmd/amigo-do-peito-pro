@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { Loader2, Shield } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { ROUTES } from "@/lib/routes";
 
 const AdminLogin = () => {
   const [email, setEmail] = useState("");
@@ -34,7 +35,7 @@ const AdminLogin = () => {
         description: "Bem-vindo ao painel administrativo.",
       });
 
-      navigate("/admin");
+      navigate(ROUTES.ADMIN_DASHBOARD);
     } catch (error: any) {
       console.error("Admin login error:", error);
       setError(error.message || "Erro ao fazer login. Verifique suas credenciais.");
