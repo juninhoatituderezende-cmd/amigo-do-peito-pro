@@ -250,11 +250,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setLoading(true);
       
-      // Cadastro direto sem confirmação de email
+      // Cadastro com confirmação de email desabilitada
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
+          emailRedirectTo: `${window.location.origin}/`,
           data: {
             full_name: userData.fullName || userData.nome || 'Usuário',
             phone: userData.phone || userData.telefone || '',
@@ -265,25 +266,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) throw error;
 
-      // Se o usuário foi criado com sucesso, fazer login automático
-      if (data.user) {
-        console.log('✅ User registered successfully, preparing for auto-login');
-        
-        // Aguardar um pouco para garantir que o trigger foi executado
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Fazer login automático
-        const { error: loginError } = await supabase.auth.signInWithPassword({
-          email,
-          password
-        });
-        
-        if (loginError) {
-          console.warn('Usuário criado mas login automático falhou:', loginError);
-          // Don't throw here - user was created successfully
-        } else {
-          console.log('✅ Auto-login successful after registration');
-        }
+      // Se o usuário foi criado com sucesso
+      if (data.user && !data.session) {
+        console.log('✅ User registered successfully, email confirmation may be required');
+        console.log('ℹ️  Please check your email to confirm your account, or disable email confirmation in Supabase settings');
+        return { error: null };
+      } else if (data.session) {
+        console.log('✅ User registered and logged in successfully');
+        return { error: null };
       }
 
       return { error: null };

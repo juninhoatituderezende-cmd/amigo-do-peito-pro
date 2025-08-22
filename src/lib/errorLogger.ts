@@ -13,12 +13,20 @@ interface ErrorLogData {
 class ErrorLogger {
   private async logToSupabase(data: ErrorLogData) {
     try {
-      const { error } = await supabase.functions.invoke("log-error", {
-        body: data,
-      });
+      // Log to console for immediate visibility
+      console.log('🔴 Error logged:', data);
       
-      if (error) {
-        console.error("Failed to log error to Supabase:", error);
+      // Try edge function but don't fail if it's not available
+      try {
+        const { error } = await supabase.functions.invoke("log-error", {
+          body: data,
+        });
+        
+        if (error) {
+          console.warn("Edge function not available for error logging:", error.message);
+        }
+      } catch (edgeError) {
+        console.warn("Edge function not available for error logging");
       }
     } catch (error) {
       console.error("Error logging to Supabase:", error);

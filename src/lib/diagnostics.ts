@@ -67,8 +67,17 @@ class DiagnosticsManager {
     try {
       this.log("DATABASE", `Testing table access: ${tableName}`);
       
-      // Check if table name is valid
-      const validTables = ["users", "services", "professionals", "groups", "transactions", "activity_logs", "error_logs", "performance_metrics"];
+      // Check if table name is valid - using actual table names from database
+      const validTables = [
+        "profiles", 
+        "services", 
+        "plan_groups", 
+        "credit_transactions", 
+        "notification_triggers",
+        "user_credits",
+        "marketplace_sales",
+        "withdrawal_requests"
+      ];
       
       if (!validTables.includes(tableName)) {
         this.log("DATABASE", `Table ${tableName} not in valid tables list`);
@@ -104,8 +113,8 @@ class DiagnosticsManager {
     // Test Supabase connection
     results.supabaseConnection = await this.testSupabaseConnection();
 
-    // Test critical tables
-    const criticalTables = ["users", "services", "professionals", "groups", "transactions"];
+    // Test critical tables - using actual database table names
+    const criticalTables = ["profiles", "services", "plan_groups", "credit_transactions", "user_credits"];
     
     for (const table of criticalTables) {
       results.tableAccess[table] = await this.testTableAccess(table);

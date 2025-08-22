@@ -40,16 +40,28 @@ class ActivityLogger {
     try {
       const userInfo = await this.getUserInfo();
       
-      const { error } = await supabase.functions.invoke("log-activity", {
-        body: {
-          ...data,
-          ...userInfo,
-          timestamp: new Date().toISOString(),
-        },
+      // Log to console instead of edge function for now to avoid failures
+      console.log('📊 Activity Log:', {
+        ...data,
+        ...userInfo,
+        timestamp: new Date().toISOString(),
       });
 
-      if (error) {
-        console.error("Failed to log activity:", error);
+      // Optionally try edge function but don't fail if it doesn't work
+      try {
+        const { error } = await supabase.functions.invoke("log-activity", {
+          body: {
+            ...data,
+            ...userInfo,
+            timestamp: new Date().toISOString(),
+          },
+        });
+
+        if (error) {
+          console.warn("Edge function not available for activity logging:", error.message);
+        }
+      } catch (edgeError) {
+        console.warn("Edge function not available for activity logging");
       }
     } catch (error) {
       console.error("Activity logging error:", error);
