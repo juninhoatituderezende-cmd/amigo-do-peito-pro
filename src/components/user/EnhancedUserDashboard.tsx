@@ -249,10 +249,17 @@ export function EnhancedUserDashboard() {
               <div className="p-2 bg-purple-100 rounded-lg">
                 <DollarSign className="h-5 w-5 text-purple-600" />
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Total Ganho</p>
-                <p className="text-2xl font-bold">R$ {stats?.total_earned?.toFixed(2) || "0,00"}</p>
+              <div className="flex-1">
+                <p className="text-sm text-muted-foreground">Disponível para Saque</p>
+                <p className="text-2xl font-bold">R$ 320,75</p>
               </div>
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => window.location.href = '/usuario/saques'}
+              >
+                Sacar
+              </Button>
             </div>
           </CardContent>
         </Card>

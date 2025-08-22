@@ -64,11 +64,10 @@ const menuItems: MenuItem[] = [
   { title: "Ferramentas", url: "/influenciador/ferramentas", icon: TrendingUp, roles: ["influencer"] },
   
   // User Items
-  { title: "Dashboard", url: "/usuario", icon: LayoutDashboard, roles: [null] },
-  { title: "Meus Planos", url: "/usuario/planos", icon: Package, roles: [null] },
-  { title: "Indicações", url: "/usuario/indicacoes", icon: Users, roles: [null] },
-  { title: "Créditos", url: "/usuario/creditos", icon: Gift, roles: [null] },
-  { title: "Carteira", url: "/usuario/carteira", icon: CreditCard, roles: [null] },
+  { title: "Dashboard", url: "/usuario/dashboard", icon: LayoutDashboard, roles: ["user"] },
+  { title: "Marketplace", url: "/usuario/marketplace", icon: Package, roles: ["user"] },
+  { title: "Saques", url: "/usuario/saques", icon: DollarSign, roles: ["user"] },
+  { title: "Créditos", url: "/usuario/creditos", icon: Gift, roles: ["user"] },
 ];
 
 export function AppSidebar() {
@@ -78,7 +77,7 @@ export function AppSidebar() {
 
   // Filter menu items based on user role
   const filteredItems = menuItems.filter(item => 
-    item.roles.includes(user?.role || null)
+    item.roles.includes(user?.role || "user")
   );
 
   const isActive = (path: string) => {
@@ -110,10 +109,10 @@ export function AppSidebar() {
         <div className="p-4 border-b">
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground text-sm font-bold">
-              {user.name.charAt(0)}
+              {user.full_name?.charAt(0) || user.email?.charAt(0) || "U"}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{user.name}</p>
+              <p className="text-sm font-medium truncate">{user.full_name || user.email?.split('@')[0]}</p>
               <p className="text-xs text-muted-foreground">{getRoleLabel()}</p>
             </div>
           </div>

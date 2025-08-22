@@ -29,6 +29,7 @@ import CreateAdmin from "./pages/CreateAdmin";
 import QuickLogin from "./pages/QuickLogin";
 import UserDashboard from "./pages/user/UserDashboard";
 import UserMarketplace from "./pages/user/UserMarketplace";
+import UserWithdrawals from "./pages/user/UserWithdrawals";
 import Marketplace from "./pages/Marketplace";
 import InfluencerRegister from "./pages/InfluencerRegister";
 import InfluencerLogin from "./pages/InfluencerLogin";
@@ -86,6 +87,11 @@ const App = () => (
             <Route path="/usuario/marketplace" element={
               <ProtectedRoute role="user">
                 <UserMarketplace />
+              </ProtectedRoute>
+            } />
+            <Route path="/usuario/saques" element={
+              <ProtectedRoute role="user">
+                <UserWithdrawals />
               </ProtectedRoute>
             } />
             <Route path="/marketplace" element={<Marketplace />} />
