@@ -593,7 +593,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      admin_login_validation: {
+        Args: { login_email: string; login_password: string }
+        Returns: {
+          profile_email: string
+          profile_id: string
+          profile_name: string
+          profile_role: string
+        }[]
+      }
     }
     Enums: {
       group_status: "forming" | "complete" | "contemplated" | "cancelled"

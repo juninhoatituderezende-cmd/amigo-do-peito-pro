@@ -301,31 +301,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setLoading(true);
       
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      // Use custom validation function for admin login
+      const { data: adminData, error: validationError } = await supabase
+        .rpc('admin_login_validation', {
+          login_email: email,
+          login_password: password
+        });
 
-      if (error) throw error;
-
-      // Verificar se é admin via profiles
-      if (data.user) {
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', data.user.id)
-          .eq('role', 'admin')
-          .single();
-
-        if (!profileData) {
-          await supabase.auth.signOut();
-          throw new Error('Email ou senha incorretos');
-        }
-        
-        // Success - redirect to admin dashboard
-        console.log('✅ Admin login successful');
-        navigate(ROUTES.ADMIN_DASHBOARD, { replace: true });
+      if (validationError || !adminData || adminData.length === 0) {
+        throw new Error('Email ou senha incorretos');
       }
+
+      const adminProfile = adminData[0];
+      
+      // Set user state with admin profile data
+      setUser({
+        id: adminProfile.profile_id,
+        email: adminProfile.profile_email,
+        full_name: adminProfile.profile_name,
+        name: adminProfile.profile_name,
+        phone: '',
+        role: adminProfile.profile_role as UserRole,
+        avatar_url: null,
+      });
+      
+      // Success - redirect to admin dashboard
+      console.log('✅ Admin login successful');
+      navigate(ROUTES.ADMIN_DASHBOARD, { replace: true });
 
       return { error: null };
     } catch (error: any) {
