@@ -14,7 +14,580 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      asaas_subaccounts: {
+        Row: {
+          access_token: string | null
+          account_key: string | null
+          account_number: string | null
+          agency: string | null
+          created_at: string | null
+          id: string
+          professional_id: string | null
+          status: string | null
+          subaccount_id: string
+          updated_at: string | null
+          wallet_id: string | null
+        }
+        Insert: {
+          access_token?: string | null
+          account_key?: string | null
+          account_number?: string | null
+          agency?: string | null
+          created_at?: string | null
+          id?: string
+          professional_id?: string | null
+          status?: string | null
+          subaccount_id: string
+          updated_at?: string | null
+          wallet_id?: string | null
+        }
+        Update: {
+          access_token?: string | null
+          account_key?: string | null
+          account_number?: string | null
+          agency?: string | null
+          created_at?: string | null
+          id?: string
+          professional_id?: string | null
+          status?: string | null
+          subaccount_id?: string
+          updated_at?: string | null
+          wallet_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asaas_subaccounts_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      credit_transactions: {
+        Row: {
+          amount: number
+          created_at: string | null
+          description: string | null
+          id: string
+          reference_id: string | null
+          reference_table: string | null
+          status: string | null
+          type: Database["public"]["Enums"]["transaction_type"]
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          reference_id?: string | null
+          reference_table?: string | null
+          status?: string | null
+          type: Database["public"]["Enums"]["transaction_type"]
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          reference_id?: string | null
+          reference_table?: string | null
+          status?: string | null
+          type?: Database["public"]["Enums"]["transaction_type"]
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      group_participants: {
+        Row: {
+          amount_paid: number
+          group_id: string | null
+          id: string
+          joined_at: string | null
+          referrer_id: string | null
+          status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          amount_paid: number
+          group_id?: string | null
+          id?: string
+          joined_at?: string | null
+          referrer_id?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          amount_paid?: number
+          group_id?: string | null
+          id?: string
+          joined_at?: string | null
+          referrer_id?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_participants_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "plan_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_participants_referrer_id_fkey"
+            columns: ["referrer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketplace_sales: {
+        Row: {
+          buyer_id: string | null
+          created_at: string | null
+          credits_used: number | null
+          id: string
+          payment_id: string | null
+          payment_method: string
+          referrer_id: string | null
+          seller_id: string | null
+          service_id: string | null
+          status: Database["public"]["Enums"]["payment_status"] | null
+          total_amount: number
+          updated_at: string | null
+        }
+        Insert: {
+          buyer_id?: string | null
+          created_at?: string | null
+          credits_used?: number | null
+          id?: string
+          payment_id?: string | null
+          payment_method: string
+          referrer_id?: string | null
+          seller_id?: string | null
+          service_id?: string | null
+          status?: Database["public"]["Enums"]["payment_status"] | null
+          total_amount: number
+          updated_at?: string | null
+        }
+        Update: {
+          buyer_id?: string | null
+          created_at?: string | null
+          credits_used?: number | null
+          id?: string
+          payment_id?: string | null
+          payment_method?: string
+          referrer_id?: string | null
+          seller_id?: string | null
+          service_id?: string | null
+          status?: Database["public"]["Enums"]["payment_status"] | null
+          total_amount?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_sales_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketplace_sales_referrer_id_fkey"
+            columns: ["referrer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketplace_sales_seller_id_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketplace_sales_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_triggers: {
+        Row: {
+          created_at: string | null
+          data: Json | null
+          event_type: string
+          id: string
+          message: string
+          sent: boolean | null
+          sent_at: string | null
+          title: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          data?: Json | null
+          event_type: string
+          id?: string
+          message: string
+          sent?: boolean | null
+          sent_at?: string | null
+          title: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          data?: Json | null
+          event_type?: string
+          id?: string
+          message?: string
+          sent?: boolean | null
+          sent_at?: string | null
+          title?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      payment_split_rules: {
+        Row: {
+          created_at: string | null
+          id: string
+          platform_percentage: number | null
+          professional_percentage: number | null
+          referrer_percentage: number | null
+          service_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          platform_percentage?: number | null
+          professional_percentage?: number | null
+          referrer_percentage?: number | null
+          service_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          platform_percentage?: number | null
+          professional_percentage?: number | null
+          referrer_percentage?: number | null
+          service_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_split_rules_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: true
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_splits: {
+        Row: {
+          created_at: string | null
+          id: string
+          payment_id: string
+          platform_amount: number
+          processed_at: string | null
+          professional_amount: number
+          professional_id: string | null
+          referrer_amount: number | null
+          referrer_id: string | null
+          service_id: string | null
+          status: string | null
+          total_amount: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          payment_id: string
+          platform_amount: number
+          processed_at?: string | null
+          professional_amount: number
+          professional_id?: string | null
+          referrer_amount?: number | null
+          referrer_id?: string | null
+          service_id?: string | null
+          status?: string | null
+          total_amount: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          payment_id?: string
+          platform_amount?: number
+          processed_at?: string | null
+          professional_amount?: number
+          professional_id?: string | null
+          referrer_amount?: number | null
+          referrer_id?: string | null
+          service_id?: string | null
+          status?: string | null
+          total_amount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_splits_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_splits_referrer_id_fkey"
+            columns: ["referrer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_splits_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plan_groups: {
+        Row: {
+          contemplated_at: string | null
+          created_at: string | null
+          current_amount: number | null
+          current_participants: number | null
+          group_number: number
+          id: string
+          max_participants: number | null
+          service_id: string | null
+          status: Database["public"]["Enums"]["group_status"] | null
+          target_amount: number
+          updated_at: string | null
+          winner_id: string | null
+        }
+        Insert: {
+          contemplated_at?: string | null
+          created_at?: string | null
+          current_amount?: number | null
+          current_participants?: number | null
+          group_number: number
+          id?: string
+          max_participants?: number | null
+          service_id?: string | null
+          status?: Database["public"]["Enums"]["group_status"] | null
+          target_amount: number
+          updated_at?: string | null
+          winner_id?: string | null
+        }
+        Update: {
+          contemplated_at?: string | null
+          created_at?: string | null
+          current_amount?: number | null
+          current_participants?: number | null
+          group_number?: number
+          id?: string
+          max_participants?: number | null
+          service_id?: string | null
+          status?: Database["public"]["Enums"]["group_status"] | null
+          target_amount?: number
+          updated_at?: string | null
+          winner_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_groups_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          approved: boolean | null
+          cpf: string | null
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          id: string
+          phone: string | null
+          referral_code: string | null
+          referred_by: string | null
+          role: Database["public"]["Enums"]["user_role"] | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          approved?: boolean | null
+          cpf?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          referral_code?: string | null
+          referred_by?: string | null
+          role?: Database["public"]["Enums"]["user_role"] | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          approved?: boolean | null
+          cpf?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          referral_code?: string | null
+          referred_by?: string | null
+          role?: Database["public"]["Enums"]["user_role"] | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_referred_by_fkey"
+            columns: ["referred_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      services: {
+        Row: {
+          active: boolean | null
+          category: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          image_url: string | null
+          name: string
+          price: number
+          professional_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          name: string
+          price: number
+          professional_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          name?: string
+          price?: number
+          professional_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "services_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_credits: {
+        Row: {
+          available_credits: number | null
+          created_at: string | null
+          id: string
+          pending_credits: number | null
+          total_credits: number | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          available_credits?: number | null
+          created_at?: string | null
+          id?: string
+          pending_credits?: number | null
+          total_credits?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          available_credits?: number | null
+          created_at?: string | null
+          id?: string
+          pending_credits?: number | null
+          total_credits?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      withdrawal_requests: {
+        Row: {
+          amount: number
+          bank_account: Json | null
+          created_at: string | null
+          id: string
+          method: string | null
+          notes: string | null
+          pix_key: string | null
+          processed_at: string | null
+          processed_by: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          bank_account?: Json | null
+          created_at?: string | null
+          id?: string
+          method?: string | null
+          notes?: string | null
+          pix_key?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          bank_account?: Json | null
+          created_at?: string | null
+          id?: string
+          method?: string | null
+          notes?: string | null
+          pix_key?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +596,20 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      group_status: "forming" | "complete" | "contemplated" | "cancelled"
+      payment_status:
+        | "pending"
+        | "completed"
+        | "failed"
+        | "refunded"
+        | "cancelled"
+      transaction_type:
+        | "earned"
+        | "spent"
+        | "refund"
+        | "withdrawal_request"
+        | "withdrawal_completed"
+      user_role: "user" | "professional" | "admin" | "influencer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +736,23 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      group_status: ["forming", "complete", "contemplated", "cancelled"],
+      payment_status: [
+        "pending",
+        "completed",
+        "failed",
+        "refunded",
+        "cancelled",
+      ],
+      transaction_type: [
+        "earned",
+        "spent",
+        "refund",
+        "withdrawal_request",
+        "withdrawal_completed",
+      ],
+      user_role: ["user", "professional", "admin", "influencer"],
+    },
   },
 } as const
