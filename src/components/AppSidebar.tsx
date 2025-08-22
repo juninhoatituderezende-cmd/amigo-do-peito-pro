@@ -54,6 +54,7 @@ const menuItems: MenuItem[] = [
   
   // Professional Items
   { title: "Dashboard", url: "/profissional", icon: LayoutDashboard, roles: ["professional"] },
+  { title: "Marketplace", url: "/profissional/marketplace", icon: Package, roles: ["professional"] },
   { title: "Meus Clientes", url: "/profissional/clientes", icon: Users, roles: ["professional"] },
   { title: "Agenda", url: "/profissional/agenda", icon: Calendar, roles: ["professional"] },
   { title: "Serviços", url: "/profissional/servicos", icon: Package, roles: ["professional"] },
@@ -62,6 +63,7 @@ const menuItems: MenuItem[] = [
   
   // Influencer Items
   { title: "Dashboard", url: "/influenciador", icon: LayoutDashboard, roles: ["influencer"] },
+  { title: "Marketplace", url: "/influenciador/marketplace", icon: Package, roles: ["influencer"] },
   { title: "Meu Link", url: "/influenciador/link", icon: LinkIcon, roles: ["influencer"] },
   { title: "Comissões", url: "/influenciador/comissoes", icon: DollarSign, roles: ["influencer"] },
   { title: "Histórico", url: "/influenciador/historico", icon: History, roles: ["influencer"] },

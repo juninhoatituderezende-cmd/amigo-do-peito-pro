@@ -147,6 +147,11 @@ const App = () => (
                   <ProServices />
                 </ProtectedRoute>
               } />
+              <Route path="/profissional/marketplace" element={
+                <ProtectedRoute role="professional">
+                  <Marketplace />
+                </ProtectedRoute>
+              } />
               
               {/* Influencer Routes */}
               <Route path="/influenciador/cadastro" element={<InfluencerRegister />} />
@@ -159,6 +164,11 @@ const App = () => (
               <Route path="/influenciador/ferramentas" element={
                 <ProtectedRoute role="influencer">
                   <InfluencerTools />
+                </ProtectedRoute>
+              } />
+              <Route path="/influenciador/marketplace" element={
+                <ProtectedRoute role="influencer">
+                  <Marketplace />
                 </ProtectedRoute>
               } />
               
