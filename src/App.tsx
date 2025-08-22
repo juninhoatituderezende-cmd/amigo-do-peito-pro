@@ -13,6 +13,8 @@ import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUsuarios from "./pages/admin/AdminUsuarios";
 import AdminPlanos from "./pages/admin/AdminPlanos";
+import AdminProdutos from "./pages/admin/AdminProdutos";
+import AdminMarketplace from "./pages/admin/AdminMarketplace";
 import AdminPagamentos from "./pages/admin/AdminPagamentos";
 import AdminMLM from "./pages/admin/AdminMLM";
 import AdminNotificacoes from "./pages/admin/AdminNotificacoes";
@@ -185,6 +187,16 @@ const App = () => (
               <Route path="/admin/pagamentos" element={
                 <ProtectedRoute role="admin">
                   <AdminPagamentos />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/marketplace" element={
+                <ProtectedRoute role="admin">
+                  <AdminMarketplace />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/produtos" element={
+                <ProtectedRoute role="admin">
+                  <AdminProdutos />
                 </ProtectedRoute>
               } />
               <Route path="/admin/mlm" element={

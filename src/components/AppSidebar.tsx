@@ -44,6 +44,8 @@ const menuItems: MenuItem[] = [
   // Admin Items
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard, roles: ["admin"] },
   { title: "Usuários", url: "/admin/usuarios", icon: Users, roles: ["admin"] },
+  { title: "Marketplace", url: "/admin/marketplace", icon: Package, roles: ["admin"] },
+  { title: "Produtos", url: "/admin/produtos", icon: Package, roles: ["admin"] },
   { title: "Planos Custom", url: "/admin/planos", icon: Package, roles: ["admin"] },
   { title: "Pagamentos", url: "/admin/pagamentos", icon: CreditCard, roles: ["admin"] },
   { title: "Relatórios", url: "/admin/relatorios", icon: BarChart3, roles: ["admin"] },
