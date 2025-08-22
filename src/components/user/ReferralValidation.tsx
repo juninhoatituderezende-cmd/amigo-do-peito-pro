@@ -67,32 +67,31 @@ export const ReferralValidation = () => {
 
   const loadGroupData = async () => {
     try {
-      // Get user's active group
+      // Get user's active group participants
       const { data: groupsData, error: groupsError } = await supabase
-        .from('groups')
-        .select('*')
+        .from('group_participants')
+        .select('*, plan_groups(*)')
         .eq('user_id', user?.id)
-        .eq('status', 'forming')
-        .order('created_at', { ascending: false })
+        .order('joined_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (groupsError && groupsError.code !== 'PGRST116') {
         throw groupsError;
       }
 
       if (groupsData) {
-        // Get group members (simulating with transactions)
+        // Get group members from credit transactions
         const { data: membersData, error: membersError } = await supabase
-          .from('transactions')
+          .from('credit_transactions')
           .select('*')
-          .eq('professional_id', groupsData.id)
+          .eq('reference_id', groupsData.group_id)
           .order('created_at');
 
         if (membersError) throw membersError;
 
         const enrichedMembers = (membersData || []).map((member, index) => ({
-          ...member,
+          user_id: member.user_id,
           user_email: 'user@example.com',
           user_name: `Usuário ${index + 1}`,
           position: index + 1,
@@ -104,9 +103,9 @@ export const ReferralValidation = () => {
           id: groupsData.id,
           current_members: enrichedMembers.length,
           progress_message: getProgressMessage(enrichedMembers.length),
-          status: groupsData.status,
-          created_at: groupsData.created_at,
-          completed_at: groupsData.end_date,
+          status: groupsData.plan_groups?.status || 'forming',
+          created_at: groupsData.joined_at,
+          completed_at: groupsData.plan_groups?.contemplated_at,
           members: enrichedMembers
         });
       }
@@ -212,16 +211,27 @@ export const ReferralValidation = () => {
   const createNewGroup = async () => {
     try {
       const { data, error } = await supabase
-        .from('groups')
+        .from('plan_groups')
         .insert({
-          user_id: user?.id,
           service_id: 'default-service',
-          status: 'forming'
+          status: 'forming',
+          group_number: Math.floor(Math.random() * 1000) + 1,
+          target_amount: 1000,
+          max_participants: 10
         })
         .select()
         .single();
 
       if (error) throw error;
+
+      // Create participant record
+      await supabase
+        .from('group_participants')
+        .insert({
+          user_id: user?.id,
+          group_id: data.id,
+          amount_paid: 100
+        });
 
       toast({
         title: "Novo grupo criado!",

@@ -73,35 +73,35 @@ export function PlanProgress() {
       const userId = user?.id;
       if (!userId) return;
 
-      // Carregar grupos do usuário
+      // Carregar participações do usuário
       const { data: plansData } = await supabase
-        .from('groups')
-        .select('*')
+        .from('group_participants')
+        .select('*, plan_groups(*)')
         .eq('user_id', userId)
-        .order('created_at', { ascending: false });
+        .order('joined_at', { ascending: false });
 
       // Transformar dados para o formato esperado
-      const formattedPlans = (plansData || []).map(group => ({
-        participation_id: group.id,
-        plan_code: `GROUP-${group.id.slice(-4)}`,
-        plan_name: `Grupo ${group.service_id}`,
+      const formattedPlans = (plansData || []).map(participant => ({
+        participation_id: participant.id,
+        plan_code: `GROUP-${participant.id.slice(-4)}`,
+        plan_name: `Grupo ${participant.plan_groups?.group_number || 'N/A'}`,
         description: 'Grupo de contemplação',
         category_name: 'Serviços',
-        total_price: 1000,
-        entry_amount: 100,
-        group_number: 1,
+        total_price: participant.plan_groups?.target_amount || 1000,
+        entry_amount: participant.amount_paid || 100,
+        group_number: participant.plan_groups?.group_number || 1,
         position_number: 1,
-        current_participants: 1,
-        max_participants: 10,
-        group_status: group.status,
+        current_participants: participant.plan_groups?.current_participants || 1,
+        max_participants: participant.plan_groups?.max_participants || 10,
+        group_status: participant.plan_groups?.status || 'forming',
         payment_status: 'pago',
-        contemplated: group.status === 'completed',
+        contemplated: participant.plan_groups?.status === 'complete',
         service_completed: false,
         professional_name: '',
         especialidade: '',
         local_atendimento: '',
-        enrollment_date: group.created_at,
-        contemplation_date: group.end_date || '',
+        enrollment_date: participant.joined_at,
+        contemplation_date: participant.plan_groups?.contemplated_at || '',
         service_completion_date: ''
       }));
 

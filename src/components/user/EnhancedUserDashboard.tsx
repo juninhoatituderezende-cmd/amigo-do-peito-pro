@@ -82,27 +82,27 @@ export function EnhancedUserDashboard() {
 
   const loadUserPlans = async () => {
     try {
-      // Buscar grupos do usuário
+      // Buscar participações do usuário
       const { data, error } = await supabase
-        .from("groups")
-        .select("*")
+        .from("group_participants")
+        .select("*, plan_groups(*)")
         .eq("user_id", user?.id)
-        .order("created_at", { ascending: false });
+        .order("joined_at", { ascending: false });
 
       if (data) {
-        const formattedPlans = data.map((group, index) => ({
-          id: group.id,
-          plan_id: group.id,
+        const formattedPlans = data.map((participant, index) => ({
+          id: participant.id,
+          plan_id: participant.group_id,
           payment_status: 'paid',
-          contemplated: group.status === 'completed',
+          contemplated: participant.plan_groups?.status === 'complete',
           position_in_queue: index + 1,
-          entry_paid_at: group.created_at,
+          entry_paid_at: participant.joined_at,
           plan: {
-            title: `Grupo ${group.service_id}`,
+            title: `Grupo ${participant.plan_groups?.group_number || 'N/A'}`,
             description: 'Grupo de contemplação',
-            entry_value: 100,
-            contemplation_value: 1000,
-            max_participants: 10
+            entry_value: participant.amount_paid || 100,
+            contemplation_value: participant.plan_groups?.target_amount || 1000,
+            max_participants: participant.plan_groups?.max_participants || 10
           }
         }));
         setPlans(formattedPlans);

@@ -86,9 +86,9 @@ export const DigitalWallet = () => {
       if (data) {
         setWalletData({
           available_balance: data.available_credits,
-          pending_balance: data.pending_withdrawal,
+          pending_balance: data.pending_credits || 0,
           total_earned: data.total_credits,
-          total_withdrawn: data.total_credits - data.available_credits,
+          total_withdrawn: Math.max(0, data.total_credits - data.available_credits),
           pix_key: 'não informado',
           pix_key_type: 'cpf'
         });
@@ -100,20 +100,20 @@ export const DigitalWallet = () => {
 
   const loadGroupProgress = async () => {
     try {
-      // Buscar grupos do usuário
+      // Buscar participações do usuário
       const { data, error } = await supabase
-        .from('groups')
-        .select('*')
+        .from('group_participants')
+        .select('*, plan_groups(*)')
         .eq('user_id', user?.id)
-        .order('created_at', { ascending: false });
+        .order('joined_at', { ascending: false });
 
       if (data) {
-        const formattedGroups = data.map(group => ({
-          group_id: group.id,
-          current_members: 1, // Mock value
-          progress_message: `Grupo criado em ${new Date(group.created_at).toLocaleDateString()}`,
-          status: group.status,
-          created_at: group.created_at,
+        const formattedGroups = data.map(participant => ({
+          group_id: participant.id,
+          current_members: participant.plan_groups?.current_participants || 1,
+          progress_message: `Participando desde ${new Date(participant.joined_at).toLocaleDateString()}`,
+          status: participant.status,
+          created_at: participant.joined_at,
           members: [] // Mock empty array
         }));
         setGroupProgress(formattedGroups);
@@ -130,7 +130,7 @@ export const DigitalWallet = () => {
         .from('credit_transactions')
         .select('*')
         .eq('user_id', user?.id)
-        .eq('type', 'referral')
+        .eq('type', 'earned')
         .order('created_at', { ascending: false });
 
       if (data) {

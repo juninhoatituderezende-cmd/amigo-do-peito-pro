@@ -174,12 +174,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Para profissionais, buscar dados adicionais
         let additionalData = {};
         if (profileData.role === 'professional') {
-          const { data: profData } = await supabase
-            .from('professionals')
-            .select('category, approved')
-            .eq('user_id', userId)
-            .single();
-          additionalData = { category: profData?.category, approved: profData?.approved };
+          // Get additional professional data from profiles table
+          additionalData = { 
+            category: 'professional', 
+            approved: profileData.approved 
+          };
         }
 
         setUser({
@@ -189,7 +188,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           name: profileData.full_name, // Compatibility
           phone: profileData.phone,
           role: profileData.role as UserRole,
-          avatar_url: profileData.avatar_url,
+          avatar_url: null, // Not available in current schema
           ...additionalData
         });
       }

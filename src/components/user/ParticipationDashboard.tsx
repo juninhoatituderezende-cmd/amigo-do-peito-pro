@@ -64,17 +64,40 @@ export const ParticipationDashboard = () => {
   const loadParticipationData = async () => {
     try {
       const { data, error } = await supabase
-        .from('plan_participants')
+        .from('group_participants')
         .select(`
           *,
-          plan_groups(*),
-          custom_plans(*)
+          plan_groups(*)
         `)
         .eq('user_id', user?.id)
         .order('joined_at', { ascending: false });
 
       if (error) throw error;
-      setParticipations(data || []);
+      
+      if (data) {
+        const formattedParticipations: PlanParticipation[] = data.map(participation => ({
+          id: participation.id,
+          plan_id: participation.group_id,
+          group_id: participation.group_id,
+          contemplation_status: participation.plan_groups?.status === 'complete' ? 'contemplated' : 'waiting',
+          payment_status: 'paid', // Default since they're participants
+          contemplation_date: participation.plan_groups?.contemplated_at,
+          joined_at: participation.joined_at,
+          plan_groups: {
+            current_participants: participation.plan_groups?.current_participants || 0,
+            status: participation.plan_groups?.status || 'forming',
+            start_date: participation.plan_groups?.created_at,
+            end_date: participation.plan_groups?.contemplated_at,
+          },
+          custom_plans: {
+            name: `Grupo ${participation.plan_groups?.group_number || 'N/A'}`,
+            entry_price: participation.amount_paid || 100,
+            total_price: participation.plan_groups?.target_amount || 1000,
+            max_participants: participation.plan_groups?.max_participants || 10,
+          }
+        }));
+        setParticipations(formattedParticipations);
+      }
     } catch (error) {
       console.error('Erro ao carregar participações:', error);
     }
@@ -82,33 +105,33 @@ export const ParticipationDashboard = () => {
 
   const loadReferralData = async () => {
     try {
-      // Buscar dados do MLM network do usuário
-      const { data: mlmData, error: mlmError } = await supabase
-        .from('mlm_network')
-        .select('referral_code, total_referrals, active_referrals')
+      // Buscar dados do perfil do usuário para código de indicação
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('referral_code')
         .eq('user_id', user?.id)
         .single();
 
-      if (mlmError && mlmError.code !== 'PGRST116') {
-        throw mlmError;
-      }
+      // Contar referências diretas
+      const { count: totalReferrals } = await supabase
+        .from('profiles')
+        .select('id', { count: 'exact' })
+        .eq('referred_by', user?.id);
 
-      if (mlmData) {
+      if (profileData?.referral_code) {
         setReferralData({
-          referralCode: mlmData.referral_code,
-          totalReferrals: mlmData.total_referrals,
-          confirmedReferrals: mlmData.active_referrals,
-          pendingReferrals: mlmData.total_referrals - mlmData.active_referrals
-        });
-      } else {
-        // Se não existir, não há problema - será criado automaticamente pelo trigger quando necessário
-        setReferralData({
-          referralCode: 'Aguardando...',
-          totalReferrals: 0,
-          confirmedReferrals: 0,
+          referralCode: profileData.referral_code,
+          totalReferrals: totalReferrals || 0,
+          confirmedReferrals: totalReferrals || 0,
           pendingReferrals: 0
         });
-
+      } else {
+        setReferralData({
+          referralCode: user?.id?.slice(-8).toUpperCase() || 'N/A',
+          totalReferrals: totalReferrals || 0,
+          confirmedReferrals: totalReferrals || 0,
+          pendingReferrals: 0
+        });
       }
     } catch (error) {
       console.error('Erro ao carregar dados de indicação:', error);

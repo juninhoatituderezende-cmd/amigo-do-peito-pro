@@ -50,7 +50,7 @@ export const useCredits = () => {
           userId: balanceData.user_id,
           totalCredits: balanceData.total_credits,
           availableCredits: balanceData.available_credits,
-          pendingWithdrawal: balanceData.pending_withdrawal,
+          pendingWithdrawal: balanceData.pending_credits,
           lastUpdated: balanceData.updated_at
         });
       } else {
@@ -73,7 +73,7 @@ export const useCredits = () => {
             userId: newBalance.user_id,
             totalCredits: newBalance.total_credits,
             availableCredits: newBalance.available_credits,
-            pendingWithdrawal: newBalance.pending_withdrawal,
+            pendingWithdrawal: newBalance.pending_credits,
             lastUpdated: newBalance.updated_at
           });
         }
@@ -95,9 +95,9 @@ export const useCredits = () => {
           userId: t.user_id,
           amount: t.amount,
           type: (t.type as 'credit' | 'debit'),
-          source: (t.source as 'initial_payment' | 'referral_bonus' | 'marketplace_purchase' | 'withdrawal' | 'admin_adjustment'),
+          source: (t.description as 'initial_payment' | 'referral_bonus' | 'marketplace_purchase' | 'withdrawal' | 'admin_adjustment'),
           description: t.description,
-          relatedOrderId: t.related_order_id || '',
+          relatedOrderId: t.reference_id || '',
           createdAt: t.created_at
         }));
         setTransactions(formattedTransactions);
