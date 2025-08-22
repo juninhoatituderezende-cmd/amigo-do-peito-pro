@@ -7,6 +7,8 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AuthRedirect } from "@/components/AuthRedirect";
 import { ScrollToTop, ConnectionStatus } from "@/components/ui/ux-improvements";
 import { diagnostics } from "@/lib/diagnostics";
+import { ProWallet } from "@/components/pro/ProWallet";
+import { InfluencerWallet } from "@/components/influencer/InfluencerWallet";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/AdminLogin";
@@ -152,6 +154,21 @@ const App = () => (
                   <Marketplace />
                 </ProtectedRoute>
               } />
+              <Route path="/profissional/carteira" element={
+                <ProtectedRoute role="professional">
+                  <div className="min-h-screen bg-gray-50">
+                    <div className="flex">
+                      <div className="flex-1 p-8">
+                        <div className="mb-8">
+                          <h1 className="text-3xl font-bold text-gray-900 mb-2">Carteira</h1>
+                          <p className="text-muted-foreground">Gerencie seus ganhos e saques</p>
+                        </div>
+                        <ProWallet />
+                      </div>
+                    </div>
+                  </div>
+                </ProtectedRoute>
+              } />
               
               {/* Influencer Routes */}
               <Route path="/influenciador/cadastro" element={<InfluencerRegister />} />
@@ -169,6 +186,21 @@ const App = () => (
               <Route path="/influenciador/marketplace" element={
                 <ProtectedRoute role="influencer">
                   <Marketplace />
+                </ProtectedRoute>
+              } />
+              <Route path="/influenciador/carteira" element={
+                <ProtectedRoute role="influencer">
+                  <div className="min-h-screen bg-gray-50">
+                    <div className="flex">
+                      <div className="flex-1 p-8">
+                        <div className="mb-8">
+                          <h1 className="text-3xl font-bold text-gray-900 mb-2">Carteira</h1>
+                          <p className="text-muted-foreground">Gerencie suas comissões e saques</p>
+                        </div>
+                        <InfluencerWallet />
+                      </div>
+                    </div>
+                  </div>
                 </ProtectedRoute>
               } />
               
