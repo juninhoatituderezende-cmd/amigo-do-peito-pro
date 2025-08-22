@@ -85,9 +85,10 @@ const ProDashboard: React.FC = () => {
       
       // Load professional data
       const { data: profData, error: profError } = await supabase
-        .from('professionals')
+        .from('profiles')
         .select('*')
         .eq('user_id', user?.id)
+        .eq('role', 'professional')
         .single();
 
       if (profError) throw profError;
@@ -96,10 +97,10 @@ const ProDashboard: React.FC = () => {
         id: profData.id,
         name: profData.full_name || user?.name || '',
         email: profData.email || user?.email || '',
-        specialty: profData.category,
-        location: profData.location,
-        phone: profData.phone,
-        instagram: profData.instagram,
+        specialty: 'Especialidade não informada',
+        location: profData.phone || 'Localização não informada',
+        phone: profData.phone || '',
+        instagram: '',
         bank_data: null,
         rating: 0,
         total_earnings: 0,

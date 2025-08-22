@@ -62,7 +62,7 @@ const UserDashboard = () => {
       
       // Load user participations
       const { data: participations } = await supabase
-        .from('plan_participants')
+        .from('group_participants')
         .select(`
           *,
           plan_groups(*)
@@ -70,8 +70,8 @@ const UserDashboard = () => {
         .eq('user_id', user?.id);
 
       const totalGroups = participations?.length || 0;
-      const activeGroups = participations?.filter(p => p.contemplation_status === 'waiting').length || 0;
-      const contemplatedGroups = participations?.filter(p => p.contemplation_status === 'contemplated').length || 0;
+      const activeGroups = participations?.filter(p => p.status === 'active').length || 0;
+      const contemplatedGroups = participations?.filter(p => p.status === 'contemplated').length || 0;
 
       setUserData({
         name: user?.name || "Usuário",
@@ -92,28 +92,27 @@ const UserDashboard = () => {
     try {
       // Load active participations
       const { data: activeParticipations } = await supabase
-        .from('plan_participants')
+        .from('group_participants')
         .select('id')
         .eq('user_id', user?.id)
-        .eq('contemplation_status', 'waiting');
+        .eq('status', 'active');
 
-      // Load MLM referrals
-      const { data: mlmData } = await supabase
-        .from('mlm_network')
-        .select('total_referrals')
-        .eq('user_id', user?.id)
-        .single();
+      // Load referrals (using profiles table with referred_by)
+      const { data: referralData } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('referred_by', user?.id);
 
       // Load unread notifications
       const { data: notifications } = await supabase
-        .from('notifications')
+        .from('notification_triggers')
         .select('id')
         .eq('user_id', user?.id)
-        .eq('read', false);
+        .eq('sent', false);
 
       setQuickStats({
         activeParticipations: activeParticipations?.length || 0,
-        totalReferrals: mlmData?.total_referrals || 0,
+        totalReferrals: referralData?.length || 0,
         unreadNotifications: notifications?.length || 0
       });
     } catch (error) {

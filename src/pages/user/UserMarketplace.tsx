@@ -49,19 +49,32 @@ const UserMarketplace = () => {
       setLoading(true);
       
       const { data, error } = await supabase
-        .from('marketplace_products')
+        .from('services')
         .select('*')
-        .eq('target_audience', 'user')
-        .eq('approved', true)
-        .eq('ativo', true)
+        .eq('active', true)
         .order('name');
 
       if (error) throw error;
 
-      setProducts(data || []);
+      // Transform services to marketplace products format
+      const marketplaceProducts = (data || []).map(service => ({
+        id: service.id,
+        name: service.name,
+        description: service.description || '',
+        valor_total: service.price,
+        category: service.category || 'General',
+        ativo: service.active,
+        target_audience: 'user',
+        approved: true,
+        professional_name: 'Profissional',
+        image_url: service.image_url,
+        created_at: service.created_at
+      }));
+
+      setProducts(marketplaceProducts);
       
       // Extrair categorias únicas
-      const uniqueCategories = [...new Set(data?.map(p => p.category) || [])];
+      const uniqueCategories = [...new Set(marketplaceProducts.map(p => p.category))];
       setCategories(uniqueCategories);
       
     } catch (error) {

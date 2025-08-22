@@ -47,10 +47,7 @@ const MLMAdmin = () => {
 
           <TabsContent value="contemplation" className="space-y-6">
             {selectedGroup ? (
-              <ContemplationSystem 
-                groupId={selectedGroup.id} 
-                groupName={selectedGroup.name}
-              />
+              <ContemplationSystem />
             ) : (
               <Card>
                 <CardHeader>
