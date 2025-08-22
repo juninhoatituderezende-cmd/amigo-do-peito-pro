@@ -2,18 +2,11 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = "https://rczygmsaybzcrmdxxyge.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJjenlnbXNheWJ6Y3JtZHh4eWdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0NTU4MDgsImV4cCI6MjA3MDAzMTgwOH0.Icjg9OnYFAT9tCSzFMRKcCWUnV9OgBz_feENz0Rd1K0";
+const SUPABASE_URL = "https://jiqgwevetdkvcqelniaw.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImppcWd3ZXZldGRrdmNxZWxuaWF3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU4NDY3NTMsImV4cCI6MjA3MTQyMjc1M30.tkTy-XuHKWsyMeNSAHu1BE56mxZA0N1F-coDMcdWUyc";
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
-
-// Debug Supabase configuration
-console.log('🔧 Supabase Config Debug:', {
-  url: SUPABASE_URL,
-  keyPrefix: SUPABASE_PUBLISHABLE_KEY.substring(0, 20) + '...',
-  timestamp: new Date().toISOString()
-});
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
@@ -22,9 +15,3 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     autoRefreshToken: true,
   }
 });
-
-// Test connection
-supabase.from('profiles').select('count').limit(1).then(
-  (result) => console.log('✅ Supabase Connection Test:', result),
-  (error) => console.error('❌ Supabase Connection Failed:', error)
-);
