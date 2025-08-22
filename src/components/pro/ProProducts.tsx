@@ -51,9 +51,10 @@ export const ProProducts = () => {
     try {
       // Get professional ID first
       const { data: professional } = await supabase
-        .from('professionals')
+        .from('profiles')
         .select('id')
         .eq('user_id', user?.id)
+        .eq('role', 'professional')
         .single();
 
       if (!professional) {
@@ -73,6 +74,7 @@ export const ProProducts = () => {
       // Add mock stats and affiliate links
       const servicesWithStats = (servicesData || []).map(service => ({
         ...service,
+        duration: '1 hora', // Default duration since not in DB
         total_sales: Math.floor(Math.random() * 20),
         total_revenue: service.price * Math.floor(Math.random() * 20),
         affiliate_link: `${window.location.origin}/service/${service.id}`

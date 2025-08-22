@@ -66,11 +66,12 @@ export function InfluencerDashboard() {
 
     setLoading(true);
     try {
-      // Buscar ID do influenciador
+      // Buscar perfil do influenciador
       const { data: influencerData } = await supabase
-        .from('influencers')
+        .from('profiles')
         .select('id')
         .eq('user_id', user.id)
+        .eq('role', 'influencer')
         .single();
 
       if (!influencerData) {
@@ -105,20 +106,21 @@ export function InfluencerDashboard() {
 
       // Carregar comissões usando credit_transactions
       const { data: commissionsData } = await supabase
-        .from('influencer_commissions')
+        .from('credit_transactions')
         .select('*')
-        .eq('influencer_id', influencerData.id)
+        .eq('user_id', user.id)
+        .eq('type', 'earned')
         .order('created_at', { ascending: false });
 
       if (commissionsData) {
         const formattedCommissions: Commission[] = commissionsData.map(commission => ({
           id: commission.id,
           client_name: 'Cliente Desconhecido',
-          participation_amount: commission.entry_value, // Valor de entrada (10% do total)
-          commission_amount: commission.commission_amount, // Comissão já calculada (25% da entrada)
-          status: commission.status,
-          created_at: commission.created_at,
-          plan_name: `Produto R$ ${commission.product_total_value.toFixed(2)}`
+          participation_amount: Number(commission.amount) * 4, // Simula valor de entrada
+          commission_amount: Number(commission.amount), // Comissão recebida
+          status: commission.status || 'completed',
+          created_at: commission.created_at || new Date().toISOString(),
+          plan_name: commission.description || 'Comissão de Referência'
         }));
 
         setCommissions(formattedCommissions);

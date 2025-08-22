@@ -59,11 +59,12 @@ export const ProductForm = () => {
 
     setLoading(true);
     try {
-      // Get professional ID from professionals table
+      // Get professional ID from profiles table
       const { data: professional } = await supabase
-        .from('professionals')
+        .from('profiles')
         .select('id')
         .eq('user_id', user.id)
+        .eq('role', 'professional')
         .single();
 
       if (!professional) {

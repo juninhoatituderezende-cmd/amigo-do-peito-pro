@@ -2,178 +2,117 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { 
-  Users, 
   DollarSign, 
-  CheckCircle, 
-  Clock, 
-  Camera,
-  FileText,
+  Package, 
+  Users, 
+  TrendingUp,
   Calendar,
-  Phone,
-  Mail
+  Bell,
+  Settings
 } from 'lucide-react';
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import SimpleImageUpload from "@/components/SimpleImageUpload";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
-interface ClientData {
+interface Transaction {
   id: string;
   client_name: string;
-  client_email: string;
-  client_phone: string;
-  service_type: string;
-  service_price: number;
-  payment_amount: number;
+  description: string;
+  amount: number;
+  commission: number;
+  status: string;
   payment_status: string;
-  contemplation_date: string;
-  service_completed: boolean;
   created_at: string;
-}
-
-interface ProfessionalStats {
-  total_clients: number;
-  completed_services: number;
-  pending_payments: number;
-  total_earnings: number;
 }
 
 export function ProfessionalDashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [clients, setClients] = useState<ClientData[]>([]);
-  const [stats, setStats] = useState<ProfessionalStats | null>(null);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [stats, setStats] = useState({
+    totalServices: 0,
+    totalEarnings: 0,
+    pendingPayments: 0,
+    completedJobs: 0
+  });
   const [loading, setLoading] = useState(true);
-  const [selectedClient, setSelectedClient] = useState<ClientData | null>(null);
-  const [confirmingService, setConfirmingService] = useState(false);
-  const [beforePhoto, setBeforePhoto] = useState<string>('');
-  const [afterPhoto, setAfterPhoto] = useState<string>('');
-  const [serviceNotes, setServiceNotes] = useState('');
 
   useEffect(() => {
-    loadProfessionalData();
+    loadDashboardData();
   }, [user]);
 
-  const loadProfessionalData = async () => {
+  const loadDashboardData = async () => {
     if (!user) return;
 
     setLoading(true);
     try {
-      // Buscar ID do profissional
-      const { data: professionalData } = await supabase
-        .from('professionals')
+      // Get professional profile
+      const { data: professional } = await supabase
+        .from('profiles')
         .select('id')
         .eq('user_id', user.id)
+        .eq('role', 'professional')
         .single();
 
-      if (!professionalData) {
-        toast({
-          title: "Erro",
-          description: "Dados do profissional não encontrados.",
-          variant: "destructive",
-        });
+      if (!professional) {
+        setLoading(false);
         return;
       }
 
-      // Carregar serviços/clientes atribuídos (usando transações como proxy)
-      const { data: clientsData } = await supabase
-        .from('transactions')
-        .select(`
-          id,
-          amount,
-          status,
-          description,
-          created_at,
-          user_id,
-          service_id
-        `)
-        .eq('professional_id', professionalData.id)
-        .order('created_at', { ascending: false });
+      // Load services count
+      const { data: services } = await supabase
+        .from('services')
+        .select('*')
+        .eq('professional_id', professional.id);
 
-      if (clientsData) {
-        const formattedClients: ClientData[] = clientsData.map(client => ({
-          id: client.id,
-          client_name: `Cliente ${client.user_id.slice(-4)}`,
-          client_email: 'contato@example.com',
-          client_phone: '(11) 99999-9999',
-          service_type: client.description || 'Serviço',
-          service_price: client.amount,
-          payment_amount: client.amount * 0.7, // 70% do valor para o profissional
-          payment_status: client.status,
-          contemplation_date: client.created_at,
-          service_completed: client.status === 'completed',
-          created_at: client.created_at
-        }));
+      // Load transactions (using credit_transactions as mock)
+      const { data: transactionData } = await supabase
+        .from('credit_transactions')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
 
-        setClients(formattedClients);
+      const formattedTransactions: Transaction[] = (transactionData || []).map(transaction => ({
+        id: transaction.id,
+        client_name: 'Cliente',
+        description: transaction.description || 'Serviço prestado',
+        amount: Number(transaction.amount),
+        commission: Number(transaction.amount) * 0.7, // 70% para o profissional
+        status: transaction.status || 'completed',
+        payment_status: transaction.status || 'completed',
+        created_at: transaction.created_at || new Date().toISOString()
+      }));
 
-        // Calcular estatísticas
-        const totalClients = formattedClients.length;
-        const completedServices = formattedClients.filter(c => c.service_completed).length;
-        const pendingPayments = formattedClients.filter(c => c.payment_status === 'pendente').length;
-        const totalEarnings = formattedClients
-          .filter(c => c.payment_status === 'pago')
-          .reduce((sum, c) => sum + c.payment_amount, 0);
+      setTransactions(formattedTransactions);
 
-        setStats({
-          total_clients: totalClients,
-          completed_services: completedServices,
-          pending_payments: pendingPayments,
-          total_earnings: totalEarnings
-        });
-      }
+      // Calculate stats
+      const totalServices = services?.length || 0;
+      const totalEarnings = formattedTransactions
+        .filter(t => t.status === 'completed')
+        .reduce((sum, t) => sum + t.commission, 0);
+      const pendingPayments = formattedTransactions
+        .filter(t => t.status === 'pending')
+        .reduce((sum, t) => sum + t.commission, 0);
+
+      setStats({
+        totalServices,
+        totalEarnings,
+        pendingPayments,
+        completedJobs: formattedTransactions.filter(t => t.status === 'completed').length
+      });
 
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
       toast({
         title: "Erro",
-        description: "Erro ao carregar seus dados.",
+        description: "Erro ao carregar dados do dashboard.",
         variant: "destructive",
       });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const confirmServiceCompletion = async () => {
-    if (!selectedClient) return;
-
-    setConfirmingService(true);
-    try {
-      const { error } = await supabase
-        .from('transactions')
-        .update({
-          status: 'completed',
-          description: `${selectedClient.service_type} - Concluído. Notas: ${serviceNotes || 'Nenhuma observação'}`
-        })
-        .eq('id', selectedClient.id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Serviço confirmado!",
-        description: "O serviço foi marcado como concluído.",
-      });
-
-      setSelectedClient(null);
-      setBeforePhoto('');
-      setAfterPhoto('');
-      setServiceNotes('');
-      loadProfessionalData();
-
-    } catch (error) {
-      console.error('Erro ao confirmar serviço:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao confirmar conclusão do serviço.",
-        variant: "destructive",
-      });
-    } finally {
-      setConfirmingService(false);
     }
   };
 
@@ -188,18 +127,14 @@ export function ProfessionalDashboard() {
     return new Date(date).toLocaleDateString('pt-BR');
   };
 
-  const getStatusBadge = (status: string, completed: boolean) => {
-    if (completed) {
-      return <Badge variant="default">Concluído</Badge>;
-    }
-    
+  const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'pendente':
-        return <Badge variant="secondary">Aguardando Serviço</Badge>;
-      case 'liberado':
-        return <Badge variant="outline">Pronto para Atender</Badge>;
-      case 'pago':
-        return <Badge variant="default">Pago</Badge>;
+      case 'pending':
+        return <Badge variant="secondary">Pendente</Badge>;
+      case 'completed':
+        return <Badge variant="default">Concluído</Badge>;
+      case 'paid':
+        return <Badge>Pago</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -216,178 +151,116 @@ export function ProfessionalDashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">Dashboard do Profissional</h2>
+        <h2 className="text-3xl font-bold tracking-tight">Dashboard Profissional</h2>
         <p className="text-muted-foreground">
-          Gerencie seus clientes e serviços
+          Acompanhe seus serviços e ganhos
         </p>
       </div>
 
-      {/* Estatísticas */}
-      {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total de Clientes</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.total_clients}</div>
-            </CardContent>
-          </Card>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total de Serviços</CardTitle>
+            <Package className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalServices}</div>
+          </CardContent>
+        </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Serviços Concluídos</CardTitle>
-              <CheckCircle className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">{stats.completed_services}</div>
-            </CardContent>
-          </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total de Ganhos</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{formatCurrency(stats.totalEarnings)}</div>
+          </CardContent>
+        </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pagamentos Pendentes</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-orange-600">{stats.pending_payments}</div>
-            </CardContent>
-          </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pagamentos Pendentes</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-600">{formatCurrency(stats.pendingPayments)}</div>
+          </CardContent>
+        </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Recebido</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-purple-600">{formatCurrency(stats.total_earnings)}</div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Trabalhos Concluídos</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.completedJobs}</div>
+          </CardContent>
+        </Card>
+      </div>
 
-      {/* Lista de Clientes */}
+      {/* Recent Transactions */}
       <Card>
         <CardHeader>
-          <CardTitle>Meus Clientes</CardTitle>
+          <CardTitle>Transações Recentes</CardTitle>
           <CardDescription>
-            Clientes atribuídos a você e status dos serviços
+            Últimas movimentações financeiras
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {clients.length === 0 ? (
+          {transactions.length === 0 ? (
             <Alert>
               <AlertDescription>
-                Nenhum cliente atribuído ainda. Aguarde novas contemplações.
+                Nenhuma transação encontrada ainda.
               </AlertDescription>
             </Alert>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Serviço</TableHead>
-                  <TableHead>Valor</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {clients.map((client) => (
-                  <TableRow key={client.id}>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">{client.client_name}</p>
-                        <p className="text-sm text-muted-foreground">{client.client_email}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell>{client.service_type}</TableCell>
-                    <TableCell>{formatCurrency(client.payment_amount)}</TableCell>
-                    <TableCell>
-                      {getStatusBadge(client.payment_status, client.service_completed)}
-                    </TableCell>
-                    <TableCell>{formatDate(client.created_at)}</TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => window.open(`tel:${client.client_phone}`)}
-                        >
-                          <Phone className="h-4 w-4" />
-                        </Button>
-                        
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => window.open(`mailto:${client.client_email}`)}
-                        >
-                          <Mail className="h-4 w-4" />
-                        </Button>
-                        
-                        {!client.service_completed && client.payment_status === 'liberado' && (
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button 
-                                size="sm"
-                                onClick={() => setSelectedClient(client)}
-                              >
-                                <CheckCircle className="h-4 w-4 mr-1" />
-                                Confirmar Serviço
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-md">
-                              <DialogHeader>
-                                <DialogTitle>Confirmar Conclusão do Serviço</DialogTitle>
-                                <DialogDescription>
-                                  Marque este serviço como concluído para {client.client_name}
-                                </DialogDescription>
-                              </DialogHeader>
-                              
-                              <div className="space-y-4">
-                                <div>
-                                  <label className="text-sm font-medium">Foto Antes (Opcional)</label>
-                                  <SimpleImageUpload onUpload={setBeforePhoto} />
-                                </div>
-                                
-                                <div>
-                                  <label className="text-sm font-medium">Foto Depois (Opcional)</label>
-                                  <SimpleImageUpload onUpload={setAfterPhoto} />
-                                </div>
-                                
-                                <div>
-                                  <label className="text-sm font-medium">Observações</label>
-                                  <textarea
-                                    className="w-full mt-1 p-2 border rounded-md"
-                                    rows={3}
-                                    value={serviceNotes}
-                                    onChange={(e) => setServiceNotes(e.target.value)}
-                                    placeholder="Observações sobre o serviço..."
-                                  />
-                                </div>
-                                
-                                <Button 
-                                  onClick={confirmServiceCompletion}
-                                  disabled={confirmingService}
-                                  className="w-full"
-                                >
-                                  {confirmingService ? 'Confirmando...' : 'Confirmar Conclusão'}
-                                </Button>
-                              </div>
-                            </DialogContent>
-                          </Dialog>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <div className="space-y-4">
+              {transactions.map((transaction) => (
+                <div key={transaction.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div>
+                    <h4 className="font-medium">{transaction.client_name}</h4>
+                    <p className="text-sm text-muted-foreground">{transaction.description}</p>
+                    <p className="text-xs text-muted-foreground">{formatDate(transaction.created_at)}</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold text-green-600">{formatCurrency(transaction.commission)}</div>
+                    {getStatusBadge(transaction.status)}
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </CardContent>
       </Card>
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="cursor-pointer hover:shadow-md transition-shadow">
+          <CardContent className="p-6 text-center">
+            <Package className="h-12 w-12 mx-auto mb-4 text-primary" />
+            <h3 className="font-semibold mb-2">Gerenciar Serviços</h3>
+            <p className="text-sm text-muted-foreground">Adicione e edite seus serviços</p>
+          </CardContent>
+        </Card>
+
+        <Card className="cursor-pointer hover:shadow-md transition-shadow">
+          <CardContent className="p-6 text-center">
+            <Calendar className="h-12 w-12 mx-auto mb-4 text-primary" />
+            <h3 className="font-semibold mb-2">Agenda</h3>
+            <p className="text-sm text-muted-foreground">Gerencie seus compromissos</p>
+          </CardContent>
+        </Card>
+
+        <Card className="cursor-pointer hover:shadow-md transition-shadow">
+          <CardContent className="p-6 text-center">
+            <Settings className="h-12 w-12 mx-auto mb-4 text-primary" />
+            <h3 className="font-semibold mb-2">Configurações</h3>
+            <p className="text-sm text-muted-foreground">Ajuste suas preferências</p>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
