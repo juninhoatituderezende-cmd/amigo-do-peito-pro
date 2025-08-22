@@ -100,6 +100,62 @@ export type Database = {
         }
         Relationships: []
       }
+      custom_plans: {
+        Row: {
+          active: boolean | null
+          category: string | null
+          created_at: string | null
+          description: string | null
+          duration_months: number | null
+          features: Json | null
+          id: string
+          max_participants: number | null
+          name: string
+          price: number
+          professional_id: string | null
+          stripe_price_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          duration_months?: number | null
+          features?: Json | null
+          id?: string
+          max_participants?: number | null
+          name: string
+          price: number
+          professional_id?: string | null
+          stripe_price_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          duration_months?: number | null
+          features?: Json | null
+          id?: string
+          max_participants?: number | null
+          name?: string
+          price?: number
+          professional_id?: string | null
+          stripe_price_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_plans_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       group_participants: {
         Row: {
           amount_paid: number
@@ -413,6 +469,68 @@ export type Database = {
           },
         ]
       }
+      products: {
+        Row: {
+          active: boolean | null
+          category: string | null
+          created_at: string | null
+          description: string | null
+          external_link: string | null
+          featured: boolean | null
+          id: string
+          image_url: string | null
+          name: string
+          price: number
+          professional_id: string | null
+          stock_quantity: number | null
+          target_audience: string | null
+          updated_at: string | null
+          visibility: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          external_link?: string | null
+          featured?: boolean | null
+          id?: string
+          image_url?: string | null
+          name: string
+          price: number
+          professional_id?: string | null
+          stock_quantity?: number | null
+          target_audience?: string | null
+          updated_at?: string | null
+          visibility?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          external_link?: string | null
+          featured?: boolean | null
+          id?: string
+          image_url?: string | null
+          name?: string
+          price?: number
+          professional_id?: string | null
+          stock_quantity?: number | null
+          target_audience?: string | null
+          updated_at?: string | null
+          visibility?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           approved: boolean | null
@@ -542,6 +660,67 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      user_purchases: {
+        Row: {
+          amount_paid: number
+          created_at: string | null
+          id: string
+          payment_method: string | null
+          plan_id: string | null
+          product_id: string | null
+          purchase_type: string | null
+          status: string | null
+          transaction_id: string | null
+          user_id: string
+        }
+        Insert: {
+          amount_paid: number
+          created_at?: string | null
+          id?: string
+          payment_method?: string | null
+          plan_id?: string | null
+          product_id?: string | null
+          purchase_type?: string | null
+          status?: string | null
+          transaction_id?: string | null
+          user_id: string
+        }
+        Update: {
+          amount_paid?: number
+          created_at?: string | null
+          id?: string
+          payment_method?: string | null
+          plan_id?: string | null
+          product_id?: string | null
+          purchase_type?: string | null
+          status?: string | null
+          transaction_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_purchases_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "custom_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_purchases_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_purchases_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       withdrawal_requests: {
         Row: {

@@ -15,6 +15,7 @@ interface Service {
   category: string | null;
   active: boolean;
   created_at: string;
+  type?: 'service' | 'product';
 }
 
 export function AdminProductsManagerSimple() {
@@ -29,15 +30,45 @@ export function AdminProductsManagerSimple() {
   const loadServices = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('services')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // Load from both services and products table
+      const [servicesResponse, productsResponse] = await Promise.all([
+        supabase.from('services').select('*').order('created_at', { ascending: false }),
+        supabase.from('products').select('*').order('created_at', { ascending: false })
+      ]);
 
-      if (error) throw error;
-      setServices(data || []);
+      if (servicesResponse.error) throw servicesResponse.error;
+      if (productsResponse.error) throw productsResponse.error;
+
+      // Combine and format data
+      const servicesData = (servicesResponse.data || []).map(service => ({
+        id: service.id,
+        name: service.name,
+        description: service.description,
+        price: service.price,
+        category: service.category,
+        active: service.active,
+        created_at: service.created_at,
+        type: 'service' as const
+      }));
+
+      const productsData = (productsResponse.data || []).map(product => ({
+        id: product.id,
+        name: product.name,
+        description: product.description,
+        price: product.price,
+        category: product.category,
+        active: product.active,
+        created_at: product.created_at,
+        type: 'product' as const
+      }));
+
+      const combinedData = [...servicesData, ...productsData].sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+
+      setServices(combinedData);
     } catch (error) {
-      console.error('Erro ao carregar serviços:', error);
+      console.error('Erro ao carregar produtos/serviços:', error);
       toast({
         title: "Erro",
         description: "Erro ao carregar produtos/serviços.",

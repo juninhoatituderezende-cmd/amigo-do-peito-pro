@@ -22,6 +22,7 @@ interface MarketplaceProduct {
   image_url?: string;
   ativo: boolean;
   approved: boolean;
+  type?: 'service' | 'product';
 }
 
 const UserMarketplace = () => {
@@ -48,33 +49,48 @@ const UserMarketplace = () => {
     try {
       setLoading(true);
       
-      const { data, error } = await supabase
-        .from('services')
-        .select('*')
-        .eq('active', true)
-        .order('name');
+      // Load from both services and products tables
+      const [servicesResponse, productsResponse] = await Promise.all([
+        supabase.from('services').select('*').eq('active', true).order('name'),
+        supabase.from('products').select('*').eq('active', true).eq('target_audience', 'user').order('name')
+      ]);
 
-      if (error) throw error;
+      if (servicesResponse.error) throw servicesResponse.error;
+      if (productsResponse.error) throw productsResponse.error;
 
       // Transform services to marketplace products format
-      const marketplaceProducts = (data || []).map(service => ({
+      const serviceProducts = (servicesResponse.data || []).map(service => ({
         id: service.id,
         name: service.name,
         description: service.description || '',
         valor_total: service.price,
-        category: service.category || 'General',
+        category: service.category || 'Serviços',
         ativo: service.active,
-        target_audience: 'user',
         approved: true,
-        professional_name: 'Profissional',
         image_url: service.image_url,
-        created_at: service.created_at
+        created_at: service.created_at,
+        type: 'service' as const
       }));
 
-      setProducts(marketplaceProducts);
+      // Transform products to marketplace products format
+      const productItems = (productsResponse.data || []).map(product => ({
+        id: product.id,
+        name: product.name,
+        description: product.description || '',
+        valor_total: product.price,
+        category: product.category || 'Produtos',
+        ativo: product.active,
+        approved: true,
+        image_url: product.image_url,
+        created_at: product.created_at,
+        type: 'product' as const
+      }));
+
+      const allProducts = [...serviceProducts, ...productItems];
+      setProducts(allProducts);
       
       // Extrair categorias únicas
-      const uniqueCategories = [...new Set(marketplaceProducts.map(p => p.category))];
+      const uniqueCategories = [...new Set(allProducts.map(p => p.category))];
       setCategories(uniqueCategories);
       
     } catch (error) {
