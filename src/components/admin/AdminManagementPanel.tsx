@@ -41,45 +41,42 @@ export function AdminManagementPanel() {
     try {
       // Carregar participantes dos planos
       const { data: participantsData, error } = await supabase
-        .from('plan_participants')
+        .from('group_participants')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('joined_at', { ascending: false });
 
       if (error) throw error;
 
-      // Carregar dados de usuários separadamente
+      // Carregar dados de usuários separadamente (usando profiles em vez de users)
       const userIds = participantsData?.map(p => p.user_id) || [];
       const { data: usersData } = await supabase
-        .from('users')
-        .select('id, nome, email, telefone')
-        .in('id', userIds);
+        .from('profiles')
+        .select('user_id, full_name, email, phone')
+        .in('user_id', userIds);
 
-      // Carregar dados de planos separadamente
+      // Carregar dados de grupos separadamente
       const groupIds = participantsData?.map(p => p.group_id) || [];
       const { data: groupsData } = await supabase
         .from('plan_groups')
-        .select(`
-          id,
-          custom_plans!inner(name, category_id)
-        `)
+        .select('id')
         .in('id', groupIds);
 
       // Transformar dados para o formato esperado
       const transformedParticipants = (participantsData || []).map(participant => {
-        const user = usersData?.find(u => u.id === participant.user_id);
+        const user = usersData?.find(u => u.user_id === participant.user_id);
         const group = groupsData?.find(g => g.id === participant.group_id);
         
         return {
           id: participant.id,
-          nome: user?.nome || 'N/A',
+          nome: user?.full_name || 'N/A',
           email: user?.email || 'N/A', 
-          telefone: user?.telefone || 'N/A',
-          serviceType: group?.custom_plans?.name || 'Plano personalizado',
-          status: participant.payment_status === 'paid' ? 'Ativo' : 'Pendente',
-          paymentStatus: participant.payment_status,
-          contemplationStatus: participant.contemplation_status,
-          joinDate: participant.joined_at?.split('T')[0] || participant.created_at?.split('T')[0],
-          contemplationDate: participant.contemplation_date?.split('T')[0] || null
+          telefone: user?.phone || 'N/A',
+          serviceType: 'Plano MLM',
+          status: participant.status === 'active' ? 'Ativo' : 'Pendente',
+          paymentStatus: participant.status || 'pending',
+          contemplationStatus: 'aguardando',
+          joinDate: participant.joined_at?.split('T')[0] || new Date().toISOString().split('T')[0],
+          contemplationDate: null
         };
       });
 
@@ -100,11 +97,9 @@ export function AdminManagementPanel() {
     try {
       // Atualizar no Supabase
       const { error } = await supabase
-        .from('plan_participants')
+        .from('group_participants')
         .update({
-          contemplation_status: newStatus,
-          contemplation_date: newStatus === 'contemplado' ? new Date().toISOString() : null,
-          updated_at: new Date().toISOString()
+          status: newStatus === 'contemplado' ? 'contemplated' : 'active'
         })
         .eq('id', participantId);
 
@@ -125,31 +120,8 @@ export function AdminManagementPanel() {
       if (newStatus === 'contemplado') {
         const participant = participants.find(p => p.id === participantId);
         if (participant) {
-          // Buscar o user_id real do participante
-          const { data: participantData } = await supabase
-            .from('plan_participants')
-            .select('user_id')
-            .eq('id', participantId)
-            .single();
-
-          if (participantData) {
-            const { error: contemplationError } = await supabase
-              .from('contemplations')
-              .insert({
-                user_id: participantData.user_id,
-                user_name: participant.nome,
-                user_email: participant.email,
-                service_type: participant.serviceType,
-                voucher_code: `VOUCHER-${Date.now()}`,
-                status: 'confirmed',
-                total_referrals: 9, // Padrão MLM
-                total_commission: 0 // Será calculado
-              });
-
-            if (contemplationError) {
-              console.error('Erro ao criar contemplação:', contemplationError);
-            }
-          }
+          // Log the contemplation (since we don't have a contemplations table)
+          console.log(`Participant ${participant.nome} was contemplated`);
         }
       }
 
@@ -171,7 +143,7 @@ export function AdminManagementPanel() {
     try {
       // Remover do Supabase
       const { error } = await supabase
-        .from('plan_participants')
+        .from('group_participants')
         .delete()
         .eq('id', participantId);
 

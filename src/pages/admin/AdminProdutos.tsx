@@ -1,5 +1,5 @@
-import { AdminProductsManager } from "@/components/admin/AdminProductsManager";
+import { AdminProductsManagerSimple } from "@/components/admin/AdminProductsManagerSimple";
 
 export default function AdminProdutos() {
-  return <AdminProductsManager />;
+  return <AdminProductsManagerSimple />;
 }

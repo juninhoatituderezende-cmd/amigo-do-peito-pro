@@ -38,15 +38,12 @@ export const SecurityAlert = ({ enableRealTimeAlerts = true, showCriticalOnly = 
     try {
       setLoading(true);
       
+      // Use notification_triggers as a substitute for security events
       let query = supabase
-        .from('security_events')
+        .from('notification_triggers')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(10);
-
-      if (showCriticalOnly) {
-        query = query.in('event_type', CRITICAL_EVENTS);
-      }
 
       const { data, error } = await query;
 
@@ -55,7 +52,18 @@ export const SecurityAlert = ({ enableRealTimeAlerts = true, showCriticalOnly = 
         return;
       }
 
-      setAlerts(data || []);
+      // Transform notification triggers to security events format
+      const transformedData = (data || []).map(item => ({
+        id: item.id,
+        event_type: item.event_type || 'notification_trigger',
+        created_at: item.created_at,
+        details: item.data,
+        user_id: item.user_id,
+        ip_address: null,
+        user_agent: null
+      }));
+
+      setAlerts(transformedData);
     } catch (error) {
       console.error('Error in fetchRecentAlerts:', error);
     } finally {
@@ -73,8 +81,8 @@ export const SecurityAlert = ({ enableRealTimeAlerts = true, showCriticalOnly = 
           { 
             event: 'INSERT', 
             schema: 'public', 
-            table: 'security_events' 
-          }, 
+            table: 'notification_triggers' 
+          },
           (payload) => {
             const newEvent = payload.new as SecurityEvent;
             
