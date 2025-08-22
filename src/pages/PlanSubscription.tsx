@@ -108,18 +108,19 @@ export function PlanSubscription() {
           image_url: ''
         });
 
-        // Carregar lista de profissionais
+        // Carregar lista de profissionais do plano
         const { data: professionalsData } = await supabase
-          .from('professionals')
-          .select('id, full_name, category, location')
+          .from('profiles')
+          .select('id, full_name, phone')
+          .eq('role', 'professional')
           .order('full_name');
         
         if (professionalsData) {
           setProfessionals(professionalsData.map(p => ({
             id: p.id,
-            nome: p.full_name,
-            especialidade: p.category,
-            local_atendimento: p.location
+            nome: p.full_name || 'Nome não informado',
+            especialidade: 'Categoria não informada',
+            local_atendimento: p.phone || 'Localização não informada'
           })));
         }
       }

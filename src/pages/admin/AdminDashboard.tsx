@@ -163,12 +163,24 @@ const AdminDashboard = () => {
         const loadProfessionals = async () => {
           try {
             const { data, error } = await supabase
-              .from('professionals')
+              .from('profiles')
               .select('*')
+              .eq('role', 'professional')
               .order('created_at', { ascending: false });
             
             if (error) throw error;
-            setProfessionals(data || []);
+            const mappedProfessionals = (data || []).map(prof => ({
+              id: prof.id,
+              full_name: prof.full_name || 'Nome não informado',
+              email: prof.email || 'Email não informado',
+              category: 'Categoria não informada',
+              location: prof.phone || 'Localização não informada',
+              phone: prof.phone || '',
+              instagram: '',
+              approved: prof.approved || false,
+              created_at: prof.created_at
+            }));
+            setProfessionals(mappedProfessionals);
           } catch (error) {
             console.error('Error loading professionals:', error);
             if (retryCount < 2) {
@@ -183,19 +195,20 @@ const AdminDashboard = () => {
         const loadUsers = async () => {
           try {
             const { data, error } = await supabase
-              .from('users')
+              .from('profiles')
               .select('*')
+              .eq('role', 'user')
               .order('created_at', { ascending: false });
             
             if (error) throw error;
             const transformedUsers = (data || []).map(user => ({
               id: user.id,
-              name: user.nome,
-              email: user.email,
-              full_name: user.nome,
-              phone: user.telefone,
+              name: user.full_name || 'Nome não informado',
+              email: user.email || 'Email não informado',
+              full_name: user.full_name || 'Nome não informado',
+              phone: user.phone || '',
               created_at: user.created_at,
-              referral_code: `REF-${user.id.slice(-4).toUpperCase()}`
+              referral_code: user.referral_code || `REF-${user.id.slice(-4).toUpperCase()}`
             }));
             setUsers(transformedUsers);
           } catch (error) {
@@ -212,12 +225,23 @@ const AdminDashboard = () => {
         const loadInfluencers = async () => {
           try {
             const { data, error } = await supabase
-              .from('influencers')
+              .from('profiles')
               .select('*')
+              .eq('role', 'influencer')
               .order('created_at', { ascending: false });
             
             if (error) throw error;
-            setInfluencers(data || []);
+            const mappedInfluencers = (data || []).map(inf => ({
+              id: inf.id,
+              full_name: inf.full_name || 'Nome não informado',
+              email: inf.email || 'Email não informado',
+              phone: inf.phone || '',
+              instagram: '',
+              followers: '0',
+              approved: inf.approved || false,
+              created_at: inf.created_at
+            }));
+            setInfluencers(mappedInfluencers);
           } catch (error) {
             console.error('Error loading influencers:', error);
             if (retryCount < 2) {
@@ -359,9 +383,10 @@ const AdminDashboard = () => {
     try {
       if (type === "Profissional") {
         const { error } = await supabase
-          .from('professionals')
+          .from('profiles')
           .update({ approved: true })
-          .eq('id', id);
+          .eq('id', id)
+          .eq('role', 'professional');
         
         if (error) {
           throw error;
@@ -373,9 +398,10 @@ const AdminDashboard = () => {
         ));
       } else if (type === "Influenciador") {
         const { error } = await supabase
-          .from('influencers')
+          .from('profiles')
           .update({ approved: true })
-          .eq('id', id);
+          .eq('id', id)
+          .eq('role', 'influencer');
         
         if (error) {
           throw error;
@@ -405,9 +431,10 @@ const AdminDashboard = () => {
     try {
       if (type === "Profissional") {
         const { error } = await supabase
-          .from('professionals')
+          .from('profiles')
           .update({ approved: false })
-          .eq('id', id);
+          .eq('id', id)
+          .eq('role', 'professional');
         
         if (error) {
           throw error;
@@ -419,9 +446,10 @@ const AdminDashboard = () => {
         ));
       } else if (type === "Influenciador") {
         const { error } = await supabase
-          .from('influencers')
+          .from('profiles')
           .update({ approved: false })
-          .eq('id', id);
+          .eq('id', id)
+          .eq('role', 'influencer');
         
         if (error) {
           throw error;
@@ -467,25 +495,50 @@ const AdminDashboard = () => {
     try {
       // Recarregar dados do Supabase
       const [professionalsRes, usersRes, influencersRes] = await Promise.all([
-        supabase.from('professionals').select('*').order('created_at', { ascending: false }),
-        supabase.from('users').select('*').order('created_at', { ascending: false }),
-        supabase.from('influencers').select('*').order('created_at', { ascending: false })
+        supabase.from('profiles').select('*').eq('role', 'professional').order('created_at', { ascending: false }),
+        supabase.from('profiles').select('*').eq('role', 'user').order('created_at', { ascending: false }),
+        supabase.from('profiles').select('*').eq('role', 'influencer').order('created_at', { ascending: false })
       ]);
 
-      if (professionalsRes.data) setProfessionals(professionalsRes.data);
+      if (professionalsRes.data) {
+        const mappedProfessionals = professionalsRes.data.map(prof => ({
+          id: prof.id,
+          full_name: prof.full_name || 'Nome não informado',
+          email: prof.email || 'Email não informado',
+          category: 'Categoria não informada',
+          location: prof.phone || 'Localização não informada',
+          phone: prof.phone || '',
+          instagram: '',
+          approved: prof.approved || false,
+          created_at: prof.created_at
+        }));
+        setProfessionals(mappedProfessionals);
+      }
       if (usersRes.data) {
         const transformedUsers = usersRes.data.map(user => ({
           id: user.id,
-          name: user.nome,
-          email: user.email,
-          full_name: user.nome,
-          phone: user.telefone,
+          name: user.full_name || 'Nome não informado',
+          email: user.email || 'Email não informado',
+          full_name: user.full_name || 'Nome não informado',
+          phone: user.phone || '',
           created_at: user.created_at,
-          referral_code: `REF-${user.id.slice(-4).toUpperCase()}`
+          referral_code: user.referral_code || `REF-${user.id.slice(-4).toUpperCase()}`
         }));
         setUsers(transformedUsers);
       }
-      if (influencersRes.data) setInfluencers(influencersRes.data);
+      if (influencersRes.data) {
+        const mappedInfluencers = influencersRes.data.map(inf => ({
+          id: inf.id,
+          full_name: inf.full_name || 'Nome não informado',
+          email: inf.email || 'Email não informado',
+          phone: inf.phone || '',
+          instagram: '',
+          followers: '0',
+          approved: inf.approved || false,
+          created_at: inf.created_at
+        }));
+        setInfluencers(mappedInfluencers);
+      }
 
       toast({
         title: "Dados atualizados!",

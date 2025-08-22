@@ -68,21 +68,20 @@ export default function MLMSuccess() {
 
   const loadGroupDetails = async (groupId: string) => {
     try {
-      const { data, error } = await supabase
-        .from("groups")
-        .select(`
-          *,
-          product:products (
-            name,
-            full_value,
-            entry_value
-          )
-        `)
-        .eq("id", groupId)
-        .single();
+    const { data: groupData, error: groupError } = await supabase
+      .from('plan_groups')
+      .select(`
+        *,
+        services (
+          name,
+          price
+        )
+      `)
+      .eq('id', groupId)
+      .single();
 
-      if (error) throw error;
-      setGroupData({ ...groupData, group_details: data });
+      if (groupError) throw groupError;
+      setGroupData({ ...groupData, group_details: groupData });
     } catch (error) {
       console.error("Erro ao carregar detalhes do grupo:", error);
     }
