@@ -43,25 +43,34 @@ export default function AdminNotificacoes() {
       setSending(true);
 
       // Buscar usuários baseado no target
-      let userQuery = supabase.from('users').select('id');
+      let userIds: string[] = [];
       
-      if (broadcastForm.target === 'professionals') {
-        const { data: professionals } = await supabase
-          .from('professionals')
+      if (broadcastForm.target === 'all') {
+        const { data: allUsers } = await supabase
+          .from('profiles')
           .select('user_id');
-        const profIds = professionals?.map(p => p.user_id) || [];
-        userQuery = userQuery.in('id', profIds);
+        userIds = allUsers?.map(u => u.user_id) || [];
+      } else if (broadcastForm.target === 'professionals') {
+        const { data: professionals } = await supabase
+          .from('profiles')
+          .select('user_id')
+          .eq('role', 'professional');
+        userIds = professionals?.map(p => p.user_id) || [];
       } else if (broadcastForm.target === 'influencers') {
         const { data: influencers } = await supabase
-          .from('influencers')
-          .select('user_id');
-        const infIds = influencers?.map(i => i.user_id) || [];
-        userQuery = userQuery.in('id', infIds);
+          .from('profiles')
+          .select('user_id')
+          .eq('role', 'influencer');
+        userIds = influencers?.map(i => i.user_id) || [];
+      } else if (broadcastForm.target === 'users') {
+        const { data: users } = await supabase
+          .from('profiles')
+          .select('user_id')
+          .eq('role', 'user');
+        userIds = users?.map(u => u.user_id) || [];
       }
 
-      const { data: targetUsers } = await userQuery;
-
-      if (!targetUsers || targetUsers.length === 0) {
+      if (userIds.length === 0) {
         toast({
           title: "Aviso",
           description: "Nenhum usuário encontrado para o público selecionado.",
@@ -71,23 +80,23 @@ export default function AdminNotificacoes() {
       }
 
       // Criar notificações para todos os usuários alvo
-      const notifications = targetUsers.map(user => ({
-        user_id: user.id,
+      const notifications = userIds.map(userId => ({
+        user_id: userId,
         title: broadcastForm.title,
         message: broadcastForm.message,
-        type: broadcastForm.type,
-        category: 'admin_broadcast'
+        event_type: broadcastForm.type,
+        data: { category: 'admin_broadcast' }
       }));
 
       const { error } = await supabase
-        .from('notifications')
+        .from('notification_triggers')
         .insert(notifications);
 
       if (error) throw error;
 
       toast({
         title: "Notificação enviada!",
-        description: `Notificação enviada para ${targetUsers.length} usuários.`,
+        description: `Notificação enviada para ${userIds.length} usuários.`,
       });
 
       // Reset form

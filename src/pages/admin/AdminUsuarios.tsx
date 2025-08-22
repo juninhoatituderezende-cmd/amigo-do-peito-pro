@@ -52,8 +52,9 @@ export default function AdminUsuarios() {
       
       // Carregar usuários
       const { data: usersData, error: usersError } = await supabase
-        .from('users')
+        .from('profiles')
         .select('*')
+        .eq('role', 'user')
         .order('created_at', { ascending: false });
 
       if (usersError) throw usersError;
@@ -63,21 +64,22 @@ export default function AdminUsuarios() {
         .from('user_credits')
         .select('user_id, total_credits');
 
-      // Carregar indicações dos usuários
+      // Para referrals, usar a tabela profiles com referred_by
       const { data: referralsData } = await supabase
-        .from('indicacoes')
-        .select('indicado_por_id');
+        .from('profiles')
+        .select('referred_by')
+        .not('referred_by', 'is', null);
 
       // Combinar dados
       const usersWithData = (usersData || []).map(user => {
-        const userCredits = creditsData?.find(c => c.user_id === user.id);
-        const userReferrals = referralsData?.filter(r => r.indicado_por_id === user.id);
+        const userCredits = creditsData?.find(c => c.user_id === user.user_id);
+        const userReferrals = referralsData?.filter(r => r.referred_by === user.user_id);
         
         return {
           id: user.id,
-          nome: user.nome,
+          nome: user.full_name || 'Nome não informado',
           email: user.email || '',
-          telefone: user.telefone || '',
+          telefone: user.phone || '',
           created_at: user.created_at,
           referral_count: userReferrals?.length || 0,
           credits: userCredits?.total_credits || 0,
