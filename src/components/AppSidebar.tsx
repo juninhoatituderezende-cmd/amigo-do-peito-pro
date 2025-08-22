@@ -12,6 +12,8 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { useNotifications } from '@/hooks/useNotifications';
+import { Badge } from '@/components/ui/badge';
 import { 
   LayoutDashboard, 
   Users, 
@@ -67,11 +69,13 @@ const menuItems: MenuItem[] = [
   { title: "Dashboard", url: "/usuario/dashboard", icon: LayoutDashboard, roles: ["user"] },
   { title: "Marketplace", url: "/usuario/marketplace", icon: Package, roles: ["user"] },
   { title: "Saques", url: "/usuario/saques", icon: DollarSign, roles: ["user"] },
+  { title: "Notificações", url: "/usuario/notificacoes", icon: Bell, roles: ["user"] },
   { title: "Créditos", url: "/usuario/creditos", icon: Gift, roles: ["user"] },
 ];
 
 export function AppSidebar() {
   const { user } = useAuth();
+  const { unreadCount } = useNotifications();
   const location = useLocation();
   const currentPath = location.pathname;
 
@@ -128,14 +132,19 @@ export function AppSidebar() {
               {filteredItems.map((item) => (
                 <SidebarMenuItem key={item.url}>
                   <SidebarMenuButton asChild>
-                    <NavLink 
-                      to={item.url} 
-                      end={item.url === '/admin' || item.url === '/profissional' || item.url === '/influenciador' || item.url === '/usuario'}
-                      className={({ isActive }) => getNavClass(isActive)}
-                    >
-                      <item.icon className="h-4 w-4" />
-                      <span className="ml-2">{item.title}</span>
-                    </NavLink>
+                     <NavLink 
+                       to={item.url} 
+                       end={item.url === '/admin' || item.url === '/profissional' || item.url === '/influenciador' || item.url === '/usuario'}
+                       className={({ isActive }) => getNavClass(isActive)}
+                     >
+                       <item.icon className="h-4 w-4" />
+                       <span className="ml-2">{item.title}</span>
+                       {item.title === "Notificações" && unreadCount > 0 && (
+                         <Badge variant="destructive" className="ml-auto min-w-[1.5rem] h-5 text-xs">
+                           {unreadCount}
+                         </Badge>
+                       )}
+                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}

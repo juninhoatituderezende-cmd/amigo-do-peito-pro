@@ -1,21 +1,7 @@
 import React, { createContext, useContext, ReactNode } from 'react';
-import { useNotifications, Notification } from '@/hooks/useNotifications';
+import { useNotifications } from '@/hooks/useNotifications';
 
-interface NotificationContextType {
-  notifications: Notification[];
-  loading: boolean;
-  unreadCount: number;
-  markAsRead: (id: string) => Promise<void>;
-  markAllAsRead: () => Promise<void>;
-  deleteNotification: (id: string) => Promise<void>;
-  createNotification: (notificationData: Omit<Notification, 'id' | 'createdAt' | 'userId'>) => Promise<void>;
-  notifyGroupUpdate: (groupName: string, membersCount: number, maxMembers: number) => void;
-  notifyReferralSuccess: (referredName: string, commission: number) => void;
-  notifyPaymentProcessed: (amount: number, type: 'withdrawal' | 'commission') => void;
-  notifyAchievement: (achievementName: string, bonus?: number) => void;
-}
-
-const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
+const NotificationContext = createContext<ReturnType<typeof useNotifications> | undefined>(undefined);
 
 export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const notificationData = useNotifications();

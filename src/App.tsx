@@ -30,6 +30,7 @@ import QuickLogin from "./pages/QuickLogin";
 import UserDashboard from "./pages/user/UserDashboard";
 import UserMarketplace from "./pages/user/UserMarketplace";
 import UserWithdrawals from "./pages/user/UserWithdrawals";
+import UserNotifications from "./pages/user/UserNotifications";
 import Marketplace from "./pages/Marketplace";
 import InfluencerRegister from "./pages/InfluencerRegister";
 import InfluencerLogin from "./pages/InfluencerLogin";
@@ -92,6 +93,11 @@ const App = () => (
             <Route path="/usuario/saques" element={
               <ProtectedRoute role="user">
                 <UserWithdrawals />
+              </ProtectedRoute>
+            } />
+            <Route path="/usuario/notificacoes" element={
+              <ProtectedRoute role="user">
+                <UserNotifications />
               </ProtectedRoute>
             } />
             <Route path="/marketplace" element={<Marketplace />} />
