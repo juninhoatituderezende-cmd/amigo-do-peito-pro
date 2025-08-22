@@ -1,13 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { AvatarUpload } from "@/components/ui/avatar-upload";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { User, Mail, Phone, MapPin, Calendar, Edit, Camera } from "lucide-react";
+import { User, Mail, Phone, MapPin, Calendar, Edit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface UserProfile {
@@ -27,6 +29,7 @@ interface UserProfile {
 }
 
 export const UserProfile = () => {
+  const { user } = useAuth();
   const [profile, setProfile] = useState<UserProfile>({
     name: "João Silva",
     email: "joao@email.com",
@@ -44,7 +47,46 @@ export const UserProfile = () => {
 
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [editedProfile, setEditedProfile] = useState<UserProfile>(profile);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+
+  // Load user profile data
+  useEffect(() => {
+    if (user) {
+      loadProfileData();
+    }
+  }, [user]);
+
+  const loadProfileData = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user?.id)
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        setProfile(prev => ({
+          ...prev,
+          name: data.full_name || prev.name,
+          email: data.email || prev.email,
+          phone: data.phone || prev.phone,
+          avatar: data.avatar_url
+        }));
+      }
+    } catch (error) {
+      console.error('Error loading profile:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAvatarUpdate = (avatarUrl: string | null) => {
+    setProfile(prev => ({ ...prev, avatar: avatarUrl }));
+  };
 
   const handleSaveProfile = () => {
     setProfile(editedProfile);
@@ -70,27 +112,26 @@ export const UserProfile = () => {
     });
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Profile Header */}
       <Card>
         <CardContent className="pt-6">
           <div className="flex items-center gap-6">
-            <div className="relative">
-              <Avatar className="h-24 w-24">
-                <AvatarImage src={profile.avatar} />
-                <AvatarFallback className="text-xl">
-                  {profile.name.split(' ').map(n => n[0]).join('')}
-                </AvatarFallback>
-              </Avatar>
-              <Button
-                size="sm"
-                variant="outline"
-                className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full p-0"
-              >
-                <Camera className="h-4 w-4" />
-              </Button>
-            </div>
+            <AvatarUpload
+              currentAvatar={profile.avatar}
+              userName={profile.name}
+              size="lg"
+              onAvatarUpdate={handleAvatarUpdate}
+            />
             
             <div className="flex-1">
               <h2 className="text-2xl font-bold">{profile.name}</h2>
