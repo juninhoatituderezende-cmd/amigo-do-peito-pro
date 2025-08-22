@@ -66,6 +66,16 @@ export const Marketplace = () => {
   // Usar hook otimizado com cache para produtos
   const { data: products = [], loading } = useMarketplaceProducts();
 
+  // Determinar tipo de usuário baseado no contexto
+  const getUserType = (): 'client' | 'professional' => {
+    if (user?.role === 'professional') {
+      return 'professional';
+    }
+    return 'client'; // Por padrão, assumir cliente
+  };
+
+  const userType = getUserType();
+
   // Filtrar e ordenar produtos com useMemo para otimização
   const filteredAndSortedProducts = useMemo(() => {
     return products
@@ -138,15 +148,6 @@ export const Marketplace = () => {
     });
   };
 
-  // Determinar tipo de usuário baseado no contexto
-  const getUserType = (): 'client' | 'professional' => {
-    if (user?.role === 'professional') {
-      return 'professional';
-    }
-    return 'client'; // Por padrão, assumir cliente
-  };
-
-  const userType = getUserType();
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {

@@ -29,6 +29,7 @@ import CreateAdmin from "./pages/CreateAdmin";
 import QuickLogin from "./pages/QuickLogin";
 import UserDashboard from "./pages/user/UserDashboard";
 import UserMarketplace from "./pages/user/UserMarketplace";
+import Marketplace from "./pages/Marketplace";
 import InfluencerRegister from "./pages/InfluencerRegister";
 import InfluencerLogin from "./pages/InfluencerLogin";
 import InfluencerDashboard from "./pages/influencer/InfluencerDashboard";
@@ -87,6 +88,7 @@ const App = () => (
                 <UserMarketplace />
               </ProtectedRoute>
             } />
+            <Route path="/marketplace" element={<Marketplace />} />
             
             {/* Professional Routes */}
             <Route path="/profissional/login" element={<ProfessionalLogin />} />

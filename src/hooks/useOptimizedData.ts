@@ -126,22 +126,32 @@ export const useMarketplaceProducts = () => {
     'marketplace-products',
     async () => {
       const { data, error } = await supabase
-        .from('services')
-        .select('*, professionals(full_name)')
+        .from('marketplace_products')
+        .select('*')
+        .eq('ativo', true)
+        .eq('approved', true)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      return (data || []).map(service => ({
-        id: service.id,
-        title: service.name,
-        description: service.description,
-        full_price: service.price,
-        down_payment: service.price * 0.1,
-        category: service.category,
-        professional_name: service.professionals?.full_name || 'Profissional',
-        image: null,
-        external_link: null
+      return (data || []).map(product => ({
+        id: product.id,
+        title: product.name,
+        description: product.description || '',
+        full_price: Number(product.valor_total),
+        down_payment: Number(product.valor_total) * (Number(product.percentual_entrada) / 100),
+        category: product.category,
+        professional_name: 'Profissional',
+        professional_id: product.professional_id,
+        professional_avatar: null,
+        image_url: product.image_url,
+        external_link: null,
+        visibility: (product.target_audience === 'user' ? 'client' : 
+                    product.target_audience === 'professional' ? 'professional' : 'both') as 'client' | 'professional' | 'both',
+        is_active: product.ativo,
+        created_at: product.created_at,
+        total_sales: 0, // Placeholder
+        rating: 4.5 // Placeholder - implementar sistema de avaliações depois
       }));
     },
     { ttl: 2 * 60 * 1000 } // Cache por 2 minutos

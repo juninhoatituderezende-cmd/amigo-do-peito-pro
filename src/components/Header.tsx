@@ -29,6 +29,9 @@ const Header = () => {
           <Link to="/sobre" className="text-gray-800 hover:text-ap-orange transition-colors">
             Sobre
           </Link>
+          <Link to="/marketplace" className="text-gray-800 hover:text-ap-orange transition-colors">
+            Marketplace
+          </Link>
           <Link to="/todos" className="text-gray-800 hover:text-ap-orange transition-colors">
             Tarefas
           </Link>
@@ -103,6 +106,12 @@ const Header = () => {
               onClick={() => setMobileMenuOpen(false)}
             >
               Sobre
+            </Link>
+            <Link to="/marketplace" 
+              className="text-gray-800 hover:text-ap-orange transition-colors"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Marketplace
             </Link>
             <Link to="/todos" 
               className="text-gray-800 hover:text-ap-orange transition-colors"
