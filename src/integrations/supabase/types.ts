@@ -67,33 +67,42 @@ export type Database = {
       credit_transactions: {
         Row: {
           amount: number
+          commission_rate: number | null
           created_at: string | null
           description: string | null
           id: string
           reference_id: string | null
           reference_table: string | null
+          related_user_id: string | null
+          source_type: string | null
           status: string | null
           type: Database["public"]["Enums"]["transaction_type"]
           user_id: string | null
         }
         Insert: {
           amount: number
+          commission_rate?: number | null
           created_at?: string | null
           description?: string | null
           id?: string
           reference_id?: string | null
           reference_table?: string | null
+          related_user_id?: string | null
+          source_type?: string | null
           status?: string | null
           type: Database["public"]["Enums"]["transaction_type"]
           user_id?: string | null
         }
         Update: {
           amount?: number
+          commission_rate?: number | null
           created_at?: string | null
           description?: string | null
           id?: string
           reference_id?: string | null
           reference_table?: string | null
+          related_user_id?: string | null
+          source_type?: string | null
           status?: string | null
           type?: Database["public"]["Enums"]["transaction_type"]
           user_id?: string | null
@@ -796,6 +805,10 @@ export type Database = {
         | "refund"
         | "withdrawal_request"
         | "withdrawal_completed"
+        | "service_payment"
+        | "referral_commission"
+        | "marketplace_commission"
+        | "professional_earnings"
       user_role: "user" | "professional" | "admin" | "influencer"
     }
     CompositeTypes: {
@@ -938,6 +951,10 @@ export const Constants = {
         "refund",
         "withdrawal_request",
         "withdrawal_completed",
+        "service_payment",
+        "referral_commission",
+        "marketplace_commission",
+        "professional_earnings",
       ],
       user_role: ["user", "professional", "admin", "influencer"],
     },
