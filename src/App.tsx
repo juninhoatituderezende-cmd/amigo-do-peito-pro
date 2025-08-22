@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ScrollToTop, ConnectionStatus } from "@/components/ui/ux-improvements";
 import { diagnostics } from "@/lib/diagnostics";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -55,6 +56,8 @@ const queryClient = new QueryClient({
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes
     },
   },
 });
@@ -64,137 +67,139 @@ const App = () => (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <TooltipProvider>
+          <ConnectionStatus />
           <Toaster />
           <Sonner />
           <BrowserRouter>
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/" element={<Index />} />
-            <Route path="/sobre" element={<About />} />
-            <Route path="/todos" element={<Todos />} />
-            <Route path="/cadastro" element={<Register />} />
-            <Route path="/confirmacao" element={<Confirmation />} />
-            <Route path="/admin-login" element={<AdminLogin />} />
-            
-            {/* User Routes */}
-            <Route path="/usuario/cadastro" element={<UserRegister />} />
-            <Route path="/usuario/login" element={<UserLogin />} />
-            <Route path="/login-rapido" element={<QuickLogin />} />
-            <Route path="/create-admin" element={<CreateAdmin />} />
-            <Route path="/usuario/dashboard" element={
-              <ProtectedRoute role="user">
-                <UserDashboard />
-              </ProtectedRoute>
-            } />
-            <Route path="/usuario/marketplace" element={
-              <ProtectedRoute role="user">
-                <UserMarketplace />
-              </ProtectedRoute>
-            } />
-            <Route path="/usuario/saques" element={
-              <ProtectedRoute role="user">
-                <UserWithdrawals />
-              </ProtectedRoute>
-            } />
-            <Route path="/usuario/notificacoes" element={
-              <ProtectedRoute role="user">
-                <UserNotifications />
-              </ProtectedRoute>
-            } />
-            <Route path="/usuario/historico" element={
-              <ProtectedRoute role="user">
-                <UserHistory />
-              </ProtectedRoute>
-            } />
-            <Route path="/marketplace" element={<Marketplace />} />
-            
-            {/* Professional Routes */}
-            <Route path="/profissional/login" element={<ProfessionalLogin />} />
-            <Route path="/profissional/dashboard" element={
-              <ProtectedRoute role="professional">
-                <ProDashboard />
-              </ProtectedRoute>
-            } />
-            <Route path="/profissional/perfil" element={
-              <ProtectedRoute role="professional">
-                <ProProfile />
-              </ProtectedRoute>
-            } />
-            <Route path="/profissional/agenda" element={
-              <ProtectedRoute role="professional">
-                <ProSchedule />
-              </ProtectedRoute>
-            } />
-            <Route path="/profissional/financeiro" element={
-              <ProtectedRoute role="professional">
-                <ProFinances />
-              </ProtectedRoute>
-            } />
-            <Route path="/profissional/servicos" element={
-              <ProtectedRoute role="professional">
-                <ProServices />
-              </ProtectedRoute>
-            } />
-            
-            {/* Influencer Routes */}
-            <Route path="/influenciador/cadastro" element={<InfluencerRegister />} />
-            <Route path="/influenciador/login" element={<InfluencerLogin />} />
-            <Route path="/influenciador/dashboard" element={
-              <ProtectedRoute role="influencer">
-                <InfluencerDashboard />
-              </ProtectedRoute>
-            } />
-            <Route path="/influenciador/ferramentas" element={
-              <ProtectedRoute role="influencer">
-                <InfluencerTools />
-              </ProtectedRoute>
-            } />
-            
-            {/* MLM Routes */}
-            <Route path="/mlm/products" element={<MLMProducts />} />
-            <Route path="/mlm/dashboard" element={<MLMDashboard />} />
-            <Route path="/mlm/success" element={<MLMSuccess />} />
-            <Route path="/mlm/cancel" element={<MLMCancel />} />
-            
-            {/* Admin Protected Routes */}
-            <Route path="/admin" element={
-              <ProtectedRoute role="admin">
-                <AdminDashboard />
-              </ProtectedRoute>
-            } />
-            <Route path="/admin/usuarios" element={
-              <ProtectedRoute role="admin">
-                <AdminUsuarios />
-              </ProtectedRoute>
-            } />
-            <Route path="/admin/planos" element={
-              <ProtectedRoute role="admin">
-                <AdminPlanos />
-              </ProtectedRoute>
-            } />
-            <Route path="/admin/pagamentos" element={
-              <ProtectedRoute role="admin">
-                <AdminPagamentos />
-              </ProtectedRoute>
-            } />
-            <Route path="/admin/mlm" element={
-              <ProtectedRoute role="admin">
-                <AdminMLM />
-              </ProtectedRoute>
-            } />
-            <Route path="/admin/notificacoes" element={
-              <ProtectedRoute role="admin">
-                <AdminNotificacoes />
-              </ProtectedRoute>
-            } />
-            
-            {/* Catch-all route */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
+            <ScrollToTop />
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/" element={<Index />} />
+              <Route path="/sobre" element={<About />} />
+              <Route path="/todos" element={<Todos />} />
+              <Route path="/cadastro" element={<Register />} />
+              <Route path="/confirmacao" element={<Confirmation />} />
+              <Route path="/admin-login" element={<AdminLogin />} />
+              
+              {/* User Routes */}
+              <Route path="/usuario/cadastro" element={<UserRegister />} />
+              <Route path="/usuario/login" element={<UserLogin />} />
+              <Route path="/login-rapido" element={<QuickLogin />} />
+              <Route path="/create-admin" element={<CreateAdmin />} />
+              <Route path="/usuario/dashboard" element={
+                <ProtectedRoute role="user">
+                  <UserDashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="/usuario/marketplace" element={
+                <ProtectedRoute role="user">
+                  <UserMarketplace />
+                </ProtectedRoute>
+              } />
+              <Route path="/usuario/saques" element={
+                <ProtectedRoute role="user">
+                  <UserWithdrawals />
+                </ProtectedRoute>
+              } />
+              <Route path="/usuario/notificacoes" element={
+                <ProtectedRoute role="user">
+                  <UserNotifications />
+                </ProtectedRoute>
+              } />
+              <Route path="/usuario/historico" element={
+                <ProtectedRoute role="user">
+                  <UserHistory />
+                </ProtectedRoute>
+              } />
+              <Route path="/marketplace" element={<Marketplace />} />
+              
+              {/* Professional Routes */}
+              <Route path="/profissional/login" element={<ProfessionalLogin />} />
+              <Route path="/profissional/dashboard" element={
+                <ProtectedRoute role="professional">
+                  <ProDashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="/profissional/perfil" element={
+                <ProtectedRoute role="professional">
+                  <ProProfile />
+                </ProtectedRoute>
+              } />
+              <Route path="/profissional/agenda" element={
+                <ProtectedRoute role="professional">
+                  <ProSchedule />
+                </ProtectedRoute>
+              } />
+              <Route path="/profissional/financeiro" element={
+                <ProtectedRoute role="professional">
+                  <ProFinances />
+                </ProtectedRoute>
+              } />
+              <Route path="/profissional/servicos" element={
+                <ProtectedRoute role="professional">
+                  <ProServices />
+                </ProtectedRoute>
+              } />
+              
+              {/* Influencer Routes */}
+              <Route path="/influenciador/cadastro" element={<InfluencerRegister />} />
+              <Route path="/influenciador/login" element={<InfluencerLogin />} />
+              <Route path="/influenciador/dashboard" element={
+                <ProtectedRoute role="influencer">
+                  <InfluencerDashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="/influenciador/ferramentas" element={
+                <ProtectedRoute role="influencer">
+                  <InfluencerTools />
+                </ProtectedRoute>
+              } />
+              
+              {/* MLM Routes */}
+              <Route path="/mlm/products" element={<MLMProducts />} />
+              <Route path="/mlm/dashboard" element={<MLMDashboard />} />
+              <Route path="/mlm/success" element={<MLMSuccess />} />
+              <Route path="/mlm/cancel" element={<MLMCancel />} />
+              
+              {/* Admin Protected Routes */}
+              <Route path="/admin" element={
+                <ProtectedRoute role="admin">
+                  <AdminDashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/usuarios" element={
+                <ProtectedRoute role="admin">
+                  <AdminUsuarios />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/planos" element={
+                <ProtectedRoute role="admin">
+                  <AdminPlanos />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/pagamentos" element={
+                <ProtectedRoute role="admin">
+                  <AdminPagamentos />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/mlm" element={
+                <ProtectedRoute role="admin">
+                  <AdminMLM />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/notificacoes" element={
+                <ProtectedRoute role="admin">
+                  <AdminNotificacoes />
+                </ProtectedRoute>
+              } />
+              
+              {/* Catch-all route */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
+    </QueryClientProvider>
   </ErrorBoundary>
 );
 

@@ -39,7 +39,7 @@ export class ErrorBoundary extends Component<Props, State> {
     this.logError(error, errorInfo);
   }
 
-  private logError = (error: Error, errorInfo: ErrorInfo) => {
+  private logError = async (error: Error, errorInfo: ErrorInfo) => {
     const errorData = {
       message: error.message,
       stack: error.stack,
@@ -48,24 +48,33 @@ export class ErrorBoundary extends Component<Props, State> {
       timestamp: new Date().toISOString(),
       userAgent: navigator.userAgent,
       url: window.location.href,
+      buildVersion: import.meta.env.VITE_BUILD_VERSION || 'development',
     };
 
     // Log to console in development
     if (process.env.NODE_ENV === 'development') {
-      console.error('Error Boundary caught an error:', errorData);
+      console.error('🔴 ERROR BOUNDARY:', errorData);
     }
 
-    // Send to monitoring service in production
-    if (process.env.NODE_ENV === 'production') {
-      try {
-        fetch('/api/log-error', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(errorData),
-        }).catch(console.error);
-      } catch (e) {
-        console.error('Failed to log error:', e);
+    // Send to error logger
+    try {
+      const { errorLogger } = await import('@/lib/errorLogger');
+      await errorLogger.logError(error, errorInfo.componentStack);
+    } catch (logError) {
+      console.error('Failed to log error:', logError);
+    }
+
+    // Store error in localStorage for recovery
+    try {
+      const errorHistory = JSON.parse(localStorage.getItem('errorHistory') || '[]');
+      errorHistory.push(errorData);
+      // Keep only last 10 errors
+      if (errorHistory.length > 10) {
+        errorHistory.shift();
       }
+      localStorage.setItem('errorHistory', JSON.stringify(errorHistory));
+    } catch (storageError) {
+      console.error('Failed to store error history:', storageError);
     }
   };
 
