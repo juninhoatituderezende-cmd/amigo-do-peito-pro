@@ -15,51 +15,52 @@ const Header = () => {
   };
 
   return (
-    <header className="bg-white shadow-sm sticky top-0 z-50">
+    <header className="gradient-dark text-white shadow-xl sticky top-0 z-50 border-b border-primary/20">
       <div className="ap-container py-4 flex justify-between items-center">
         <Link to="/" className="flex items-center space-x-2">
-          <span className="text-xl font-bold text-ap-orange">Amigo do Peito</span>
+          <span className="text-xl font-bold text-primary animate-gold-pulse">Amigo do Peito</span>
         </Link>
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-6">
-          <Link to="/" className="text-gray-800 hover:text-ap-orange transition-colors">
+          <Link to="/" className="text-white hover:text-primary transition-all hover-gold">
             Início
           </Link>
-          <Link to="/sobre" className="text-gray-800 hover:text-ap-orange transition-colors">
+          <Link to="/sobre" className="text-white hover:text-primary transition-all hover-gold">
             Sobre
           </Link>
-          <Link to="/marketplace" className="text-gray-800 hover:text-ap-orange transition-colors">
+          <Link to="/marketplace" className="text-white hover:text-primary transition-all hover-gold">
             Marketplace
           </Link>
-          <Link to="/todos" className="text-gray-800 hover:text-ap-orange transition-colors">
+          <Link to="/todos" className="text-white hover:text-primary transition-all hover-gold">
             Tarefas
           </Link>
           {!user && (
             <Button 
               onClick={() => navigate("/cadastro")}
-              className="bg-ap-orange hover:bg-ap-orange/90"
+              variant="gold"
+              className="shadow-gold"
             >
               Cadastrar
             </Button>
           )}
           {user && user.role === null && (
-            <Link to="/usuario/dashboard" className="text-gray-800 hover:text-ap-orange transition-colors">
+            <Link to="/usuario/dashboard" className="text-white hover:text-primary transition-all hover-gold">
               Meu Painel
             </Link>
           )}
           {user && user.role === "professional" && (
-            <Link to="/profissional" className="text-gray-800 hover:text-ap-orange transition-colors">
+            <Link to="/profissional" className="text-white hover:text-primary transition-all hover-gold">
               Painel Profissional
             </Link>
           )}
           {user && user.role === "influencer" && (
-            <Link to="/influenciador/dashboard" className="text-gray-800 hover:text-ap-orange transition-colors">
+            <Link to="/influenciador/dashboard" className="text-white hover:text-primary transition-all hover-gold">
               Painel Influenciador
             </Link>
           )}
           {user && user.role === "admin" && (
-            <Link to="/admin" className="text-gray-800 hover:text-ap-orange transition-colors">
+            <Link to="/admin" className="text-white hover:text-primary transition-all hover-gold">
               Dashboard Admin
             </Link>
           )}
@@ -67,7 +68,7 @@ const Header = () => {
             <Button 
               onClick={handleLogout}
               variant="outline"
-              className="border-ap-orange text-ap-orange hover:bg-ap-orange hover:text-white"
+              className="border-primary text-primary hover:bg-primary hover:text-black"
             >
               Sair
             </Button>
@@ -76,7 +77,7 @@ const Header = () => {
 
         {/* Mobile Menu Button */}
         <button 
-          className="md:hidden text-gray-800"
+          className="md:hidden text-primary hover:text-primary/80 transition-colors"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
         >
           {mobileMenuOpen ? (
@@ -93,35 +94,35 @@ const Header = () => {
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-white py-4 px-6 shadow-md">
+        <div className="md:hidden bg-black-soft/95 backdrop-blur-sm py-4 px-6 border-t border-primary/20">
           <div className="flex flex-col space-y-4">
             <Link to="/" 
-              className="text-gray-800 hover:text-ap-orange transition-colors"
+              className="text-white hover:text-primary transition-all hover-gold"
               onClick={() => setMobileMenuOpen(false)}
             >
               Início
             </Link>
             <Link to="/sobre" 
-              className="text-gray-800 hover:text-ap-orange transition-colors"
+              className="text-white hover:text-primary transition-all hover-gold"
               onClick={() => setMobileMenuOpen(false)}
             >
               Sobre
             </Link>
             <Link to="/marketplace" 
-              className="text-gray-800 hover:text-ap-orange transition-colors"
+              className="text-white hover:text-primary transition-all hover-gold"
               onClick={() => setMobileMenuOpen(false)}
             >
               Marketplace
             </Link>
             <Link to="/todos" 
-              className="text-gray-800 hover:text-ap-orange transition-colors"
+              className="text-white hover:text-primary transition-all hover-gold"
               onClick={() => setMobileMenuOpen(false)}
             >
               Tarefas
             </Link>
             {!user && (
               <Link to="/cadastro" 
-                className="text-ap-orange font-medium"
+                className="text-primary font-medium hover:text-primary/80"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Cadastrar
@@ -129,7 +130,7 @@ const Header = () => {
             )}
             {user && user.role === null && (
               <Link to="/usuario/dashboard" 
-                className="text-gray-800 hover:text-ap-orange transition-colors"
+                className="text-white hover:text-primary transition-all hover-gold"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Meu Painel
@@ -137,7 +138,7 @@ const Header = () => {
             )}
             {user && user.role === "professional" && (
               <Link to="/profissional" 
-                className="text-gray-800 hover:text-ap-orange transition-colors"
+                className="text-white hover:text-primary transition-all hover-gold"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Painel Profissional
@@ -145,7 +146,7 @@ const Header = () => {
             )}
             {user && user.role === "influencer" && (
               <Link to="/influenciador/dashboard" 
-                className="text-gray-800 hover:text-ap-orange transition-colors"
+                className="text-white hover:text-primary transition-all hover-gold"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Painel Influenciador
@@ -153,7 +154,7 @@ const Header = () => {
             )}
             {user && user.role === "admin" && (
               <Link to="/admin" 
-                className="text-gray-800 hover:text-ap-orange transition-colors"
+                className="text-white hover:text-primary transition-all hover-gold"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Dashboard Admin
@@ -165,7 +166,7 @@ const Header = () => {
                   handleLogout();
                   setMobileMenuOpen(false);
                 }}
-                className="text-ap-orange text-left"
+                className="text-primary text-left hover:text-primary/80"
               >
                 Sair
               </button>

@@ -93,8 +93,8 @@ export function AppSidebar() {
 
   const getNavClass = (isActiveRoute: boolean) => 
     isActiveRoute 
-      ? "bg-primary text-primary-foreground font-medium" 
-      : "hover:bg-muted/50";
+      ? "bg-primary text-black font-semibold shadow-md border-primary/30" 
+      : "text-white hover:bg-primary/20 hover:text-primary border-transparent";
 
   const getRoleLabel = () => {
     switch (user?.role) {
@@ -108,23 +108,23 @@ export function AppSidebar() {
   if (!user) return null;
 
   return (
-    <Sidebar className="w-60">
-      <SidebarContent>
+    <Sidebar className="w-60 gradient-dark border-r border-primary/20">
+      <SidebarContent className="bg-transparent">
         {/* User Info */}
-        <div className="p-4 border-b">
+        <div className="p-4 border-b border-primary/20">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground text-sm font-bold">
+            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-black text-sm font-bold shadow-md">
               {user.full_name?.charAt(0) || user.email?.charAt(0) || "U"}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{user.full_name || user.email?.split('@')[0]}</p>
-              <p className="text-xs text-muted-foreground">{getRoleLabel()}</p>
+              <p className="text-sm font-medium truncate text-white">{user.full_name || user.email?.split('@')[0]}</p>
+              <p className="text-xs text-primary">{getRoleLabel()}</p>
             </div>
           </div>
         </div>
 
         <SidebarGroup>
-          <SidebarGroupLabel>
+          <SidebarGroupLabel className="text-primary font-semibold">
             Menu {getRoleLabel()}
           </SidebarGroupLabel>
           
@@ -136,12 +136,12 @@ export function AppSidebar() {
                      <NavLink 
                        to={item.url} 
                        end={item.url === '/admin' || item.url === '/profissional' || item.url === '/influenciador' || item.url === '/usuario'}
-                       className={({ isActive }) => getNavClass(isActive)}
+                       className={({ isActive }) => `flex items-center p-2 rounded-md border transition-all ${getNavClass(isActive)}`}
                      >
                        <item.icon className="h-4 w-4" />
                        <span className="ml-2">{item.title}</span>
                        {item.title === "Notificações" && unreadCount > 0 && (
-                         <Badge variant="destructive" className="ml-auto min-w-[1.5rem] h-5 text-xs">
+                         <Badge variant="destructive" className="ml-auto min-w-[1.5rem] h-5 text-xs bg-primary text-black">
                            {unreadCount}
                          </Badge>
                        )}
@@ -155,12 +155,12 @@ export function AppSidebar() {
 
         {/* Quick Actions */}
         <SidebarGroup>
-          <SidebarGroupLabel>Ações Rápidas</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-primary font-semibold">Ações Rápidas</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <NavLink to="/suporte" className="hover:bg-muted/50">
+                  <NavLink to="/suporte" className="flex items-center p-2 rounded-md text-white hover:bg-primary/20 hover:text-primary transition-all">
                     <Bell className="h-4 w-4" />
                     <span className="ml-2">Suporte</span>
                   </NavLink>
@@ -170,7 +170,7 @@ export function AppSidebar() {
               {user.role === 'admin' && (
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                    <NavLink to="/admin/configuracoes" className="hover:bg-muted/50">
+                    <NavLink to="/admin/configuracoes" className="flex items-center p-2 rounded-md text-white hover:bg-primary/20 hover:text-primary transition-all">
                       <Settings className="h-4 w-4" />
                       <span className="ml-2">Configurações</span>
                     </NavLink>
