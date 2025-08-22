@@ -52,9 +52,22 @@ export const useNotificationTriggers = () => {
     });
 
     try {
+      const triggersToInsert = triggers.map(trigger => ({
+        user_id: trigger.user_id,
+        event_type: trigger.trigger_type,
+        title: `Automated Trigger: ${trigger.trigger_type}`,
+        message: `Trigger scheduled for ${trigger.scheduled_for}`,
+        data: {
+          group_id: trigger.group_id,
+          trigger_type: trigger.trigger_type,
+          scheduled_for: trigger.scheduled_for
+        },
+        sent: trigger.executed
+      }));
+
       const { error } = await supabase
         .from('notification_triggers')
-        .insert(triggers);
+        .insert(triggersToInsert);
 
       if (error) {
         console.error('Erro ao agendar gatilhos:', error);
@@ -82,11 +95,11 @@ export const useNotificationTriggers = () => {
       } else {
         const formattedTriggers: AutomatedTrigger[] = data?.map(t => ({
           userId: t.user_id,
-          triggerType: (t.trigger_type as '15_days' | '30_days' | '60_days' | '90_days' | '180_days'),
-          executed: t.executed,
-          executedAt: t.executed_at || '',
-          scheduledFor: t.scheduled_for,
-          groupId: t.group_id || ''
+          triggerType: (t.event_type as '15_days' | '30_days' | '60_days' | '90_days' | '180_days'),
+          executed: t.sent,
+          executedAt: t.sent_at || '',
+          scheduledFor: t.created_at,
+          groupId: (t.data as any)?.group_id || ''
         })) || [];
         
         setTriggers(formattedTriggers);

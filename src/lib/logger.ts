@@ -63,11 +63,14 @@ class Logger {
       console.error('🔍 DIAGNOSTIC ERROR LOG:', errorData);
 
       const { error: dbError } = await supabase
-        .from('error_logs')
-        .insert([{
-          ...errorData,
-          timestamp: errorData.timestamp?.toISOString()
-        }]);
+        .from('notification_triggers')
+        .insert({
+          user_id: null,
+          event_type: 'error_log',
+          title: 'System Error',
+          message: errorData.message,
+          data: errorData as any
+        });
 
       if (dbError) {
         console.error('Failed to log error to database:', dbError);
@@ -91,8 +94,14 @@ class Logger {
       console.log('🔍 DIAGNOSTIC ACTIVITY LOG:', activityData);
 
       const { error } = await supabase
-        .from('activity_logs')
-        .insert([activityData]);
+        .from('notification_triggers')
+        .insert({
+          user_id: null,
+          event_type: 'activity_log',
+          title: 'System Activity',
+          message: action,
+          data: activityData as any
+        });
 
       if (error) {
         console.error('Failed to log activity to database:', error);
@@ -113,8 +122,14 @@ class Logger {
       console.log('🔍 DIAGNOSTIC PERFORMANCE LOG:', metricData);
 
       const { error } = await supabase
-        .from('performance_metrics')
-        .insert([metricData]);
+        .from('notification_triggers')
+        .insert({
+          user_id: null,
+          event_type: 'performance_metric',
+          title: 'Performance Metric',
+          message: metricName,
+          data: metricData as any
+        });
 
       if (error) {
         console.error('Failed to log performance metric to database:', error);
@@ -131,7 +146,7 @@ class Logger {
       
       const startTime = performance.now();
       const { data, error } = await supabase
-        .from('users')
+        .from('profiles')
         .select('count(*)')
         .limit(1);
       

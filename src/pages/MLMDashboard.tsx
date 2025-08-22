@@ -46,9 +46,9 @@ export default function MLMDashboard() {
         throw new Error("Usuário não autenticado");
       }
 
-      // Usar tabela transactions como proxy para compras
+      // Use credit_transactions instead of transactions
       const { data: purchasesData, error: purchasesError } = await supabase
-        .from("transactions")
+        .from("credit_transactions")
         .select("*")
         .eq("user_id", session.session.user.id)
         .order("created_at", { ascending: false });
@@ -57,7 +57,7 @@ export default function MLMDashboard() {
         const formattedPurchases = purchasesData.map((transaction) => ({
           id: transaction.id,
           product: { name: transaction.description || 'Produto' },
-          status: transaction.status,
+          status: transaction.status || 'completed',
           is_contemplated: transaction.status === 'completed',
           amount_paid: transaction.amount,
           created_at: transaction.created_at

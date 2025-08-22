@@ -48,7 +48,7 @@ class DiagnosticsManager {
     try {
       this.log("SUPABASE", "Testing connection...");
       
-      const { data, error } = await supabase.from("users").select("count", { count: "exact", head: true });
+      const { data, error } = await supabase.from("profiles").select("count", { count: "exact", head: true });
       
       if (error) {
         await this.logError("SUPABASE", `Connection failed: ${error.message}`, error);

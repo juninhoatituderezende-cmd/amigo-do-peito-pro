@@ -126,30 +126,28 @@ export const useMarketplaceProducts = () => {
     'marketplace-products',
     async () => {
       const { data, error } = await supabase
-        .from('marketplace_products')
+        .from('services')
         .select('*')
-        .eq('ativo', true)
-        .eq('approved', true)
+        .eq('active', true)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      return (data || []).map(product => ({
-        id: product.id,
-        title: product.name,
-        description: product.description || '',
-        full_price: Number(product.valor_total),
-        down_payment: Number(product.valor_total) * (Number(product.percentual_entrada) / 100),
-        category: product.category,
+      return (data || []).map(service => ({
+        id: service.id,
+        title: service.name,
+        description: service.description || '',
+        full_price: Number(service.price),
+        down_payment: Number(service.price) * 0.1, // 10% down payment
+        category: service.category || 'General',
         professional_name: 'Profissional',
-        professional_id: product.professional_id,
+        professional_id: service.professional_id,
         professional_avatar: null,
-        image_url: product.image_url,
+        image_url: service.image_url,
         external_link: null,
-        visibility: (product.target_audience === 'user' ? 'client' : 
-                    product.target_audience === 'professional' ? 'professional' : 'both') as 'client' | 'professional' | 'both',
-        is_active: product.ativo,
-        created_at: product.created_at,
+        visibility: 'both' as 'client' | 'professional' | 'both',
+        is_active: service.active,
+        created_at: service.created_at,
         total_sales: 0, // Placeholder
         rating: 4.5 // Placeholder - implementar sistema de avaliações depois
       }));
@@ -164,15 +162,15 @@ export const useAdminStats = () => {
     'admin-stats',
     async () => {
       // Buscar estatísticas reais
-      const [usersResult, professionalsResult, servicesResult] = await Promise.all([
-        supabase.from('users').select('count', { count: 'exact', head: true }),
-        supabase.from('professionals').select('count', { count: 'exact', head: true }),
-        supabase.from('services').select('count', { count: 'exact', head: true })
+      const [profilesResult, servicesResult, creditsResult] = await Promise.all([
+        supabase.from('profiles').select('count', { count: 'exact', head: true }),
+        supabase.from('services').select('count', { count: 'exact', head: true }),
+        supabase.from('user_credits').select('count', { count: 'exact', head: true })
       ]);
 
       return {
-        totalParticipants: usersResult.count || 0,
-        totalProfessionals: professionalsResult.count || 0,
+        totalParticipants: profilesResult.count || 0,
+        totalProfessionals: profilesResult.count || 0,
         totalServices: servicesResult.count || 0,
         activeGroups: 12, // Mock data
         monthlyRevenue: 45000,
