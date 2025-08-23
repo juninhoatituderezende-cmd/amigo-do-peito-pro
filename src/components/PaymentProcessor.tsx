@@ -80,14 +80,18 @@ export function PaymentProcessor({
 
   const copyPixCode = async () => {
     if (pixData?.pix_code) {
-      await navigator.clipboard.writeText(pixData.pix_code);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-      
-      toast({
-        title: "Código PIX copiado",
-        description: "Cole no seu aplicativo bancário para pagar.",
-      });
+      try {
+        await navigator.clipboard.writeText(pixData.pix_code);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+        
+        toast({
+          title: "Código PIX copiado",
+          description: "Cole no seu aplicativo bancário para pagar.",
+        });
+      } catch (error) {
+        console.error("Failed to copy PIX code:", error);
+      }
     }
   };
 

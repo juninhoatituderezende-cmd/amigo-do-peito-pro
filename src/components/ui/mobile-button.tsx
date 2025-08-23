@@ -9,22 +9,12 @@ interface MobileButtonProps extends ButtonProps {
 export const MobileButton = React.forwardRef<HTMLButtonElement, MobileButtonProps>(
   ({ className, touchOptimized = true, children, onClick, ...props }, ref) => {
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-      console.log('🔍 MOBILE BUTTON: Click event', {
-        target: event.currentTarget.textContent,
-        timestamp: Date.now()
-      });
-      
       if (onClick) {
         onClick(event);
       }
     };
 
     const handleTouchEnd = (event: React.TouchEvent<HTMLButtonElement>) => {
-      console.log('🔍 MOBILE BUTTON: Touch end event', {
-        target: event.currentTarget.textContent,
-        timestamp: Date.now()
-      });
-      
       // Previne duplo toque
       event.preventDefault();
       

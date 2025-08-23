@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 
 interface MobileOptimizationHook {
   isMobile: boolean;
@@ -7,112 +7,79 @@ interface MobileOptimizationHook {
 }
 
 export function useMobileOptimization(): MobileOptimizationHook {
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-  const isTablet = typeof window !== 'undefined' && window.innerWidth >= 768 && window.innerWidth < 1024;
-  const touchDevice = typeof window !== 'undefined' && 'ontouchstart' in window;
-
-  useEffect(() => {
-    // Debug console para mobile
-    if (typeof window !== 'undefined') {
-      console.log('🔍 MOBILE DEBUG:', {
-        isMobile,
-        isTablet,
-        touchDevice,
-        userAgent: navigator.userAgent,
-        viewport: {
-          width: window.innerWidth,
-          height: window.innerHeight
-        },
-        screen: {
-          width: window.screen.width,
-          height: window.screen.height
-        }
-      });
-
-      // Detecta eventos touch
-      const logTouchEvent = (eventType: string) => (event: Event) => {
-        console.log(`🔍 TOUCH EVENT: ${eventType}`, {
-          target: (event.target as Element)?.tagName,
-          timestamp: Date.now()
-        });
-      };
-
-      if (touchDevice) {
-        document.addEventListener('touchstart', logTouchEvent('touchstart'), { passive: true });
-        document.addEventListener('touchend', logTouchEvent('touchend'), { passive: true });
-        document.addEventListener('click', logTouchEvent('click'), { passive: true });
-      }
-
-      // Previne zoom duplo toque
-      document.addEventListener('touchend', (event) => {
-        const now = Date.now();
-        const lastTouch = (document as any).lastTouchEnd || 0;
-        
-        if (now - lastTouch <= 300) {
-          event.preventDefault();
-        }
-        
-        (document as any).lastTouchEnd = now;
-      }, { passive: false });
-
-      // Otimizações específicas para mobile
-      if (isMobile) {
-        // Força aceleração de hardware
-        document.body.style.transform = 'translateZ(0)';
-        document.body.style.webkitTransform = 'translateZ(0)';
-        
-        // Desabilita seleção de texto em elementos interativos
-        const interactiveElements = document.querySelectorAll('button, a, [role="button"]');
-        interactiveElements.forEach(element => {
-          (element as HTMLElement).style.webkitUserSelect = 'none';
-          (element as HTMLElement).style.userSelect = 'none';
-        });
-      }
+  const mobileData = useMemo(() => {
+    if (typeof window === 'undefined') {
+      return { isMobile: false, isTablet: false, touchDevice: false };
     }
-  }, [isMobile, isTablet, touchDevice]);
+    
+    return {
+      isMobile: window.innerWidth < 768,
+      isTablet: window.innerWidth >= 768 && window.innerWidth < 1024,
+      touchDevice: 'ontouchstart' in window
+    };
+  }, []);
 
-  return {
-    isMobile,
-    isTablet,
-    touchDevice
-  };
-}
-
-// Hook para debugging de performance
-export function useMobilePerformanceDebug() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
+    // Previne zoom duplo toque
+    let lastTouchEnd = 0;
+    const preventDoubleZoom = (event: TouchEvent) => {
+      const now = Date.now();
+      if (now - lastTouchEnd <= 300) {
+        event.preventDefault();
+      }
+      lastTouchEnd = now;
+    };
+
+    // Otimizações específicas para mobile
+    if (mobileData.isMobile) {
+      // Força aceleração de hardware
+      document.body.style.transform = 'translateZ(0)';
+      document.body.style.webkitTransform = 'translateZ(0)';
+      
+      // Adiciona listener para prevenir zoom duplo
+      document.addEventListener('touchend', preventDoubleZoom, { passive: false });
+    }
+
+    return () => {
+      if (mobileData.isMobile) {
+        document.removeEventListener('touchend', preventDoubleZoom);
+      }
+    };
+  }, [mobileData.isMobile]);
+
+  return mobileData;
+}
+
+// Hook para debugging de performance (apenas em desenvolvimento)
+export function useMobilePerformanceDebug() {
+  useEffect(() => {
+    if (typeof window === 'undefined' || process.env.NODE_ENV !== 'development') return;
+
     let frameCount = 0;
     let lastTime = Date.now();
+    let animationId: number;
 
     const checkPerformance = () => {
       frameCount++;
       const now = Date.now();
       
-      if (now - lastTime >= 1000) {
+      if (now - lastTime >= 5000) { // Check every 5 seconds
         const fps = Math.round((frameCount * 1000) / (now - lastTime));
         
         if (fps < 30) {
-          console.warn('🐌 PERFORMANCE WARNING: Low FPS detected:', fps);
+          console.warn('Low FPS detected:', fps);
         }
-        
-        console.log('🔍 MOBILE PERFORMANCE:', {
-          fps,
-          memory: (performance as any).memory ? {
-            used: Math.round((performance as any).memory.usedJSHeapSize / 1048576),
-            total: Math.round((performance as any).memory.totalJSHeapSize / 1048576)
-          } : 'not available'
-        });
         
         frameCount = 0;
         lastTime = now;
       }
       
-      requestAnimationFrame(checkPerformance);
+      animationId = requestAnimationFrame(checkPerformance);
     };
 
-    const animationId = requestAnimationFrame(checkPerformance);
+    animationId = requestAnimationFrame(checkPerformance);
     
     return () => {
       if (animationId) {

@@ -101,9 +101,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
             
             // Defer profile loading to prevent deadlocks
-            setTimeout(() => {
+            const timer = setTimeout(() => {
               loadUserProfile(session.user.id);
             }, 100);
+            
+            return () => clearTimeout(timer);
           } else if (!session?.user) {
             console.log('👋 User signed out');
             setUser(null);
@@ -366,13 +368,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       setUser(adminUser);
       
-      console.log('✅ Admin login successful, redirecting to admin dashboard in 200ms');
       
       // Use setTimeout to ensure state is updated before navigation
-      setTimeout(() => {
-        console.log('🚀 Navigating to /admin/dashboard');
+      const timer = setTimeout(() => {
         navigate('/admin/dashboard', { replace: true });
       }, 200);
+      
+      return () => clearTimeout(timer);
 
       return { error: null };
     } catch (error: any) {

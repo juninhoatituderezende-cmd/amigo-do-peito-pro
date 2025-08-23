@@ -9,33 +9,18 @@ export const MobileDebugPanel: React.FC = () => {
   useMobilePerformanceDebug();
 
   useEffect(() => {
-    // Captura logs do console
-    const originalLog = console.log;
-    const originalWarn = console.warn;
+    // Só ativa em desenvolvimento
+    if (process.env.NODE_ENV !== 'development') return;
+
+    // Captura apenas erros críticos
     const originalError = console.error;
 
-    console.log = (...args) => {
-      if (args[0] && typeof args[0] === 'string' && args[0].includes('🔍')) {
-        setLogs(prev => [...prev.slice(-10), args.join(' ')]);
-      }
-      originalLog.apply(console, args);
-    };
-
-    console.warn = (...args) => {
-      if (args[0] && typeof args[0] === 'string' && args[0].includes('🐌')) {
-        setLogs(prev => [...prev.slice(-10), `⚠️ ${args.join(' ')}`]);
-      }
-      originalWarn.apply(console, args);
-    };
-
     console.error = (...args) => {
-      setLogs(prev => [...prev.slice(-10), `❌ ${args.join(' ')}`]);
+      setLogs(prev => [...prev.slice(-5), `❌ ${args.join(' ')}`]);
       originalError.apply(console, args);
     };
 
     return () => {
-      console.log = originalLog;
-      console.warn = originalWarn;
       console.error = originalError;
     };
   }, []);
@@ -71,9 +56,9 @@ export const MobileDebugPanel: React.FC = () => {
           </div>
           
           <div className="border-t border-gray-600 pt-2">
-            <h4 className="font-semibold mb-1">Recent Logs:</h4>
+            <h4 className="font-semibold mb-1">Recent Errors:</h4>
             {logs.length === 0 ? (
-              <div className="text-gray-400">No logs yet...</div>
+              <div className="text-green-400">No errors detected</div>
             ) : (
               <div className="space-y-1">
                 {logs.map((log, index) => (

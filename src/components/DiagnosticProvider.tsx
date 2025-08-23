@@ -26,7 +26,6 @@ export const DiagnosticProvider: React.FC<DiagnosticProviderProps> = ({ children
   const [lastError, setLastError] = useState<string | null>(null);
 
   const testConnection = async () => {
-    console.log('🔍 STARTING DIAGNOSTIC TEST...');
     setConnectionStatus('testing');
     setLastError(null);
 
@@ -36,17 +35,15 @@ export const DiagnosticProvider: React.FC<DiagnosticProviderProps> = ({ children
       const isConnected = await logger.testSupabaseConnection();
       
       if (isConnected) {
-        console.log('🔍 DIAGNOSTIC RESULT: CONNECTION SUCCESS');
         setConnectionStatus('connected');
         await logger.logActivity('diagnostic_test_success');
       } else {
-        console.log('🔍 DIAGNOSTIC RESULT: CONNECTION FAILED');
         setConnectionStatus('failed');
         setLastError('Falha na conexão com Supabase');
         await logger.logActivity('diagnostic_test_failed', { reason: 'connection_failed' });
       }
     } catch (error) {
-      console.error('🔍 DIAGNOSTIC CRITICAL ERROR:', error);
+      console.error('Diagnostic error:', error);
       setConnectionStatus('failed');
       setLastError(error instanceof Error ? error.message : 'Erro desconhecido');
       await logger.logError(error as Error, 'DiagnosticProvider');
@@ -54,7 +51,6 @@ export const DiagnosticProvider: React.FC<DiagnosticProviderProps> = ({ children
   };
 
   useEffect(() => {
-    console.log('🔍 DIAGNOSTIC PROVIDER MOUNTED - STARTING AUTOMATIC TEST');
     // Teste automático na inicialização
     testConnection();
   }, []);

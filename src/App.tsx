@@ -59,7 +59,7 @@ import EmailConfirmationHelp from "./pages/EmailConfirmationHelp";
 import Todos from "./pages/Todos";
 
 // Initialize diagnostics
-console.log("🚀 APP STARTING - Initializing diagnostics...");
+
 diagnostics.enableDebugMode();
 
 const queryClient = new QueryClient({

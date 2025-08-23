@@ -12,13 +12,11 @@ const Header = () => {
   const { isMobile, touchDevice } = useMobileOptimization();
 
   const handleLogout = () => {
-    console.log('🔍 MOBILE: Logout clicked');
     logout();
     navigate("/");
   };
 
   const handleMobileMenuToggle = () => {
-    console.log('🔍 MOBILE: Menu toggle clicked', { mobileMenuOpen, isMobile, touchDevice });
     setMobileMenuOpen(!mobileMenuOpen);
   };
 

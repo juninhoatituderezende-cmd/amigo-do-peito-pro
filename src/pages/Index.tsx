@@ -18,64 +18,24 @@ const Index = () => {
   const { isMobile, touchDevice } = useMobileOptimization();
 
   useEffect(() => {
-    console.log('🔍 Index useEffect - Auth State:', { 
-      loading, 
-      hasSession: !!session, 
-      hasUser: !!user,
-      userRole: user?.role,
-      currentUrl: window.location.href,
-      currentPath: window.location.pathname,
-      searchParams: window.location.search
-    });
-
     // Detectar se está retornando do OAuth (tem parâmetros específicos)
     const urlParams = new URLSearchParams(window.location.search);
     const hasOAuthParams = urlParams.has('code') || urlParams.has('access_token') || urlParams.has('token_type');
-    
-    if (hasOAuthParams) {
-      console.log('🔄 OAuth callback detected in URL params:', {
-        hasCode: urlParams.has('code'),
-        hasAccessToken: urlParams.has('access_token'),
-        hasTokenType: urlParams.has('token_type'),
-        allParams: Object.fromEntries(urlParams.entries())
-      });
-    }
 
     // Detectar se o usuário acabou de fazer login via OAuth
-    if (!loading && session && user) {
-      console.log('🔄 OAuth return detected, user authenticated:', {
-        userId: user.id,
-        userEmail: user.email,
-        userRole: user.role,
-        sessionPresent: !!session
-      });
-      
+    if (!loading && session && user && hasOAuthParams) {
       // Mostrar toast de sucesso
       toast({
         title: "Login realizado com sucesso!",
-        description: "Redirecionando para seu dashboard...",
-        variant: "default",
+        description: `Bem-vindo(a), ${user.name || user.email}!`,
       });
-      
-      // Redirecionar baseado no role do usuário
-      setTimeout(() => {
-        const targetRoute = user.role === 'admin' ? '/admin' :
-                          user.role === 'professional' ? '/profissional/dashboard' :
-                          user.role === 'influencer' ? '/influenciador/dashboard' :
-                          '/usuario/dashboard';
-        
-        console.log('🎯 Redirecting to:', targetRoute);
-        navigate(targetRoute);
-      }, 1500);
-    }
 
-    // Log quando há problemas
-    if (!loading && hasOAuthParams && !session) {
-      console.error('❌ OAuth params detected but no session created');
+      // Limpar parâmetros da URL
+      window.history.replaceState({}, document.title, window.location.pathname);
     }
-  }, [loading, session, user, navigate, toast]);
+  }, [loading, session, user, toast]);
 
-  // Show loading state during OAuth callback processing or if URL has OAuth params
+  // Show loading state during OAuth callback processing
   const urlParams = new URLSearchParams(window.location.search);
   const hasOAuthParams = urlParams.has('code') || urlParams.has('access_token') || urlParams.has('token_type');
   
@@ -87,11 +47,6 @@ const Index = () => {
           <p className="text-lg">
             {hasOAuthParams ? 'Processando retorno do Google...' : 'Processando login...'}
           </p>
-          {hasOAuthParams && (
-            <p className="text-sm text-gray-600 mt-2">
-              Aguarde enquanto validamos sua autenticação
-            </p>
-          )}
         </div>
       </div>
     );
@@ -117,10 +72,7 @@ const Index = () => {
               <Link to="/auth?mode=register" className="w-full lg:w-auto">
                 <MobileButton 
                   className="w-full lg:w-auto bg-primary text-primary-foreground font-bold px-12 py-8 text-xl shadow-gold-glow hover:shadow-gold hover:scale-105 transition-all duration-300"
-                  onClick={() => {
-                    console.log('🔍 MOBILE: Register button clicked', { isMobile, touchDevice });
-                    navigate('/auth?mode=register');
-                  }}
+                  onClick={() => navigate('/auth?mode=register')}
                 >
                   🚀 Criar Conta
                 </MobileButton>
@@ -129,10 +81,7 @@ const Index = () => {
               <Link to="/auth?mode=login" className="w-full lg:w-auto">
                 <MobileButton 
                   className="w-full lg:w-auto bg-card border-2 border-primary text-primary font-bold px-12 py-8 text-xl hover:bg-primary hover:text-primary-foreground hover:scale-105 transition-all duration-300"
-                  onClick={() => {
-                    console.log('🔍 MOBILE: Login button clicked', { isMobile, touchDevice });
-                    navigate('/auth?mode=login');
-                  }}
+                  onClick={() => navigate('/auth?mode=login')}
                 >
                   🔑 Fazer Login
                 </MobileButton>
