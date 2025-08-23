@@ -779,6 +779,14 @@ export type Database = {
         Args: { p_sale_id: string; p_total_amount: number }
         Returns: undefined
       }
+      simple_commission_process: {
+        Args: {
+          product_name?: string
+          seller_profile_id: string
+          total_amount: number
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       group_status: "forming" | "complete" | "contemplated" | "cancelled"
