@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
+import { AdminLoginRedirect } from "@/components/AdminLoginRedirect";
 import { AuthRedirect } from "@/components/AuthRedirect";
 import { ScrollToTop, ConnectionStatus } from "@/components/ui/ux-improvements";
 import { diagnostics } from "@/lib/diagnostics";
@@ -22,6 +23,7 @@ import AdminMarketplace from "./pages/admin/AdminMarketplace";
 import AdminPagamentos from "./pages/admin/AdminPagamentos";
 import AdminMLM from "./pages/admin/AdminMLM";
 import AdminNotificacoes from "./pages/admin/AdminNotificacoes";
+import AdminRelatorios from "./pages/admin/AdminRelatorios";
 import Register from "./pages/Register";
 import ProfessionalLogin from "./pages/ProfessionalLogin";
 import Confirmation from "./pages/Confirmation";
@@ -164,11 +166,11 @@ const App = () => (
               } />
               <Route path="/profissional/carteira" element={
                 <ProtectedRoute role="professional">
-                  <div className="min-h-screen bg-gray-50">
+                  <div className="min-h-screen bg-background">
                     <div className="flex">
                       <div className="flex-1 p-8">
                         <div className="mb-8">
-                          <h1 className="text-3xl font-bold text-gray-900 mb-2">Carteira</h1>
+                          <h1 className="text-3xl font-bold text-foreground mb-2">Carteira</h1>
                           <p className="text-muted-foreground">Gerencie seus ganhos e saques</p>
                         </div>
                         <ProWallet />
@@ -196,11 +198,11 @@ const App = () => (
               } />
               <Route path="/influenciador/carteira" element={
                 <ProtectedRoute role="influencer">
-                  <div className="min-h-screen bg-gray-50">
+                  <div className="min-h-screen bg-background">
                     <div className="flex">
                       <div className="flex-1 p-8">
                         <div className="mb-8">
-                          <h1 className="text-3xl font-bold text-gray-900 mb-2">Carteira</h1>
+                          <h1 className="text-3xl font-bold text-foreground mb-2">Carteira</h1>
                           <p className="text-muted-foreground">Gerencie suas comissões e saques</p>
                         </div>
                         <InfluencerWallet />
@@ -218,7 +220,11 @@ const App = () => (
               
               {/* Admin Routes - Protected with AdminProtectedRoute */}
               {/* Admin-login route for direct admin access */}
-              <Route path="/admin" element={<AdminLogin />} />
+              <Route path="/admin" element={
+                <AdminLoginRedirect>
+                  <AdminLogin />
+                </AdminLoginRedirect>
+              } />
               <Route path="/admin/dashboard" element={
                 <AdminProtectedRoute>
                   <AdminDashboard />
@@ -257,6 +263,11 @@ const App = () => (
               <Route path="/admin/notificacoes" element={
                 <AdminProtectedRoute>
                   <AdminNotificacoes />
+                </AdminProtectedRoute>
+              } />
+              <Route path="/admin/relatorios" element={
+                <AdminProtectedRoute>
+                  <AdminRelatorios />
                 </AdminProtectedRoute>
               } />
               

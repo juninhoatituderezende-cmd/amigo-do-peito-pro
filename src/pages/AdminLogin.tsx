@@ -23,6 +23,11 @@ const AdminLogin = () => {
     e.preventDefault();
     setError("");
 
+    if (!email || !password) {
+      setError("Por favor, preencha email e senha");
+      return;
+    }
+
     try {
       const { error } = await adminLogin(email, password);
 
@@ -35,22 +40,23 @@ const AdminLogin = () => {
         description: "Redirecionando para o painel administrativo...",
       });
 
-      // O redirecionamento será feito automaticamente pelo AuthContext
+      console.log('✅ Admin login successful, navigation will be handled by AuthContext');
+      
     } catch (error: any) {
-      console.error("Admin login error:", error);
+      console.error("❌ Admin login error:", error);
       setError(error.message || "Erro ao fazer login. Verifique suas credenciais.");
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-ap-light-orange to-white">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <Card className="w-full max-w-md bg-card border-primary/20">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <Shield className="h-12 w-12 text-ap-orange" />
+            <Shield className="h-12 w-12 text-primary" />
           </div>
-          <CardTitle className="text-2xl font-bold">Admin Login</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-2xl font-bold text-foreground">Admin Login</CardTitle>
+          <CardDescription className="text-muted-foreground">
             Acesso restrito ao painel administrativo
           </CardDescription>
         </CardHeader>
@@ -104,7 +110,7 @@ const AdminLogin = () => {
             <Button 
               variant="ghost" 
               onClick={() => navigate("/")}
-              className="text-sm"
+              className="text-sm text-muted-foreground hover:text-primary"
             >
               ← Voltar ao site
             </Button>

@@ -311,22 +311,50 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const adminLogin = async (email: string, password: string) => {
     try {
       setLoading(true);
+      console.log('🔐 Starting admin login process for:', email);
       
-      // Use custom validation function for admin login
+      // First, validate admin credentials using our custom function
       const { data: adminData, error: validationError } = await supabase
         .rpc('admin_login_validation', {
           login_email: email,
           login_password: password
         });
 
-      if (validationError || !adminData || adminData.length === 0) {
-        throw new Error('Email ou senha incorretos');
+      console.log('🔍 Admin validation result:', { adminData, validationError });
+
+      if (validationError) {
+        console.error('❌ Admin validation error:', validationError);
+        throw new Error('Erro na validação: ' + validationError.message);
+      }
+
+      if (!adminData || adminData.length === 0) {
+        console.log('❌ No admin data returned - invalid credentials');
+        throw new Error('Email ou senha incorretos para administrador');
       }
 
       const adminProfile = adminData[0];
+      console.log('✅ Admin validated successfully:', adminProfile);
+      
+      // Now perform actual Supabase authentication to create a valid session
+      console.log('🔑 Performing Supabase authentication...');
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (authError) {
+        console.error('❌ Supabase auth error:', authError);
+        throw new Error('Erro na autenticação: ' + authError.message);
+      }
+
+      console.log('🎯 Authentication successful, setting session and user data');
+
+      // Set session and user state
+      setSession(authData.session);
+      setSupabaseUser(authData.user);
       
       // Set user state with admin profile data
-      setUser({
+      const adminUser: User = {
         id: adminProfile.profile_id,
         email: adminProfile.profile_email,
         full_name: adminProfile.profile_name,
@@ -334,15 +362,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         phone: '',
         role: adminProfile.profile_role as UserRole,
         avatar_url: null,
-      });
+      };
       
-      // Success - redirect to admin dashboard
-      console.log('✅ Admin login successful');
-      navigate(ROUTES.ADMIN_DASHBOARD, { replace: true });
+      setUser(adminUser);
+      
+      console.log('✅ Admin login successful, redirecting to admin dashboard in 200ms');
+      
+      // Use setTimeout to ensure state is updated before navigation
+      setTimeout(() => {
+        console.log('🚀 Navigating to /admin/dashboard');
+        navigate('/admin/dashboard', { replace: true });
+      }, 200);
 
       return { error: null };
     } catch (error: any) {
-      console.error('Erro no login admin:', error);
+      console.error('❌ Erro no login admin:', error);
       return { error };
     } finally {
       setLoading(false);
