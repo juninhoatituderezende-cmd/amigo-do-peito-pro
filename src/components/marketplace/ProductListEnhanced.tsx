@@ -74,7 +74,10 @@ export const ProductListEnhanced = ({ refreshTrigger }: { refreshTrigger?: numbe
 
       if (categoriesError) throw categoriesError;
 
-      setProducts(productsData || []);
+      setProducts((productsData || []).map(product => ({
+        ...product,
+        target_audience: product.target_audience as 'professional' | 'consumer' | 'both'
+      })));
       setCategories(categoriesData || []);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
