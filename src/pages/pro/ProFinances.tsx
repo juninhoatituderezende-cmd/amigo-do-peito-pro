@@ -1,7 +1,7 @@
-import Header from "../../components/Header";
-import Footer from "../../components/Footer";
-import ProSidebar from "../../components/pro/ProSidebar";
-import { FinancialReports } from "../../components/pro/FinancialReports";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import ProSidebar from "@/components/pro/ProSidebar";
+import { FinancialReports } from "@/components/pro/FinancialReports";
 
 const ProFinances = () => {
   return (

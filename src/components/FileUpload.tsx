@@ -3,8 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
-import { storageService, UploadResult } from '../lib/storage';
-import { useAuth } from '../contexts/AuthContext';
+import { storageService, UploadResult } from '@/lib/storage';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface FileUploadProps {
   type: 'document' | 'video' | 'avatar';

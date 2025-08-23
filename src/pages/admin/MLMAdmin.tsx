@@ -4,8 +4,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { GroupsOverview } from "@/components/admin/GroupsOverview";
 import { ContemplationSystem } from "@/components/admin/ContemplationSystem";
 import { ReportsAnalytics } from "@/components/admin/ReportsAnalytics";
-import Header from "../../components/Header";
-import Footer from "../../components/Footer";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import { Users, Award, BarChart3, Settings } from "lucide-react";
 
 const MLMAdmin = () => {

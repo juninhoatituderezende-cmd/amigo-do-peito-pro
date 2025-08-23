@@ -1,8 +1,8 @@
 
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
-import Header from "../components/Header";
-import Footer from "../components/Footer";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { MobileButton } from "@/components/ui/mobile-button";
 import { useMobileOptimization } from "@/hooks/useMobileOptimization";

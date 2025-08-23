@@ -1,7 +1,7 @@
-import Header from "../../components/Header";
-import Footer from "../../components/Footer";
-import ProSidebar from "../../components/pro/ProSidebar";
-import { AppointmentScheduler } from "../../components/pro/AppointmentScheduler";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import ProSidebar from "@/components/pro/ProSidebar";
+import { AppointmentScheduler } from "@/components/pro/AppointmentScheduler";
 
 const ProSchedule = () => {
   return (

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useMobileOptimization, useMobilePerformanceDebug } from '../hooks/useMobileOptimization';
+import { useMobileOptimization, useMobilePerformanceDebug } from '@/hooks/useMobileOptimization';
 
 export const MobileDebugPanel: React.FC = () => {
   const [isVisible, setIsVisible] = useState(false);

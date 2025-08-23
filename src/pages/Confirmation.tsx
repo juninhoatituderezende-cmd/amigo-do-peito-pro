@@ -1,9 +1,9 @@
 
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
-import Header from "../components/Header";
-import Footer from "../components/Footer";
+import { useAuth } from "@/contexts/AuthContext";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 
 const Confirmation = () => {
   const { user } = useAuth();
