@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      asaas_integration: {
+        Row: {
+          api_key_encrypted: string
+          connection_status: string | null
+          created_at: string
+          created_by: string | null
+          environment: string
+          error_message: string | null
+          id: string
+          last_sync_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          api_key_encrypted: string
+          connection_status?: string | null
+          created_at?: string
+          created_by?: string | null
+          environment?: string
+          error_message?: string | null
+          id?: string
+          last_sync_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          api_key_encrypted?: string
+          connection_status?: string | null
+          created_at?: string
+          created_by?: string | null
+          environment?: string
+          error_message?: string | null
+          id?: string
+          last_sync_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       asaas_subaccounts: {
         Row: {
           access_token: string | null
@@ -112,6 +151,7 @@ export type Database = {
       custom_plans: {
         Row: {
           active: boolean | null
+          asaas_product_id: string | null
           category: string | null
           created_at: string | null
           description: string | null
@@ -127,6 +167,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean | null
+          asaas_product_id?: string | null
           category?: string | null
           created_at?: string | null
           description?: string | null
@@ -142,6 +183,7 @@ export type Database = {
         }
         Update: {
           active?: boolean | null
+          asaas_product_id?: string | null
           category?: string | null
           created_at?: string | null
           description?: string | null
@@ -490,6 +532,7 @@ export type Database = {
       products: {
         Row: {
           active: boolean | null
+          asaas_product_id: string | null
           category: string | null
           created_at: string | null
           description: string | null
@@ -507,6 +550,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean | null
+          asaas_product_id?: string | null
           category?: string | null
           created_at?: string | null
           description?: string | null
@@ -524,6 +568,7 @@ export type Database = {
         }
         Update: {
           active?: boolean | null
+          asaas_product_id?: string | null
           category?: string | null
           created_at?: string | null
           description?: string | null

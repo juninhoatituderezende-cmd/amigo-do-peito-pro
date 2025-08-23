@@ -49,6 +49,7 @@ const menuItems: MenuItem[] = [
   { title: "Produtos", url: "/admin/produtos", icon: Package, roles: ["admin"] },
   { title: "Planos Custom", url: "/admin/planos", icon: Package, roles: ["admin"] },
   { title: "Pagamentos", url: "/admin/pagamentos", icon: CreditCard, roles: ["admin"] },
+  { title: "Integração Asaas", url: "/admin/integracao-asaas", icon: Settings, roles: ["admin"] },
   { title: "Relatórios", url: "/admin/relatorios", icon: BarChart3, roles: ["admin"] },
   { title: "MLM (Min)", url: "/admin/mlm", icon: Network, roles: ["admin"] },
   { title: "Notificações", url: "/admin/notificacoes", icon: Bell, roles: ["admin"] },

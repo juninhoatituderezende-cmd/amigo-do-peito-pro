@@ -22,6 +22,7 @@ import AdminPlanos from "./pages/admin/AdminPlanos";
 import AdminProdutos from "./pages/admin/AdminProdutos";
 import AdminMarketplace from "./pages/admin/AdminMarketplace";
 import AdminPagamentos from "./pages/admin/AdminPagamentos";
+import AdminIntegracaoAsaas from "./pages/admin/AdminIntegracaoAsaas";
 import AdminMLM from "./pages/admin/AdminMLM";
 import AdminNotificacoes from "./pages/admin/AdminNotificacoes";
 import AdminRelatorios from "./pages/admin/AdminRelatorios";
@@ -244,6 +245,11 @@ const App = () => (
               <Route path="/admin/pagamentos" element={
                 <AdminProtectedRoute>
                   <AdminPagamentos />
+                </AdminProtectedRoute>
+              } />
+              <Route path="/admin/integracao-asaas" element={
+                <AdminProtectedRoute>
+                  <AdminIntegracaoAsaas />
                 </AdminProtectedRoute>
               } />
               <Route path="/admin/marketplace" element={
