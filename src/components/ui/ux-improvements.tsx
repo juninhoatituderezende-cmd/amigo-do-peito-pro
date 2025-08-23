@@ -131,7 +131,7 @@ export function ConnectionStatus() {
   if (isOnline) return null;
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 bg-red-500 text-white p-2 text-center text-sm">
+    <div className="fixed top-0 left-0 right-0 z-50 bg-destructive text-destructive-foreground p-2 text-center text-sm">
       <div className="flex items-center justify-center space-x-2">
         <WifiOff className="w-4 h-4" />
         <span>Conexão perdida. Tentando reconectar...</span>

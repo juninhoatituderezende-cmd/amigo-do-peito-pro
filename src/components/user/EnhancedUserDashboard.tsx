@@ -190,7 +190,7 @@ export function EnhancedUserDashboard() {
   return (
     <div className="container mx-auto p-4 space-y-6">
       {/* Welcome Header */}
-      <div className="bg-gradient-to-r from-primary to-primary/80 text-white rounded-lg p-6">
+      <div className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-lg p-6">
         <h1 className="text-2xl font-bold mb-2">
           Olá, {(user as any)?.user_metadata?.full_name || user?.email?.split('@')[0] || "Usuário"}! 👋
         </h1>

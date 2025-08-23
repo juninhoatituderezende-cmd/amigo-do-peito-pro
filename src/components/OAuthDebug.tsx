@@ -229,7 +229,7 @@ export const OAuthDebug = () => {
           {supabaseAuthConfig && (
             <div className="bg-gray-50 p-4 rounded-lg border">
               <h4 className="font-medium mb-2">🔬 Resultados dos Testes:</h4>
-              <pre className="text-xs bg-white p-2 rounded border overflow-auto">
+              <pre className="text-xs bg-card p-2 rounded border overflow-auto">
                 {JSON.stringify(supabaseAuthConfig, null, 2)}
               </pre>
             </div>
@@ -238,7 +238,7 @@ export const OAuthDebug = () => {
           {oauthProviders && (
             <div className="bg-gray-50 p-4 rounded-lg border">
               <h4 className="font-medium mb-2">⚙️ Configuração OAuth:</h4>
-              <pre className="text-xs bg-white p-2 rounded border overflow-auto max-h-40">
+              <pre className="text-xs bg-card p-2 rounded border overflow-auto max-h-40">
                 {JSON.stringify(oauthProviders, null, 2)}
               </pre>
             </div>
@@ -250,14 +250,14 @@ export const OAuthDebug = () => {
             <div className="text-sm text-blue-700 space-y-2">
               <div>
                 <strong>Authorized JavaScript Origins:</strong>
-                <div className="bg-white p-2 rounded border font-mono text-xs mt-1 space-y-1">
+                <div className="bg-card p-2 rounded border font-mono text-xs mt-1 space-y-1">
                   <div>https://rczygmsaybzcrmdxxyge.supabase.co</div>
                   <div>{window.location.origin}</div>
                 </div>
               </div>
               <div>
                 <strong>Authorized Redirect URIs:</strong>
-                <div className="bg-white p-2 rounded border font-mono text-xs mt-1">
+                <div className="bg-card p-2 rounded border font-mono text-xs mt-1">
                   https://rczygmsaybzcrmdxxyge.supabase.co/auth/v1/callback
                 </div>
               </div>
@@ -276,13 +276,13 @@ export const OAuthDebug = () => {
             <div className="text-sm text-green-700 space-y-2">
               <div>
                 <strong>Site URL (em Auth Settings):</strong>
-                <div className="bg-white p-2 rounded border font-mono text-xs mt-1">
+                <div className="bg-card p-2 rounded border font-mono text-xs mt-1">
                   {window.location.origin}
                 </div>
               </div>
               <div>
                 <strong>Redirect URLs (adicionar):</strong>
-                <div className="bg-white p-2 rounded border font-mono text-xs mt-1">
+                <div className="bg-card p-2 rounded border font-mono text-xs mt-1">
                   {window.location.origin}/**
                 </div>
               </div>

@@ -197,7 +197,7 @@ export const ProWallet = () => {
       {/* Modal de Saque */}
       {showWithdrawal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg w-full max-w-md">
+          <div className="bg-card rounded-lg w-full max-w-md">
             <div className="p-4 border-b">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold">Solicitar Saque</h3>

@@ -21,7 +21,7 @@ const Header = () => {
   };
 
   return (
-    <header className="gradient-dark text-white shadow-xl sticky top-0 z-50 border-b border-primary/20">
+    <header className="gradient-dark text-foreground shadow-xl sticky top-0 z-50 border-b border-primary/20">
       <div className="ap-container py-4 flex justify-between items-center">
         <Link to="/" className="flex items-center space-x-2">
           <span className="text-xl font-bold text-primary">Amigo do Peito</span>

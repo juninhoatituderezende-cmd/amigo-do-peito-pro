@@ -1,5 +1,4 @@
 import React, { Suspense, useEffect } from 'react';
-import { ErrorBoundary } from 'react-error-boundary';
 import { TimerManager, performanceTracker, analyzeBundleSize } from '@/utils/performanceOptimizer';
 
 // Lazy load componentes pesados
@@ -11,7 +10,7 @@ const ProDashboard = React.lazy(() => import('@/pages/pro/ProDashboard'));
 export const globalTimerManager = new TimerManager();
 
 // Error fallback component
-const ErrorFallback: React.FC<{ error: Error }> = ({ error }) => (
+const ErrorFallback: React.FC<{ error: Error; resetError: () => void }> = ({ error, resetError }) => (
   <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
     <div className="text-center">
       <h2 className="text-2xl font-bold mb-4">Algo deu errado</h2>
@@ -19,8 +18,14 @@ const ErrorFallback: React.FC<{ error: Error }> = ({ error }) => (
         {error.message || 'Erro desconhecido'}
       </p>
       <button
+        onClick={resetError}
+        className="bg-primary text-primary-foreground px-4 py-2 rounded mr-2"
+      >
+        Tentar Novamente
+      </button>
+      <button
         onClick={() => window.location.reload()}
-        className="bg-primary text-primary-foreground px-4 py-2 rounded"
+        className="bg-secondary text-secondary-foreground px-4 py-2 rounded"
       >
         Recarregar Página
       </button>
@@ -69,20 +74,51 @@ export const useAppCleanup = () => {
   }, []);
 };
 
+// Simple error boundary
+class SimpleErrorBoundary extends React.Component<
+  { children: React.ReactNode; fallback: React.ComponentType<{ error: Error; resetError: () => void }> },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('Error caught by error boundary:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError && this.state.error) {
+      const FallbackComponent = this.props.fallback;
+      return <FallbackComponent 
+        error={this.state.error} 
+        resetError={() => this.setState({ hasError: false, error: null })}
+      />;
+    }
+
+    return this.props.children;
+  }
+}
+
 // Optimized route component
 export const OptimizedRoute: React.FC<{
-  component: React.ComponentType;
+  component: React.ComponentType<any>;
   componentName: string;
   children?: React.ReactNode;
 }> = ({ component: Component, componentName, children }) => {
   return (
-    <ErrorBoundary FallbackComponent={ErrorFallback}>
+    <SimpleErrorBoundary fallback={ErrorFallback}>
       <Suspense fallback={<LoadingFallback />}>
         <PerformanceWrapper componentName={componentName}>
-          <Component>{children}</Component>
+          <Component />
         </PerformanceWrapper>
       </Suspense>
-    </ErrorBoundary>
+    </SimpleErrorBoundary>
   );
 };
 

@@ -114,7 +114,7 @@ export const ReferralSystem = () => {
             
             <div className="mt-4">
               <p className="text-sm font-medium text-gray-700 mb-2">Link completo:</p>
-              <div className="flex items-center gap-2 p-3 bg-white border rounded">
+              <div className="flex items-center gap-2 p-3 bg-card border rounded">
                 <ExternalLink className="h-4 w-4 text-gray-400" />
                 <span className="flex-1 text-sm font-mono text-gray-600 truncate">
                   {referralData.referralLink}
@@ -151,7 +151,7 @@ export const ReferralSystem = () => {
         <CardContent>
           <div className="space-y-4">
             <div className="flex items-start gap-3">
-              <div className="w-8 h-8 bg-ap-orange text-white rounded-full flex items-center justify-center text-sm font-bold">
+              <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">
                 1
               </div>
               <div>
@@ -163,7 +163,7 @@ export const ReferralSystem = () => {
             </div>
             
             <div className="flex items-start gap-3">
-              <div className="w-8 h-8 bg-ap-orange text-white rounded-full flex items-center justify-center text-sm font-bold">
+              <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">
                 2
               </div>
               <div>
@@ -175,7 +175,7 @@ export const ReferralSystem = () => {
             </div>
             
             <div className="flex items-start gap-3">
-              <div className="w-8 h-8 bg-ap-orange text-white rounded-full flex items-center justify-center text-sm font-bold">
+              <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">
                 3
               </div>
               <div>

@@ -71,7 +71,7 @@ const ProSidebar = () => {
     <div
       className={`flex flex-col ${
         collapsed ? "w-20" : "w-72"
-      } bg-white border-r border-gray-200 transition-all duration-300 ease-in-out h-screen sticky top-0`}
+      } bg-card border-r border-border transition-all duration-300 ease-in-out h-screen sticky top-0`}
     >
       <div className="flex items-center justify-between p-4 border-b border-gray-100">
         {!collapsed && (
@@ -144,7 +144,7 @@ const ProSidebar = () => {
           variant="outline"
           className={`${
             collapsed ? "justify-center px-2" : "justify-start px-4"
-          } w-full border-ap-orange text-ap-orange hover:bg-ap-orange hover:text-white`}
+          } w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground`}
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />

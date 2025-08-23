@@ -12,7 +12,7 @@ const Footer = () => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="gradient-dark text-white py-10 border-t border-primary/20">
+    <footer className="gradient-dark text-foreground py-10 border-t border-primary/20">
       <div className="ap-container">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
@@ -21,7 +21,7 @@ const Footer = () => {
           </div>
           
           <div>
-            <h4 className="text-lg font-semibold mb-3 text-white">Links Úteis</h4>
+            <h4 className="text-lg font-semibold mb-3 text-foreground">Links Úteis</h4>
             <ul className="space-y-2">
               <li>
                 <Link to="/" className="text-gray-300 hover:text-primary transition-all hover-gold">
@@ -42,7 +42,7 @@ const Footer = () => {
           </div>
           
           <div>
-            <h4 className="text-lg font-semibold mb-3 text-white">Contato</h4>
+            <h4 className="text-lg font-semibold mb-3 text-foreground">Contato</h4>
             <p className="text-gray-300">contato@amigodopeito.com</p>
             <p className="text-gray-300">São Paulo - SP, Brasil</p>
             <button 

@@ -410,7 +410,7 @@ export const EnhancedReportsAnalytics = ({ className }: EnhancedReportsAnalytics
                   {mockTopProducts.map((product, index) => (
                     <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
                       <div className="flex items-center gap-4">
-                        <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white text-sm font-bold">
+                        <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground text-sm font-bold">
                           {index + 1}
                         </div>
                         <div>
@@ -439,7 +439,7 @@ export const EnhancedReportsAnalytics = ({ className }: EnhancedReportsAnalytics
                   {mockActiveUsers.map((user, index) => (
                     <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
                       <div className="flex items-center gap-4">
-                        <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                        <div className="w-8 h-8 bg-accent rounded-full flex items-center justify-center text-accent-foreground text-sm font-bold">
                           {user.name.charAt(0)}
                         </div>
                         <div>

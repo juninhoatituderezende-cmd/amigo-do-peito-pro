@@ -61,7 +61,7 @@ export const GoogleOAuthSetup = () => {
                     <li>• Preencha nome da aplicação, email de suporte</li>
                     <li>• Em "Authorized domains", adicione:</li>
                   </ul>
-                  <div className="bg-white p-3 rounded border font-mono text-sm flex items-center justify-between">
+                  <div className="bg-card p-3 rounded border font-mono text-sm flex items-center justify-between">
                     <span>rczygmsaybzcrmdxxyge.supabase.co</span>
                     <Button 
                       size="sm" 
@@ -93,7 +93,7 @@ export const GoogleOAuthSetup = () => {
                     <li>• Authorized JavaScript origins:</li>
                   </ul>
                   <div className="space-y-2">
-                    <div className="bg-white p-3 rounded border font-mono text-sm flex items-center justify-between">
+                    <div className="bg-card p-3 rounded border font-mono text-sm flex items-center justify-between">
                       <span>https://rczygmsaybzcrmdxxyge.supabase.co</span>
                       <Button 
                         size="sm" 
@@ -103,7 +103,7 @@ export const GoogleOAuthSetup = () => {
                         <Copy className="w-4 h-4" />
                       </Button>
                     </div>
-                    <div className="bg-white p-3 rounded border font-mono text-sm flex items-center justify-between">
+                    <div className="bg-card p-3 rounded border font-mono text-sm flex items-center justify-between">
                       <span>https://preview--amigo-do-peito-pro.lovable.app</span>
                       <Button 
                         size="sm" 
@@ -115,7 +115,7 @@ export const GoogleOAuthSetup = () => {
                     </div>
                   </div>
                   <p className="text-sm mt-2 mb-2">• Authorized redirect URIs:</p>
-                  <div className="bg-white p-3 rounded border font-mono text-sm flex items-center justify-between">
+                  <div className="bg-card p-3 rounded border font-mono text-sm flex items-center justify-between">
                     <span>https://rczygmsaybzcrmdxxyge.supabase.co/auth/v1/callback</span>
                     <Button 
                       size="sm" 
@@ -172,13 +172,13 @@ export const GoogleOAuthSetup = () => {
                   <div className="text-sm space-y-2">
                     <div>
                       <strong>Site URL:</strong>
-                      <div className="bg-white p-2 rounded border font-mono text-xs mt-1">
+                      <div className="bg-card p-2 rounded border font-mono text-xs mt-1">
                         https://preview--amigo-do-peito-pro.lovable.app
                       </div>
                     </div>
                     <div>
                       <strong>Redirect URLs (adicionar):</strong>
-                      <div className="bg-white p-2 rounded border font-mono text-xs mt-1">
+                      <div className="bg-card p-2 rounded border font-mono text-xs mt-1">
                         https://preview--amigo-do-peito-pro.lovable.app/**
                       </div>
                     </div>

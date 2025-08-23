@@ -20,7 +20,7 @@ const About = () => {
       </section>
       
       {/* Founder Section */}
-      <section className="section bg-white">
+      <section className="section bg-card">
         <div className="ap-container">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
@@ -84,7 +84,7 @@ const About = () => {
                   )
                 }
               ].map((value, index) => (
-                <div key={index} className="bg-white p-6 rounded-lg shadow-md">
+                <div key={index} className="bg-card p-6 rounded-lg shadow-md">
                   <div className="mb-4">
                     {value.icon}
                   </div>
@@ -98,7 +98,7 @@ const About = () => {
       </section>
       
       {/* Ambassadors Section */}
-      <section className="section bg-white">
+      <section className="section bg-card">
         <div className="ap-container">
           <h2 className="text-3xl font-bold text-center mb-10">Nossos Embaixadores</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12">

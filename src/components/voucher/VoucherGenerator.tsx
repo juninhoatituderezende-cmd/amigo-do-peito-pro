@@ -135,7 +135,7 @@ export function VoucherGenerator({ voucherData, onEmailSent }: VoucherGeneratorP
         className="bg-gradient-to-br from-blue-50 to-purple-50 p-8 rounded-lg border-2 border-dashed border-blue-200"
         style={{ width: '800px', margin: '0 auto' }}
       >
-        <div className="bg-white rounded-lg shadow-lg p-8">
+        <div className="bg-card rounded-lg shadow-lg p-8">
           {/* Header */}
           <div className="text-center mb-6">
             <h1 className="text-3xl font-bold text-primary mb-2">VOUCHER DIGITAL</h1>
@@ -191,7 +191,7 @@ export function VoucherGenerator({ voucherData, onEmailSent }: VoucherGeneratorP
 
             {/* QR Code */}
             <div className="flex flex-col items-center justify-center">
-              <div className="bg-white p-4 rounded-lg border-2 border-gray-200">
+              <div className="bg-card p-4 rounded-lg border-2 border-gray-200">
                 <QRCodeSVG
                   value={verificationUrl}
                   size={200}

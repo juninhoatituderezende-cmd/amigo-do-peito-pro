@@ -56,10 +56,10 @@ const Index = () => {
       <Header />
       
       {/* Hero Section - Focused and Direct */}
-      <section className="py-20 md:py-32 gradient-dark text-white min-h-screen flex items-center">
+      <section className="py-20 md:py-32 gradient-dark text-foreground min-h-screen flex items-center">
         <div className="ap-container">
           <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-5xl md:text-7xl font-bold mb-8 text-white animate-fade-in">
+            <h1 className="text-5xl md:text-7xl font-bold mb-8 text-foreground animate-fade-in">
               <span className="text-primary">
                 Amigo do Peito
               </span>
