@@ -1,101 +1,74 @@
 
 import { Link, useNavigate } from "react-router-dom";
-import { useEffect } from "react";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-import { Button } from "@/components/ui/button";
-import { MobileButton } from "@/components/ui/mobile-button";
-import { useMobileOptimization } from "@/hooks/useMobileOptimization";
-import { Card, CardContent } from "@/components/ui/card";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
   const navigate = useNavigate();
-  const { user, session, loading } = useAuth();
-  const { toast } = useToast();
-  const { isMobile, touchDevice } = useMobileOptimization();
+  const { user, loading } = useAuth();
 
-  useEffect(() => {
-    // Detectar se está retornando do OAuth (tem parâmetros específicos)
-    const urlParams = new URLSearchParams(window.location.search);
-    const hasOAuthParams = urlParams.has('code') || urlParams.has('access_token') || urlParams.has('token_type');
-
-    // Detectar se o usuário acabou de fazer login via OAuth
-    if (!loading && session && user && hasOAuthParams) {
-      // Mostrar toast de sucesso
-      toast({
-        title: "Login realizado com sucesso!",
-        description: `Bem-vindo(a), ${user.name || user.email}!`,
-      });
-
-      // Limpar parâmetros da URL
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-  }, [loading, session, user, toast]);
-
-  // Show loading state during OAuth callback processing
-  const urlParams = new URLSearchParams(window.location.search);
-  const hasOAuthParams = urlParams.has('code') || urlParams.has('access_token') || urlParams.has('token_type');
-  
-  if (loading || hasOAuthParams) {
+  // Simple loading state
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-lg">
-            {hasOAuthParams ? 'Processando retorno do Google...' : 'Processando login...'}
-          </p>
+          <div className="animate-pulse rounded-full h-12 w-12 bg-primary mx-auto mb-4"></div>
+          <p className="text-foreground">Carregando...</p>
         </div>
       </div>
     );
   }
-  return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      
-      {/* Hero Section - Focused and Direct */}
-      <section className="py-20 md:py-32 gradient-dark text-foreground min-h-screen flex items-center">
-        <div className="ap-container">
-          <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-5xl md:text-7xl font-bold mb-8 text-foreground animate-fade-in">
-              <span className="text-primary">
-                Amigo do Peito
-              </span>
-            </h1>
-            <p className="text-2xl md:text-3xl text-gray-200 mb-12 max-w-3xl mx-auto animate-fade-in">
-              A plataforma que conecta profissionais de saúde estética com clientes através de um sistema inovador de marketing multinível.
-            </p>
-            
-            <div className="flex flex-col lg:flex-row gap-6 justify-center items-center max-w-3xl mx-auto">
-              <Link to="/auth?mode=register" className="w-full lg:w-auto">
-                <MobileButton 
-                  className="w-full lg:w-auto bg-primary text-primary-foreground font-bold px-12 py-8 text-xl shadow-gold-glow hover:shadow-gold hover:scale-105 transition-all duration-300"
-                  onClick={() => navigate('/auth?mode=register')}
-                >
-                  🚀 Criar Conta
-                </MobileButton>
-              </Link>
-              
-              <Link to="/auth?mode=login" className="w-full lg:w-auto">
-                <MobileButton 
-                  className="w-full lg:w-auto bg-card border-2 border-primary text-primary font-bold px-12 py-8 text-xl hover:bg-primary hover:text-primary-foreground hover:scale-105 transition-all duration-300"
-                  onClick={() => navigate('/auth?mode=login')}
-                >
-                  🔑 Fazer Login
-                </MobileButton>
-              </Link>
-            </div>
-            
-            <p className="text-gray-400 mt-12 text-lg">
-              Escolha seu perfil e comece agora mesmo
-            </p>
-          </div>
-        </div>
-      </section>
 
-      <Footer />
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Simple Header */}
+      <header className="bg-background border-b border-border p-4">
+        <div className="container mx-auto flex justify-between items-center">
+          <h1 className="text-primary text-2xl font-bold">Amigo do Peito</h1>
+          {user && (
+            <span className="text-foreground">Olá, {user.name || user.email}</span>
+          )}
+        </div>
+      </header>
+
+      {/* Minimal Hero */}
+      <main className="container mx-auto px-4 py-16 text-center">
+        <h2 className="text-4xl font-bold text-foreground mb-4">
+          <span className="text-primary">Amigo do Peito</span>
+        </h2>
+        
+        <p className="text-foreground/80 mb-12 text-lg max-w-2xl mx-auto">
+          Plataforma MLM para profissionais de estética
+        </p>
+
+        {/* Simple Action Buttons */}
+        <div className="space-y-4 max-w-md mx-auto">
+          <button 
+            onClick={() => navigate('/auth?mode=register')}
+            className="w-full bg-primary text-black p-4 rounded-lg font-semibold hover:bg-primary/90 transition-colors"
+          >
+            🚀 Criar Conta
+          </button>
+          
+          <button 
+            onClick={() => navigate('/auth?mode=login')}
+            className="w-full bg-card text-foreground border border-primary p-4 rounded-lg font-semibold hover:bg-primary hover:text-black transition-colors"
+          >
+            🔑 Fazer Login
+          </button>
+          
+          <button 
+            onClick={() => navigate('/marketplace')}
+            className="w-full bg-card text-foreground border border-border p-4 rounded-lg font-semibold hover:bg-card/80 transition-colors"
+          >
+            🛍️ Ver Marketplace
+          </button>
+        </div>
+      </main>
+
+      {/* Simple Footer */}
+      <footer className="bg-background border-t border-border p-4 text-center mt-auto">
+        <p className="text-foreground/60">© 2024 Amigo do Peito</p>
+      </footer>
     </div>
   );
 };
