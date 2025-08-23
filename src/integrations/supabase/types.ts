@@ -275,13 +275,6 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "marketplace_sales_service_id_fkey"
-            columns: ["service_id"]
-            isOneToOne: false
-            referencedRelation: "services"
-            referencedColumns: ["id"]
-          },
         ]
       }
       notification_triggers: {
@@ -348,15 +341,7 @@ export type Database = {
           service_id?: string | null
           updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "payment_split_rules_service_id_fkey"
-            columns: ["service_id"]
-            isOneToOne: true
-            referencedRelation: "services"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       payment_splits: {
         Row: {
@@ -789,6 +774,10 @@ export type Database = {
           profile_name: string
           profile_role: string
         }[]
+      }
+      process_marketplace_commission: {
+        Args: { p_sale_id: string; p_total_amount: number }
+        Returns: undefined
       }
     }
     Enums: {
