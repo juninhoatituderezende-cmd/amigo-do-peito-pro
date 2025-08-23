@@ -15,7 +15,7 @@ interface Product {
   description: string | null;
   price: number;
   category: string | null;
-  target_audience: 'professional' | 'consumer' | 'both';
+  target_audience: string;
   image_url: string | null;
   external_link: string | null;
   featured: boolean;
@@ -33,7 +33,7 @@ interface Category {
   description: string;
 }
 
-const TARGET_AUDIENCE_LABELS = {
+const TARGET_AUDIENCE_LABELS: Record<string, { label: string; icon: any; color: string }> = {
   professional: { label: "Profissionais", icon: Users, color: "bg-blue-100 text-blue-700" },
   consumer: { label: "Consumidor", icon: ShoppingCart, color: "bg-green-100 text-green-700" },
   both: { label: "Ambos", icon: Package, color: "bg-purple-100 text-purple-700" }
@@ -257,7 +257,7 @@ export const ProductListEnhanced = ({ refreshTrigger }: { refreshTrigger?: numbe
               </TableHeader>
               <TableBody>
                 {filteredProducts.map((product) => {
-                  const audienceInfo = TARGET_AUDIENCE_LABELS[product.target_audience];
+                  const audienceInfo = TARGET_AUDIENCE_LABELS[product.target_audience] || TARGET_AUDIENCE_LABELS.consumer;
                   const AudienceIcon = audienceInfo.icon;
                   
                   return (

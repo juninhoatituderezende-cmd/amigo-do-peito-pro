@@ -301,7 +301,6 @@ export const ProductFormEnhanced = ({ onProductCreated }: { onProductCreated?: (
               <SimpleFileUpload
                 onFileSelect={handleImageUpload}
                 accept="image/*"
-                loading={uploading}
                 className="w-full"
               />
               {formData.image_url && (
