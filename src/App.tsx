@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
 import { AuthRedirect } from "@/components/AuthRedirect";
 import { ScrollToTop, ConnectionStatus } from "@/components/ui/ux-improvements";
 import { diagnostics } from "@/lib/diagnostics";
@@ -215,46 +216,48 @@ const App = () => (
               <Route path="/mlm/success" element={<MLMSuccess />} />
               <Route path="/mlm/cancel" element={<MLMCancel />} />
               
-              {/* Admin Protected Routes */}
-              <Route path="/admin" element={
-                <ProtectedRoute role="admin">
+              {/* Admin Routes - Protected with AdminProtectedRoute */}
+              {/* Admin-login route for direct admin access */}
+              <Route path="/admin" element={<AdminLogin />} />
+              <Route path="/admin/dashboard" element={
+                <AdminProtectedRoute>
                   <AdminDashboard />
-                </ProtectedRoute>
+                </AdminProtectedRoute>
               } />
               <Route path="/admin/usuarios" element={
-                <ProtectedRoute role="admin">
+                <AdminProtectedRoute>
                   <AdminUsuarios />
-                </ProtectedRoute>
+                </AdminProtectedRoute>
               } />
               <Route path="/admin/planos" element={
-                <ProtectedRoute role="admin">
+                <AdminProtectedRoute>
                   <AdminPlanos />
-                </ProtectedRoute>
+                </AdminProtectedRoute>
               } />
               <Route path="/admin/pagamentos" element={
-                <ProtectedRoute role="admin">
+                <AdminProtectedRoute>
                   <AdminPagamentos />
-                </ProtectedRoute>
+                </AdminProtectedRoute>
               } />
               <Route path="/admin/marketplace" element={
-                <ProtectedRoute role="admin">
+                <AdminProtectedRoute>
                   <AdminMarketplace />
-                </ProtectedRoute>
+                </AdminProtectedRoute>
               } />
               <Route path="/admin/produtos" element={
-                <ProtectedRoute role="admin">
+                <AdminProtectedRoute>
                   <AdminProdutos />
-                </ProtectedRoute>
+                </AdminProtectedRoute>
               } />
               <Route path="/admin/mlm" element={
-                <ProtectedRoute role="admin">
+                <AdminProtectedRoute>
                   <AdminMLM />
-                </ProtectedRoute>
+                </AdminProtectedRoute>
               } />
               <Route path="/admin/notificacoes" element={
-                <ProtectedRoute role="admin">
+                <AdminProtectedRoute>
                   <AdminNotificacoes />
-                </ProtectedRoute>
+                </AdminProtectedRoute>
               } />
               
               {/* Catch-all route */}

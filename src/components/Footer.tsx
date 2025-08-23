@@ -6,7 +6,7 @@ const Footer = () => {
   const navigate = useNavigate();
 
   const handleAdminClick = () => {
-    navigate("/admin-login");
+    navigate("/admin");
   };
 
   const currentYear = new Date().getFullYear();

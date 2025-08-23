@@ -110,8 +110,8 @@ const Index = () => {
               A plataforma que conecta profissionais de saúde estética com clientes através de um sistema inovador de marketing multinível.
             </p>
             
-            {/* 3 Main Action Buttons */}
-            <div className="flex flex-col lg:flex-row gap-6 justify-center items-center max-w-4xl mx-auto">
+            {/* 2 Main Action Buttons */}
+            <div className="flex flex-col lg:flex-row gap-6 justify-center items-center max-w-3xl mx-auto">
               <Link to="/auth?mode=register" className="w-full lg:w-auto">
                 <Button className="w-full lg:w-auto bg-primary text-black font-bold px-12 py-8 text-xl shadow-2xl hover:scale-105 transition-all duration-300">
                   🚀 Criar Conta
@@ -121,12 +121,6 @@ const Index = () => {
               <Link to="/auth?mode=login" className="w-full lg:w-auto">
                 <Button className="w-full lg:w-auto bg-white/10 border-2 border-primary text-white font-bold px-12 py-8 text-xl backdrop-blur-sm transition-all duration-300 hover:bg-primary hover:text-black hover:scale-105">
                   🔑 Fazer Login
-                </Button>
-              </Link>
-              
-              <Link to="/admin-login" className="w-full lg:w-auto">
-                <Button className="w-full lg:w-auto border-2 border-primary text-primary bg-white/5 font-bold px-12 py-8 text-xl backdrop-blur-sm transition-all duration-300 hover:bg-primary hover:text-black hover:scale-105">
-                  🛡️ Admin
                 </Button>
               </Link>
             </div>

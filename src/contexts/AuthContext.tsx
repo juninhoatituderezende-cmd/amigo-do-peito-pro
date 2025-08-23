@@ -198,7 +198,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         // Handle automatic redirection based on role
         setTimeout(() => {
-          handleUserRedirection(profileData.role as UserRole);
+          // Redirecionar automaticamente baseado no role para usuários logados
+          const targetRoute = profileData.role === 'admin' ? '/admin/dashboard' :
+                             profileData.role === 'professional' ? '/profissional/dashboard' :
+                             profileData.role === 'influencer' ? '/influenciador/dashboard' :
+                             '/usuario/dashboard';
+          
+          // Apenas redirecionar se estiver na página de login ou home
+          const currentPath = location.pathname;
+          if (currentPath === '/' || currentPath === '/auth' || currentPath.includes('login')) {
+            console.log('🎯 Redirecting user to:', targetRoute);
+            navigate(targetRoute, { replace: true });
+          }
         }, 100);
       }
     } catch (error) {

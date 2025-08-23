@@ -32,10 +32,10 @@ const AdminLogin = () => {
 
       toast({
         title: "Login realizado com sucesso!",
-        description: "Bem-vindo ao painel administrativo.",
+        description: "Redirecionando para o painel administrativo...",
       });
 
-      navigate(ROUTES.ADMIN_DASHBOARD);
+      // O redirecionamento será feito automaticamente pelo AuthContext
     } catch (error: any) {
       console.error("Admin login error:", error);
       setError(error.message || "Erro ao fazer login. Verifique suas credenciais.");
