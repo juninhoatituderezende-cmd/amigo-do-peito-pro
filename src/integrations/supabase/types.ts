@@ -775,6 +775,27 @@ export type Database = {
           profile_role: string
         }[]
       }
+      create_sale_direct: {
+        Args: {
+          buyer_profile_id: string
+          payment_method?: string
+          seller_profile_id: string
+          service_id: string
+          total_amount: number
+        }
+        Returns: string
+      }
+      create_sale_with_referrer: {
+        Args: {
+          buyer_profile_id: string
+          payment_method?: string
+          referrer_profile_id: string
+          seller_profile_id: string
+          service_id: string
+          total_amount: number
+        }
+        Returns: string
+      }
       process_marketplace_commission: {
         Args: { p_sale_id: string; p_total_amount: number }
         Returns: undefined
