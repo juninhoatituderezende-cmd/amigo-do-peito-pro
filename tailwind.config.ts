@@ -63,15 +63,15 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				// Premium Black + Gold Theme
-				'black-deep': 'hsl(var(--black-deep))',
-				'black-soft': 'hsl(var(--black-soft))',
-				'black-light': 'hsl(var(--black-light))',
-				'gold-primary': 'hsl(var(--gold-primary))',
-				'gold-light': 'hsl(var(--gold-light))',
-				'gold-dark': 'hsl(var(--gold-dark))',
-				'white-pure': 'hsl(var(--white-pure))',
-				'white-soft': 'hsl(var(--white-soft))',
+				// TEMA OFICIAL: PRETO E DOURADO
+				'black-pure': 'hsl(var(--black-pure))',      // #000000
+				'black-soft': 'hsl(var(--black-soft))',      // #121212  
+				'black-light': 'hsl(var(--black-light))',    // Cinza escuro
+				'gold-primary': 'hsl(var(--gold-primary))',  // #FFD700
+				'gold-light': 'hsl(var(--gold-light))',      // Dourado claro
+				'gold-dark': 'hsl(var(--gold-dark))',        // Dourado escuro
+				'white-pure': 'hsl(var(--white-pure))',      // #FFFFFF
+				'white-soft': 'hsl(var(--white-soft))',      // Branco suave
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -109,11 +109,11 @@ export default {
                 },
                 'gold-pulse': {
                     '0%, 100%': { 
-                        boxShadow: '0 0 5px rgba(212, 175, 55, 0.3)',
+                        boxShadow: '0 0 5px rgba(255, 215, 0, 0.3)',
                         filter: 'brightness(1)'
                     },
                     '50%': { 
-                        boxShadow: '0 0 20px rgba(212, 175, 55, 0.6)',
+                        boxShadow: '0 0 20px rgba(255, 215, 0, 0.6)',
                         filter: 'brightness(1.1)'
                     }
                 },

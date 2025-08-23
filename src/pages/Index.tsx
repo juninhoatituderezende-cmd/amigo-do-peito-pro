@@ -110,16 +110,15 @@ const Index = () => {
               A plataforma que conecta profissionais de saúde estética com clientes através de um sistema inovador de marketing multinível.
             </p>
             
-            {/* 2 Main Action Buttons */}
             <div className="flex flex-col lg:flex-row gap-6 justify-center items-center max-w-3xl mx-auto">
               <Link to="/auth?mode=register" className="w-full lg:w-auto">
-                <Button className="w-full lg:w-auto bg-primary text-black font-bold px-12 py-8 text-xl shadow-2xl hover:scale-105 transition-all duration-300">
+                <Button className="w-full lg:w-auto bg-primary text-primary-foreground font-bold px-12 py-8 text-xl shadow-gold-glow hover:shadow-gold hover:scale-105 transition-all duration-300">
                   🚀 Criar Conta
                 </Button>
               </Link>
               
               <Link to="/auth?mode=login" className="w-full lg:w-auto">
-                <Button className="w-full lg:w-auto bg-white/10 border-2 border-primary text-white font-bold px-12 py-8 text-xl backdrop-blur-sm transition-all duration-300 hover:bg-primary hover:text-black hover:scale-105">
+                <Button className="w-full lg:w-auto bg-card border-2 border-primary text-primary font-bold px-12 py-8 text-xl hover:bg-primary hover:text-primary-foreground hover:scale-105 transition-all duration-300">
                   🔑 Fazer Login
                 </Button>
               </Link>

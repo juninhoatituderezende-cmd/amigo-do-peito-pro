@@ -1,107 +1,124 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+/* FONTE PRINCIPAL - INTER */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* APLICAR TEMA ESCURO GLOBALMENTE */
+* {
+  color-scheme: dark;
+}
+
 @layer base {
   :root {
-    /* Premium Black + Gold Theme - HSL values */
-    --background: 0 0% 100%;
-    --foreground: 0 0% 4%;
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 4%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 4%;
-    --primary: 43 74% 49%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 0 0% 4%;
-    --secondary-foreground: 0 0% 100%;
-    --muted: 0 0% 96%;
-    --muted-foreground: 215 16% 47%;
-    --accent: 43 65% 89%;
-    --accent-foreground: 0 0% 4%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 43 20% 90%;
-    --input: 43 20% 90%;
-    --ring: 43 74% 49%;
+    /* TEMA OFICIAL: PRETO E DOURADO */
+    
+    /* Cores Principais */
+    --background: 210 7% 7%;          /* Fundo principal - cinza escuro #121212 */
+    --foreground: 0 0% 100%;          /* Texto principal - branco #FFFFFF */
+    --card: 0 0% 4%;                  /* Cards - preto #000000 */
+    --card-foreground: 0 0% 100%;     /* Texto dos cards - branco */
+    --popover: 0 0% 4%;               /* Popovers - preto */
+    --popover-foreground: 0 0% 100%;  /* Texto dos popovers - branco */
+    
+    /* Cor Primária - Dourado */
+    --primary: 51 100% 50%;           /* Dourado #FFD700 */
+    --primary-foreground: 0 0% 0%;    /* Texto sobre dourado - preto */
+    
+    /* Cor Secundária - Preto */
+    --secondary: 0 0% 0%;             /* Preto #000000 */
+    --secondary-foreground: 0 0% 100%; /* Texto sobre preto - branco */
+    
+    /* Tons Neutros */
+    --muted: 210 7% 15%;              /* Cinza escuro para elementos secundários */
+    --muted-foreground: 215 16% 70%;  /* Texto secundário - cinza claro */
+    --accent: 51 100% 20%;            /* Dourado escuro para acentos */
+    --accent-foreground: 51 100% 50%; /* Dourado sobre fundo escuro */
+    
+    /* Cores de Estado */
+    --destructive: 0 84% 60%;         /* Vermelho para erros */
+    --destructive-foreground: 0 0% 98%; /* Branco sobre vermelho */
+    
+    /* Bordas e Campos */
+    --border: 210 7% 20%;             /* Bordas - cinza escuro */
+    --input: 210 7% 20%;              /* Campos de entrada - cinza escuro */
+    --ring: 51 100% 50%;              /* Foco - dourado */
     --radius: 0.75rem;
-
-    /* Premium Black Variations */
-    --black-deep: 0 0% 4%;
-    --black-soft: 0 0% 10%;
-    --black-light: 0 0% 17%;
     
-    /* Premium Gold Variations */
-    --gold-primary: 43 74% 49%;
-    --gold-light: 43 65% 89%;
-    --gold-dark: 43 89% 38%;
+    /* Sidebar - Tema Escuro */
+    --sidebar-background: 0 0% 4%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 51 100% 50%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 210 7% 15%;
+    --sidebar-accent-foreground: 51 100% 50%;
+    --sidebar-border: 210 7% 20%;
+    --sidebar-ring: 51 100% 50%;
     
-    /* White Variations */
-    --white-pure: 0 0% 100%;
-    --white-soft: 0 0% 97%;
-
-    /* Sidebar variables */
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 262 83% 58%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 262 83% 58%;
-
-    /* Premium Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(43 74% 49%), hsl(43 65% 60%));
-    --gradient-secondary: linear-gradient(135deg, hsl(0 0% 4%), hsl(0 0% 10%));
-    --gradient-dark: linear-gradient(135deg, hsl(0 0% 4%) 0%, hsl(0 0% 10%) 50%, hsl(0 0% 17%) 100%);
-    --gradient-gold: linear-gradient(45deg, hsl(43 74% 49%) 0%, hsl(43 65% 89%) 100%);
-    --gradient-premium: linear-gradient(135deg, hsl(0 0% 4%) 0%, hsl(43 74% 49%) 100%);
+    /* Variações Premium do Tema */
+    --black-pure: 0 0% 0%;            /* Preto puro #000000 */
+    --black-soft: 210 7% 7%;          /* Preto suave - fundo principal */
+    --black-light: 210 7% 15%;        /* Preto claro para elementos */
     
-    /* Premium Shadows */
-    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-    --shadow-gold: 0 4px 20px rgba(212, 175, 55, 0.3);
-    --shadow-gold-glow: 0 0 20px rgba(212, 175, 55, 0.4);
+    --gold-primary: 51 100% 50%;      /* Dourado principal #FFD700 */
+    --gold-light: 51 75% 85%;         /* Dourado claro */
+    --gold-dark: 51 100% 40%;         /* Dourado escuro */
     
-    /* Premium Animations */
+    --white-pure: 0 0% 100%;          /* Branco puro #FFFFFF */
+    --white-soft: 0 0% 95%;           /* Branco suave */
+    
+    /* Gradientes Premium */
+    --gradient-primary: linear-gradient(135deg, hsl(51 100% 50%), hsl(51 100% 60%));
+    --gradient-secondary: linear-gradient(135deg, hsl(0 0% 0%), hsl(210 7% 7%));
+    --gradient-dark: linear-gradient(135deg, hsl(0 0% 0%) 0%, hsl(210 7% 7%) 50%, hsl(210 7% 15%) 100%);
+    --gradient-gold: linear-gradient(45deg, hsl(51 100% 50%) 0%, hsl(51 75% 85%) 100%);
+    --gradient-premium: linear-gradient(135deg, hsl(0 0% 0%) 0%, hsl(51 100% 50%) 100%);
+    
+    /* Sombras Premium */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
+    --shadow-gold: 0 4px 20px rgba(255, 215, 0, 0.3);
+    --shadow-gold-glow: 0 0 20px rgba(255, 215, 0, 0.5);
+    
+    /* Transições Premium */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-fast: all 0.15s ease-out;
     --transition-luxury: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   }
 
   .dark {
-    --background: 0 0% 4%;
+    /* Dark mode usa as mesmas cores do tema principal */
+    --background: 210 7% 7%;
     --foreground: 0 0% 100%;
-    --card: 0 0% 10%;
+    --card: 0 0% 4%;
     --card-foreground: 0 0% 100%;
-    --popover: 0 0% 10%;
+    --popover: 0 0% 4%;
     --popover-foreground: 0 0% 100%;
-    --primary: 43 74% 49%;
-    --primary-foreground: 0 0% 4%;
-    --secondary: 0 0% 17%;
+    --primary: 51 100% 50%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 0 0% 0%;
     --secondary-foreground: 0 0% 100%;
-    --muted: 0 0% 17%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 43 20% 20%;
-    --accent-foreground: 43 74% 49%;
+    --muted: 210 7% 15%;
+    --muted-foreground: 215 16% 70%;
+    --accent: 51 100% 20%;
+    --accent-foreground: 51 100% 50%;
     --destructive: 0 63% 31%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 17%;
-    --input: 0 0% 17%;
-    --ring: 43 74% 49%;
+    --border: 210 7% 20%;
+    --input: 210 7% 20%;
+    --ring: 51 100% 50%;
     --sidebar-background: 0 0% 4%;
     --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 43 74% 49%;
-    --sidebar-primary-foreground: 0 0% 4%;
-    --sidebar-accent: 0 0% 10%;
-    --sidebar-accent-foreground: 43 74% 49%;
-    --sidebar-border: 0 0% 17%;
-    --sidebar-ring: 43 74% 49%;
+    --sidebar-primary: 51 100% 50%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 210 7% 15%;
+    --sidebar-accent-foreground: 51 100% 50%;
+    --sidebar-border: 210 7% 20%;
+    --sidebar-ring: 51 100% 50%;
   }
 }
 
@@ -112,6 +129,8 @@
 
   body {
     @apply bg-background text-foreground font-inter;
+    /* Força o tema escuro sempre */
+    color-scheme: dark;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -123,43 +142,49 @@
   }
 }
 
-/* Premium Black + Gold Utility Classes */
+/* CLASSES UTILITÁRIAS - TEMA PRETO E DOURADO */
+
+/* Sombras Douradas */
 .shadow-gold {
-  box-shadow: 0 4px 20px rgba(212, 175, 55, 0.3);
+  box-shadow: 0 4px 20px rgba(255, 215, 0, 0.3);
 }
 
 .shadow-gold-glow {
-  box-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
 }
 
+/* Botões Premium */
 .btn-primary {
   @apply bg-primary text-primary-foreground px-6 py-3 rounded-md font-medium hover:brightness-110 transition-all shadow-lg;
 }
 
 .btn-primary:hover {
-  box-shadow: 0 4px 20px rgba(212, 175, 55, 0.3);
+  box-shadow: 0 4px 20px rgba(255, 215, 0, 0.4);
 }
 
 .btn-secondary {
-  @apply bg-secondary text-secondary-foreground px-6 py-3 rounded-md font-medium border border-primary/20 hover:border-primary/40 transition-all;
+  @apply bg-secondary text-secondary-foreground px-6 py-3 rounded-md font-medium border border-primary/20 hover:border-primary/50 transition-all;
 }
 
 .btn-gold {
-  @apply bg-gradient-to-r from-primary to-gold-light text-black px-6 py-3 rounded-md font-medium shadow-lg transition-all;
+  @apply bg-gradient-to-r from-primary to-primary/80 text-primary-foreground px-6 py-3 rounded-md font-medium shadow-lg transition-all;
 }
 
 .btn-gold:hover {
-  box-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
 }
 
+/* Cards Premium */
 .card-premium {
   @apply bg-card border border-primary/20 rounded-lg shadow-lg transition-all;
 }
 
 .card-premium:hover {
-  box-shadow: 0 4px 20px rgba(212, 175, 55, 0.3);
+  box-shadow: 0 4px 20px rgba(255, 215, 0, 0.3);
+  border-color: hsl(var(--primary) / 0.4);
 }
 
+/* Gradientes */
 .gradient-dark {
   background: var(--gradient-dark);
 }
@@ -172,11 +197,12 @@
   background: var(--gradient-premium);
 }
 
-
+/* Utilitários de Layout */
 .section {
   @apply py-12 md:py-16;
 }
 
+/* Animações */
 .animate-on-scroll {
   @apply opacity-0;
 }
@@ -185,10 +211,29 @@
   @apply animate-slide-in;
 }
 
+/* Efeitos de Hover */
 .hover-gold {
   @apply transition-all hover:text-primary hover:drop-shadow-lg;
 }
 
 .border-gold {
   @apply border-primary/30 hover:border-primary/60 transition-all;
+}
+
+/* Foco Dourado */
+.focus-gold:focus {
+  @apply ring-2 ring-primary/50 ring-offset-2 ring-offset-background;
+}
+
+/* Status Colors */
+.text-success {
+  @apply text-green-400;
+}
+
+.text-warning {
+  @apply text-yellow-400;
+}
+
+.text-danger {
+  @apply text-destructive;
 }
