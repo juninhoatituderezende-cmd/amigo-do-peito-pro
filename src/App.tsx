@@ -11,6 +11,7 @@ import { ScrollToTop, ConnectionStatus } from "@/components/ui/ux-improvements";
 import { diagnostics } from "@/lib/diagnostics";
 import { ProWallet } from "@/components/pro/ProWallet";
 import { InfluencerWallet } from "@/components/influencer/InfluencerWallet";
+import { MobileDebugPanel } from "./components/MobileDebugPanel";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/AdminLogin";
@@ -277,6 +278,7 @@ const App = () => (
           </TooltipProvider>
         </AuthProvider>
       </BrowserRouter>
+      <MobileDebugPanel />
     </QueryClientProvider>
   </ErrorBoundary>
 );

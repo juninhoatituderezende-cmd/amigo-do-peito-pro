@@ -3,15 +3,23 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { Button } from "./ui/button";
+import { useMobileOptimization } from "../hooks/useMobileOptimization";
 
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { isMobile, touchDevice } = useMobileOptimization();
 
   const handleLogout = () => {
+    console.log('🔍 MOBILE: Logout clicked');
     logout();
     navigate("/");
+  };
+
+  const handleMobileMenuToggle = () => {
+    console.log('🔍 MOBILE: Menu toggle clicked', { mobileMenuOpen, isMobile, touchDevice });
+    setMobileMenuOpen(!mobileMenuOpen);
   };
 
   return (
@@ -76,8 +84,13 @@ const Header = () => {
 
         {/* Mobile Menu Button */}
         <button 
-          className="md:hidden text-primary hover:text-primary/80 transition-colors"
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className="md:hidden text-primary hover:text-primary/80 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+          onClick={handleMobileMenuToggle}
+          onTouchEnd={(e) => {
+            e.preventDefault();
+            handleMobileMenuToggle();
+          }}
+          aria-label="Menu mobile"
         >
           {mobileMenuOpen ? (
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-6 h-6">
@@ -93,7 +106,7 @@ const Header = () => {
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-black/95 backdrop-blur-sm py-4 px-6 border-t border-primary/20">
+        <div className="md:hidden bg-black/95 backdrop-blur-sm py-4 px-6 border-t border-primary/20 mobile-menu">
           <div className="flex flex-col space-y-4">
             <Link to="/" 
               className="text-foreground hover:text-primary transition-all hover-gold"

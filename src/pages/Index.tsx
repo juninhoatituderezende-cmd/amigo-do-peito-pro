@@ -4,6 +4,8 @@ import { useEffect } from "react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { Button } from "@/components/ui/button";
+import { MobileButton } from "@/components/ui/mobile-button";
+import { useMobileOptimization } from "@/hooks/useMobileOptimization";
 import { Card, CardContent } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useAuth } from "@/contexts/AuthContext";
@@ -13,6 +15,7 @@ const Index = () => {
   const navigate = useNavigate();
   const { user, session, loading } = useAuth();
   const { toast } = useToast();
+  const { isMobile, touchDevice } = useMobileOptimization();
 
   useEffect(() => {
     console.log('🔍 Index useEffect - Auth State:', { 
@@ -112,15 +115,27 @@ const Index = () => {
             
             <div className="flex flex-col lg:flex-row gap-6 justify-center items-center max-w-3xl mx-auto">
               <Link to="/auth?mode=register" className="w-full lg:w-auto">
-                <Button className="w-full lg:w-auto bg-primary text-primary-foreground font-bold px-12 py-8 text-xl shadow-gold-glow hover:shadow-gold hover:scale-105 transition-all duration-300">
+                <MobileButton 
+                  className="w-full lg:w-auto bg-primary text-primary-foreground font-bold px-12 py-8 text-xl shadow-gold-glow hover:shadow-gold hover:scale-105 transition-all duration-300"
+                  onClick={() => {
+                    console.log('🔍 MOBILE: Register button clicked', { isMobile, touchDevice });
+                    navigate('/auth?mode=register');
+                  }}
+                >
                   🚀 Criar Conta
-                </Button>
+                </MobileButton>
               </Link>
               
               <Link to="/auth?mode=login" className="w-full lg:w-auto">
-                <Button className="w-full lg:w-auto bg-card border-2 border-primary text-primary font-bold px-12 py-8 text-xl hover:bg-primary hover:text-primary-foreground hover:scale-105 transition-all duration-300">
+                <MobileButton 
+                  className="w-full lg:w-auto bg-card border-2 border-primary text-primary font-bold px-12 py-8 text-xl hover:bg-primary hover:text-primary-foreground hover:scale-105 transition-all duration-300"
+                  onClick={() => {
+                    console.log('🔍 MOBILE: Login button clicked', { isMobile, touchDevice });
+                    navigate('/auth?mode=login');
+                  }}
+                >
                   🔑 Fazer Login
-                </Button>
+                </MobileButton>
               </Link>
             </div>
             
