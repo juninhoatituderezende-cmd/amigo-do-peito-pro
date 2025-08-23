@@ -12,33 +12,10 @@ const ThemeContext = createContext<ThemeContextType>({
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  // TEMPORARILY DISABLED - Testing mobile freeze issue
-  // useEffect(() => {
-  //   // Aplicar tema global centralizado
-  //   applyGlobalTheme();
-  //   
-  //   // Observar mudanças e reforçar o tema
-  //   const observer = new MutationObserver(() => {
-  //     applyGlobalTheme();
-  //   });
-  //   
-  //   observer.observe(document.documentElement, { 
-  //     attributes: true, 
-  //     attributeFilter: ['class'] 
-  //   });
-  //   observer.observe(document.body, { 
-  //     attributes: true, 
-  //     attributeFilter: ['class'] 
-  //   });
-  //   
-  //   // Reaplicar tema a cada segundo como segurança
-  //   const interval = setInterval(applyGlobalTheme, 1000);
-  //   
-  //   return () => {
-  //     observer.disconnect();
-  //     clearInterval(interval);
-  //   };
-  // }, []);
+  useEffect(() => {
+    // Apply theme once on mount - NO aggressive polling
+    applyGlobalTheme();
+  }, []);
 
   const contextValue: ThemeContextType = {
     theme: 'dark',
