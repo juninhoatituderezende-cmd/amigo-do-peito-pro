@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AuthRedirect } from "@/components/AuthRedirect";
 import { ScrollToTop, ConnectionStatus } from "@/components/ui/ux-improvements";
@@ -12,6 +12,7 @@ import { InfluencerWallet } from "@/components/influencer/InfluencerWallet";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/AdminLogin";
+import Auth from "./pages/Auth";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUsuarios from "./pages/admin/AdminUsuarios";
 import AdminPlanos from "./pages/admin/AdminPlanos";
@@ -85,13 +86,20 @@ const App = () => (
               <Route path="/sobre" element={<About />} />
               <Route path="/confirmacao-email" element={<EmailConfirmationHelp />} />
               <Route path="/todos" element={<Todos />} />
-              <Route path="/cadastro" element={<Register />} />
+              
+              {/* Nova rota unificada de autenticação */}
+              <Route path="/auth" element={<Auth />} />
+              
+              {/* Rotas de compatibilidade - redirecionam para /auth */}
+              <Route path="/cadastro" element={<Navigate to="/auth?mode=register" replace />} />
+              <Route path="/usuario/cadastro" element={<Navigate to="/auth?mode=register" replace />} />
+              <Route path="/usuario/login" element={<Navigate to="/auth?mode=login" replace />} />
+              <Route path="/influenciador/cadastro" element={<Navigate to="/auth?mode=register" replace />} />
+              <Route path="/influenciador/login" element={<Navigate to="/auth?mode=login" replace />} />
+              <Route path="/profissional/login" element={<Navigate to="/auth?mode=login" replace />} />
+              
               <Route path="/confirmacao" element={<Confirmation />} />
               <Route path="/admin-login" element={<AdminLogin />} />
-              
-              {/* User Routes */}
-              <Route path="/usuario/cadastro" element={<UserRegister />} />
-              <Route path="/usuario/login" element={<UserLogin />} />
               <Route path="/login-rapido" element={<QuickLogin />} />
               <Route path="/create-admin" element={<CreateAdmin />} />
               <Route path="/create-admins" element={<CreateAdmins />} />
@@ -123,7 +131,6 @@ const App = () => (
               <Route path="/marketplace" element={<Marketplace />} />
               
               {/* Professional Routes */}
-              <Route path="/profissional/login" element={<ProfessionalLogin />} />
               <Route path="/profissional/dashboard" element={
                 <ProtectedRoute role="professional">
                   <ProDashboard />
@@ -171,8 +178,6 @@ const App = () => (
               } />
               
               {/* Influencer Routes */}
-              <Route path="/influenciador/cadastro" element={<InfluencerRegister />} />
-              <Route path="/influenciador/login" element={<InfluencerLogin />} />
               <Route path="/influenciador/dashboard" element={
                 <ProtectedRoute role="influencer">
                   <InfluencerDashboard />

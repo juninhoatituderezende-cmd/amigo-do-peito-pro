@@ -796,6 +796,30 @@ export type Database = {
         }
         Returns: string
       }
+      get_existing_account_types: {
+        Args: { check_email: string }
+        Returns: {
+          account_id: string
+          account_type: Database["public"]["Enums"]["user_role"]
+          approved: boolean
+        }[]
+      }
+      login_with_account_type: {
+        Args: {
+          login_email: string
+          requested_role: Database["public"]["Enums"]["user_role"]
+        }
+        Returns: {
+          approved: boolean
+          email: string
+          error_message: string
+          full_name: string
+          profile_id: string
+          role: Database["public"]["Enums"]["user_role"]
+          user_id: string
+          valid_login: boolean
+        }[]
+      }
       process_marketplace_commission: {
         Args: { p_sale_id: string; p_total_amount: number }
         Returns: undefined
@@ -807,6 +831,13 @@ export type Database = {
           total_amount: number
         }
         Returns: undefined
+      }
+      validate_unique_email_by_role: {
+        Args: {
+          check_email: string
+          check_role: Database["public"]["Enums"]["user_role"]
+        }
+        Returns: boolean
       }
     }
     Enums: {
