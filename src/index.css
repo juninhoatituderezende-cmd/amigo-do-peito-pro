@@ -6,9 +6,13 @@
 @tailwind components;
 @tailwind utilities;
 
-/* APLICAR TEMA ESCURO GLOBALMENTE */
+/* APLICAR TEMA ESCURO GLOBALMENTE - FORÇAR SEMPRE */
 * {
-  color-scheme: dark;
+  color-scheme: dark !important;
+}
+
+html {
+  color-scheme: dark !important;
 }
 
 @layer base {
@@ -130,7 +134,9 @@
   body {
     @apply bg-background text-foreground font-inter;
     /* Força o tema escuro sempre */
-    color-scheme: dark;
+    color-scheme: dark !important;
+    background-color: hsl(210 7% 7%) !important;
+    color: hsl(0 0% 100%) !important;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -236,4 +242,92 @@
 
 .text-danger {
   @apply text-destructive;
+}
+
+/* FORÇAR TEMA PRETO E DOURADO EM TODA A APLICAÇÃO */
+/* Remove qualquer vestígio de cores brancas/azuis fora do padrão */
+
+/* Força backgrounds escuros */
+.bg-white,
+[class*="bg-white"] {
+  background-color: hsl(0 0% 4%) !important; /* bg-card */
+}
+
+.bg-gray-50,
+.bg-gray-100,
+[class*="bg-gray-5"],
+[class*="bg-gray-1"] {
+  background-color: hsl(210 7% 15%) !important; /* bg-muted */
+}
+
+.bg-blue,
+[class*="bg-blue"] {
+  background-color: hsl(0 0% 4%) !important; /* bg-card */
+}
+
+/* Força textos claros */
+.text-black,
+[class*="text-black"] {
+  color: hsl(0 0% 100%) !important; /* text-foreground */
+}
+
+.text-gray-900,
+.text-gray-800,
+[class*="text-gray-9"],
+[class*="text-gray-8"] {
+  color: hsl(0 0% 100%) !important; /* text-foreground */
+}
+
+.text-blue,
+[class*="text-blue"] {
+  color: hsl(51 100% 50%) !important; /* text-primary */
+}
+
+/* Força bordas escuras */
+.border-white,
+[class*="border-white"] {
+  border-color: hsl(210 7% 20%) !important; /* border */
+}
+
+.border-gray-200,
+.border-gray-300,
+[class*="border-gray-2"],
+[class*="border-gray-3"] {
+  border-color: hsl(210 7% 20%) !important; /* border */
+}
+
+.border-blue,
+[class*="border-blue"] {
+  border-color: hsl(51 100% 50%) !important; /* border-primary */
+}
+
+/* Força theme em componentes específicos */
+input,
+textarea,
+select,
+button {
+  color-scheme: dark !important;
+}
+
+/* Força cards e containers */
+.card,
+.container,
+.wrapper,
+[class*="card"],
+[class*="container"] {
+  background-color: hsl(0 0% 4%) !important;
+  color: hsl(0 0% 100%) !important;
+}
+
+/* Remove shadows claras */
+.shadow-lg,
+.shadow-md,
+.shadow-sm,
+[class*="shadow-"] {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Força o tema em toda a aplicação */
+* {
+  color-scheme: dark !important;
 }

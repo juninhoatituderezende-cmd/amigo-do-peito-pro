@@ -33,8 +33,21 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- Theme Color -->
-    <meta name="theme-color" content="#000000" />
+    <!-- Theme Color - Preto e Dourado -->
+    <meta name="theme-color" content="#121212" />
+    <meta name="color-scheme" content="dark" />
+    
+    <!-- Força tema escuro desde carregamento -->
+    <script>
+      (function() {
+        const html = document.documentElement;
+        html.classList.add('dark');
+        html.classList.remove('light');
+        html.style.colorScheme = 'dark';
+        html.style.backgroundColor = '#121212';
+        html.style.color = '#ffffff';
+      })();
+    </script>
     
     <!-- Structured Data -->
     <script type="application/ld+json">

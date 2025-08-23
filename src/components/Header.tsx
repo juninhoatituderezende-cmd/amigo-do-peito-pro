@@ -23,43 +23,43 @@ const Header = () => {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-6">
-          <Link to="/" className="text-white hover:text-primary transition-all hover-gold">
+          <Link to="/" className="text-foreground hover:text-primary transition-all hover-gold">
             Início
           </Link>
-          <Link to="/sobre" className="text-white hover:text-primary transition-all hover-gold">
+          <Link to="/sobre" className="text-foreground hover:text-primary transition-all hover-gold">
             Sobre
           </Link>
-          <Link to="/marketplace" className="text-white hover:text-primary transition-all hover-gold">
+          <Link to="/marketplace" className="text-foreground hover:text-primary transition-all hover-gold">
             Marketplace
           </Link>
-          <Link to="/todos" className="text-white hover:text-primary transition-all hover-gold">
+          <Link to="/todos" className="text-foreground hover:text-primary transition-all hover-gold">
             Tarefas
           </Link>
           {!user && (
             <Button 
               onClick={() => navigate("/cadastro")}
-              className="bg-primary text-black font-semibold hover:bg-primary/90 shadow-lg"
+              className="bg-primary text-primary-foreground font-semibold hover:bg-primary/90 shadow-lg"
             >
               Cadastrar
             </Button>
           )}
           {user && user.role === "user" && (
-            <Link to="/usuario/dashboard" className="text-white hover:text-primary transition-all hover-gold">
+            <Link to="/usuario/dashboard" className="text-foreground hover:text-primary transition-all hover-gold">
               Meu Painel
             </Link>
           )}
           {user && user.role === "professional" && (
-            <Link to="/profissional/dashboard" className="text-white hover:text-primary transition-all hover-gold">
+            <Link to="/profissional/dashboard" className="text-foreground hover:text-primary transition-all hover-gold">
               Painel Profissional
             </Link>
           )}
           {user && user.role === "influencer" && (
-            <Link to="/influenciador/dashboard" className="text-white hover:text-primary transition-all hover-gold">
+            <Link to="/influenciador/dashboard" className="text-foreground hover:text-primary transition-all hover-gold">
               Painel Influenciador
             </Link>
           )}
           {user && user.role === "admin" && (
-            <Link to="/admin" className="text-white hover:text-primary transition-all hover-gold">
+            <Link to="/admin" className="text-foreground hover:text-primary transition-all hover-gold">
               Dashboard Admin
             </Link>
           )}
@@ -67,7 +67,7 @@ const Header = () => {
             <Button 
               onClick={handleLogout}
               variant="outline"
-              className="border-primary text-primary hover:bg-primary hover:text-black"
+              className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
             >
               Sair
             </Button>
@@ -96,25 +96,25 @@ const Header = () => {
         <div className="md:hidden bg-black/95 backdrop-blur-sm py-4 px-6 border-t border-primary/20">
           <div className="flex flex-col space-y-4">
             <Link to="/" 
-              className="text-white hover:text-primary transition-all hover-gold"
+              className="text-foreground hover:text-primary transition-all hover-gold"
               onClick={() => setMobileMenuOpen(false)}
             >
               Início
             </Link>
             <Link to="/sobre" 
-              className="text-white hover:text-primary transition-all hover-gold"
+              className="text-foreground hover:text-primary transition-all hover-gold"
               onClick={() => setMobileMenuOpen(false)}
             >
               Sobre
             </Link>
             <Link to="/marketplace" 
-              className="text-white hover:text-primary transition-all hover-gold"
+              className="text-foreground hover:text-primary transition-all hover-gold"
               onClick={() => setMobileMenuOpen(false)}
             >
               Marketplace
             </Link>
             <Link to="/todos" 
-              className="text-white hover:text-primary transition-all hover-gold"
+              className="text-foreground hover:text-primary transition-all hover-gold"
               onClick={() => setMobileMenuOpen(false)}
             >
               Tarefas
@@ -129,7 +129,7 @@ const Header = () => {
             )}
             {user && user.role === "user" && (
               <Link to="/usuario/dashboard" 
-                className="text-white hover:text-primary transition-all hover-gold"
+                className="text-foreground hover:text-primary transition-all hover-gold"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Meu Painel
@@ -137,7 +137,7 @@ const Header = () => {
             )}
             {user && user.role === "professional" && (
               <Link to="/profissional/dashboard" 
-                className="text-white hover:text-primary transition-all hover-gold"
+                className="text-foreground hover:text-primary transition-all hover-gold"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Painel Profissional
@@ -145,7 +145,7 @@ const Header = () => {
             )}
             {user && user.role === "influencer" && (
               <Link to="/influenciador/dashboard" 
-                className="text-white hover:text-primary transition-all hover-gold"
+                className="text-foreground hover:text-primary transition-all hover-gold"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Painel Influenciador
@@ -153,7 +153,7 @@ const Header = () => {
             )}
             {user && user.role === "admin" && (
               <Link to="/admin" 
-                className="text-white hover:text-primary transition-all hover-gold"
+                className="text-foreground hover:text-primary transition-all hover-gold"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Dashboard Admin

@@ -100,8 +100,8 @@ export function AppSidebar() {
 
   const getNavClass = (isActiveRoute: boolean) => 
     isActiveRoute 
-      ? "bg-primary text-black font-semibold shadow-md border-primary/30" 
-      : "text-white hover:bg-primary/20 hover:text-primary border-transparent";
+      ? "bg-primary text-primary-foreground font-semibold shadow-md border-primary/30" 
+      : "text-foreground hover:bg-primary/20 hover:text-primary border-transparent";
 
   const getRoleLabel = () => {
     switch (user?.role) {
@@ -120,11 +120,11 @@ export function AppSidebar() {
         {/* User Info */}
         <div className="p-4 border-b border-primary/20">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-black text-sm font-bold shadow-md">
+            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground text-sm font-bold shadow-md">
               {user.full_name?.charAt(0) || user.email?.charAt(0) || "U"}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate text-white">{user.full_name || user.email?.split('@')[0]}</p>
+              <p className="text-sm font-medium truncate text-foreground">{user.full_name || user.email?.split('@')[0]}</p>
               <p className="text-xs text-primary">{getRoleLabel()}</p>
             </div>
           </div>
@@ -148,7 +148,7 @@ export function AppSidebar() {
                        <item.icon className="h-4 w-4" />
                        <span className="ml-2">{item.title}</span>
                        {item.title === "Notificações" && unreadCount > 0 && (
-                         <Badge variant="destructive" className="ml-auto min-w-[1.5rem] h-5 text-xs bg-primary text-black">
+                         <Badge variant="destructive" className="ml-auto min-w-[1.5rem] h-5 text-xs bg-primary text-primary-foreground">
                            {unreadCount}
                          </Badge>
                        )}
@@ -167,7 +167,7 @@ export function AppSidebar() {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <NavLink to="/suporte" className="flex items-center p-2 rounded-md text-white hover:bg-primary/20 hover:text-primary transition-all">
+                  <NavLink to="/suporte" className="flex items-center p-2 rounded-md text-foreground hover:bg-primary/20 hover:text-primary transition-all">
                     <Bell className="h-4 w-4" />
                     <span className="ml-2">Suporte</span>
                   </NavLink>
@@ -177,7 +177,7 @@ export function AppSidebar() {
               {user.role === 'admin' && (
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                    <NavLink to="/admin/configuracoes" className="flex items-center p-2 rounded-md text-white hover:bg-primary/20 hover:text-primary transition-all">
+                    <NavLink to="/admin/configuracoes" className="flex items-center p-2 rounded-md text-foreground hover:bg-primary/20 hover:text-primary transition-all">
                       <Settings className="h-4 w-4" />
                       <span className="ml-2">Configurações</span>
                     </NavLink>

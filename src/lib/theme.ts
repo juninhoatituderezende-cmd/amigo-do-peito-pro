@@ -37,12 +37,12 @@ export const THEME_COLORS = {
   whitePure: '#FFFFFF'
 } as const;
 
-// Classes CSS padronizadas
+// Classes CSS padronizadas - FORÇA TEMA ESCURO
 export const THEME_CLASSES = {
   // Botões
-  btnPrimary: 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-md transition-all',
-  btnSecondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80 border border-primary/20 hover:border-primary/40 transition-all',
-  btnOutline: 'border border-primary/20 bg-background hover:bg-primary/10 hover:text-primary hover:border-primary/40 transition-all',
+  btnPrimary: 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-md transition-all [&]:!bg-primary [&]:!text-primary-foreground',
+  btnSecondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80 border border-primary/20 hover:border-primary/40 transition-all [&]:!bg-secondary [&]:!text-secondary-foreground',
+  btnOutline: 'border border-primary/20 bg-background hover:bg-primary/10 hover:text-primary hover:border-primary/40 transition-all [&]:!bg-background',
   btnGhost: 'hover:bg-primary/10 hover:text-primary transition-all',
   
   // Cards
@@ -54,10 +54,14 @@ export const THEME_CLASSES = {
   textSecondary: 'text-muted-foreground',
   textAccent: 'text-primary',
   
-  // Backgrounds
-  bgPrimary: 'bg-background',
-  bgCard: 'bg-card',
-  bgMuted: 'bg-muted',
+  // Backgrounds - FORÇA TEMA ESCURO
+  bgPrimary: 'bg-background [&]:!bg-background',
+  bgCard: 'bg-card [&]:!bg-card',  
+  bgMuted: 'bg-muted [&]:!bg-muted',
+  
+  // Layout force dark
+  containerDark: 'bg-background text-foreground [&]:!bg-background [&]:!text-foreground',
+  pageDark: 'min-h-screen bg-background text-foreground [&]:!bg-background [&]:!text-foreground',
   
   // Estados
   textSuccess: 'text-green-400',
@@ -78,6 +82,42 @@ export const THEME_CLASSES = {
   gradientGold: 'gradient-gold',
   gradientPremium: 'gradient-premium'
 } as const;
+
+// Função para aplicar o tema globalmente
+export const applyGlobalTheme = () => {
+  const html = document.documentElement;
+  const body = document.body;
+  
+  // Força tema escuro
+  html.classList.add('dark');
+  html.classList.remove('light');
+  body.classList.add('dark');  
+  body.classList.remove('light');
+  
+  // Força color-scheme
+  html.style.colorScheme = 'dark';
+  body.style.colorScheme = 'dark';
+  
+  // CSS customizado para forçar o tema
+  const styleEl = document.getElementById('forced-dark-theme');
+  if (!styleEl) {
+    const style = document.createElement('style');
+    style.id = 'forced-dark-theme';
+    style.textContent = `
+      :root { color-scheme: dark !important; }
+      * { color-scheme: dark !important; }
+      body { 
+        background-color: hsl(210 7% 7%) !important; 
+        color: hsl(0 0% 100%) !important; 
+      }
+      /* Força tema em todos os elementos */
+      .bg-white { background-color: hsl(0 0% 4%) !important; }
+      .text-black { color: hsl(0 0% 100%) !important; }
+      .border-white { border-color: hsl(210 7% 20%) !important; }
+    `;
+    document.head.appendChild(style);
+  }
+};
 
 // Utilitários para componentes
 export const getStatusColor = (status: string) => {
