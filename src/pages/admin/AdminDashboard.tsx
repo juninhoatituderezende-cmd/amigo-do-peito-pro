@@ -40,7 +40,8 @@ import {
   Upload,
   Package,
   Store,
-  ShoppingCart
+  ShoppingCart,
+  Settings
 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -883,6 +884,30 @@ const AdminDashboard = () => {
 
             {/* VISÃO GERAL */}
             <TabsContent value="overview" className="space-y-6">
+              {/* Card de Integração Asaas */}
+              <Card className="border-2 border-primary">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Settings className="h-5 w-5 text-primary" />
+                    Integração Asaas
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <p className="text-muted-foreground">
+                      Configure a integração com a API do Asaas para automação completa de pagamentos e produtos.
+                    </p>
+                    <Button 
+                      onClick={() => window.location.href = '/admin/integracao-asaas'}
+                      className="w-full"
+                    >
+                      <Settings className="h-4 w-4 mr-2" />
+                      Configurar Integração Asaas
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+              
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Gráfico de Tendência de Cadastros */}
                 <Card>
