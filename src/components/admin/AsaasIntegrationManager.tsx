@@ -17,7 +17,11 @@ import {
   Link,
   Shield,
   Database,
-  RefreshCcw
+  RefreshCcw,
+  Lock,
+  Eye,
+  EyeOff,
+  Key
 } from 'lucide-react';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -38,6 +42,9 @@ export function AsaasIntegrationManager() {
   const [loading, setLoading] = useState(true);
   const [testing, setTesting] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [isValidApiKey, setIsValidApiKey] = useState(false);
+  const [autoTestTimer, setAutoTestTimer] = useState<NodeJS.Timeout | null>(null);
   const [form, setForm] = useState({
     apiKey: '',
     environment: 'sandbox' as 'sandbox' | 'production',
@@ -47,6 +54,27 @@ export function AsaasIntegrationManager() {
   useEffect(() => {
     loadIntegration();
   }, []);
+
+  // Auto-test connection after user stops typing API key
+  useEffect(() => {
+    if (autoTestTimer) {
+      clearTimeout(autoTestTimer);
+    }
+
+    if (form.apiKey.length > 10) { // Basic validation for API key length
+      setAutoTestTimer(setTimeout(() => {
+        testConnectionSilent();
+      }, 2000));
+    } else {
+      setIsValidApiKey(false);
+    }
+
+    return () => {
+      if (autoTestTimer) {
+        clearTimeout(autoTestTimer);
+      }
+    };
+  }, [form.apiKey, form.environment]);
 
   const loadIntegration = async () => {
     try {
@@ -108,6 +136,31 @@ export function AsaasIntegrationManager() {
       return false;
     } finally {
       setTesting(false);
+    }
+  };
+
+  // Silent test for auto-validation (no toasts)
+  const testConnectionSilent = async () => {
+    if (!form.apiKey.trim() || form.apiKey.length < 10) {
+      setIsValidApiKey(false);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke('asaas-integration-manager', {
+        body: {
+          action: 'test_connection',
+          api_key: form.apiKey,
+          environment: form.environment
+        }
+      });
+
+      if (error) throw error;
+
+      setIsValidApiKey(data.success);
+    } catch (error) {
+      console.error('Silent connection test failed:', error);
+      setIsValidApiKey(false);
     }
   };
 
@@ -238,14 +291,51 @@ export function AsaasIntegrationManager() {
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="apiKey">API Key do Asaas</Label>
-                  <Input
-                    id="apiKey"
-                    type="password"
-                    placeholder="Insira sua API Key"
-                    value={form.apiKey}
-                    onChange={(e) => setForm(prev => ({ ...prev, apiKey: e.target.value }))}
-                  />
+                  <Label htmlFor="apiKey" className="flex items-center gap-2">
+                    <Lock className="h-4 w-4" />
+                    API Key do Asaas
+                    {isValidApiKey && (
+                      <Check className="h-4 w-4 text-success" />
+                    )}
+                    {form.apiKey && !isValidApiKey && form.apiKey.length > 10 && (
+                      <X className="h-4 w-4 text-destructive" />
+                    )}
+                  </Label>
+                  <div className="relative">
+                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
+                      <Key className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <Input
+                      id="apiKey"
+                      type={showApiKey ? "text" : "password"}
+                      placeholder="Insira sua API Key do Asaas"
+                      value={form.apiKey}
+                      onChange={(e) => setForm(prev => ({ ...prev, apiKey: e.target.value }))}
+                      className={`pl-10 pr-12 ${
+                        isValidApiKey ? 'border-success' : 
+                        form.apiKey && !isValidApiKey && form.apiKey.length > 10 ? 'border-destructive' : ''
+                      }`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowApiKey(!showApiKey)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  {isValidApiKey && (
+                    <p className="text-sm text-success flex items-center gap-1">
+                      <Check className="h-3 w-3" />
+                      API Key válida e conectada
+                    </p>
+                  )}
+                  {form.apiKey && !isValidApiKey && form.apiKey.length > 10 && (
+                    <p className="text-sm text-destructive flex items-center gap-1">
+                      <X className="h-3 w-3" />
+                      API Key inválida ou erro de conexão
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -305,10 +395,11 @@ export function AsaasIntegrationManager() {
 
                 <Button 
                   onClick={saveConfiguration}
-                  disabled={!form.apiKey.trim()}
+                  disabled={!isValidApiKey}
+                  className={isValidApiKey ? 'bg-success hover:bg-success/90' : ''}
                 >
                   <Settings className="h-4 w-4 mr-2" />
-                  Salvar Configuração
+                  {isValidApiKey ? 'Salvar & Ativar' : 'Salvar Configuração'}
                 </Button>
               </div>
             </CardContent>
