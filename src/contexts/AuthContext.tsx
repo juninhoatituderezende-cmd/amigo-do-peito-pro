@@ -65,7 +65,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 const { data: existingProfile, error: profileError } = await supabase
                   .from('profiles')
                   .select('*')
-                  .eq('id', session.user.id)
+                  .eq('user_id', session.user.id)
                   .single();
                 
                 if (profileError && profileError.code !== 'PGRST116') {
@@ -79,7 +79,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   const { error: insertError } = await supabase
                     .from('profiles')
                     .insert({
-                      id: session.user.id,
+                      user_id: session.user.id,
                       email: session.user.email,
                       full_name: session.user.user_metadata?.full_name || 
                                 session.user.user_metadata?.name || 
@@ -140,7 +140,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { data: profileData, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', userId)
+        .eq('user_id', userId)
         .single();
 
       if (error) {
@@ -153,7 +153,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const { error: createError } = await supabase
             .from('profiles')
             .insert({
-              id: userId,
+              user_id: userId,
               email: supabaseUser.email || '',
               full_name: supabaseUser.user_metadata?.full_name || 
                         supabaseUser.user_metadata?.name || 
