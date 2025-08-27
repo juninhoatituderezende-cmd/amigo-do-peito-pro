@@ -114,11 +114,11 @@ export const UserGroupsHistory = () => {
   }
   const getStatusColor = (status: GroupParticipation["status"]) => {
     switch (status) {
-      case "active": return "bg-blue-100 text-blue-800";
-      case "contemplated": return "bg-green-100 text-green-800";
-      case "completed": return "bg-gray-100 text-gray-800";
-      case "pending_payment": return "bg-yellow-100 text-yellow-800";
-      default: return "bg-gray-100 text-gray-800";
+      case "active": return "bg-blue-50 text-blue-700 border-blue-200";
+      case "contemplated": return "bg-green-50 text-green-700 border-green-200";
+      case "completed": return "bg-gray-50 text-gray-700 border-gray-200";
+      case "pending_payment": return "bg-yellow-50 text-yellow-700 border-yellow-200";
+      default: return "bg-gray-50 text-gray-700 border-gray-200";
     }
   };
 
@@ -132,13 +132,7 @@ export const UserGroupsHistory = () => {
     }
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  };
-
+  // Remover função duplicada - já importada do utils
   const totalInvested = participations.reduce((sum, p) => sum + p.amountPaid, 0);
   const activeGroups = participations.filter(p => p.status === "active").length;
   const contemplatedGroups = participations.filter(p => p.status === "contemplated").length;
@@ -207,7 +201,7 @@ export const UserGroupsHistory = () => {
                     <h4 className="font-medium">{group.groupName}</h4>
                     <p className="text-sm text-muted-foreground">{group.productName}</p>
                   </div>
-                  <Badge className={getStatusColor(group.status)}>
+                  <Badge variant="outline" className={`${getStatusColor(group.status)} border`}>
                     {getStatusText(group.status)}
                   </Badge>
                 </div>
@@ -288,7 +282,7 @@ export const UserGroupsHistory = () => {
                   {group.status === "pending_payment" && (
                     <Button 
                       size="sm" 
-                      className="bg-ap-orange hover:bg-ap-orange/90"
+                      className="bg-primary hover:bg-primary/90 text-primary-foreground"
                       onClick={() => handleMakePayment(group.id)}
                     >
                       Fazer Pagamento
@@ -297,7 +291,7 @@ export const UserGroupsHistory = () => {
                   {group.status === "contemplated" && (
                     <Button 
                       size="sm" 
-                      className="bg-green-600 hover:bg-green-700"
+                      className="bg-green-600 hover:bg-green-700 text-white"
                       onClick={() => handleScheduleAppointment(group.groupId || group.id)}
                     >
                       Agendar Procedimento

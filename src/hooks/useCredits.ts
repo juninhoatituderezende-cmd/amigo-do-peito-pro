@@ -61,7 +61,7 @@ export const useCredits = () => {
             user_id: user.id,
             total_credits: 0,
             available_credits: 0,
-            pending_withdrawal: 0
+            pending_credits: 0
           })
           .select()
           .single();
@@ -95,7 +95,7 @@ export const useCredits = () => {
           userId: t.user_id,
           amount: t.amount,
           type: (t.type as 'credit' | 'debit'),
-          source: (t.description as 'initial_payment' | 'referral_bonus' | 'marketplace_purchase' | 'withdrawal' | 'admin_adjustment'),
+          source: (t.source_type as 'initial_payment' | 'referral_bonus' | 'marketplace_purchase' | 'withdrawal' | 'admin_adjustment'),
           description: t.description,
           relatedOrderId: t.reference_id || '',
           createdAt: t.created_at

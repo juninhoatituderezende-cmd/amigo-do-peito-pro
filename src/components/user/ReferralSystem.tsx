@@ -66,7 +66,7 @@ export const ReferralSystem = () => {
       
       setReferralData({
         referralCode,
-        referralLink: `${window.location.origin}/register?ref=${referralCode}`,
+        referralLink: `https://${window.location.host}/register?ref=${referralCode}`,
         totalReferrals: totalReferrals || 0,
         groupsFormed: activeParticipations || 0,
         pendingInvites: pendingCount
@@ -89,31 +89,86 @@ export const ReferralSystem = () => {
     console.log('ReferralData:', referralData);
     console.log('ReferralLink:', referralData.referralLink);
     
+    if (!referralData.referralLink || !referralData.referralCode) {
+      toast({
+        title: "Erro",
+        description: "Link de referência não disponível. Tente recarregar a página.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
-      await navigator.clipboard.writeText(referralData.referralLink);
+      // Verificar se clipboard está disponível
+      if (!navigator.clipboard) {
+        throw new Error('Clipboard API não disponível');
+      }
+
+      // Garantir que o link está correto
+      const linkToCopy = referralData.referralLink.startsWith('http') 
+        ? referralData.referralLink 
+        : `https://${window.location.host}/register?ref=${referralData.referralCode}`;
+
+      await navigator.clipboard.writeText(linkToCopy);
+      
       toast({
         title: "Link copiado!",
         description: "Seu link de indicação foi copiado para a área de transferência.",
       });
-      console.log('Link copiado com sucesso do ReferralSystem');
-    } catch (error) {
-      console.error('Erro ao copiar link do ReferralSystem:', error);
       
-      // Fallback: criar link manual
-      const fallbackLink = `${window.location.origin}/register?ref=${referralData.referralCode}`;
+      console.log('Link copiado com sucesso:', linkToCopy);
+      
+    } catch (error) {
+      console.error('Erro ao copiar link:', error);
+      
+      // Fallback mais robusto
       try {
-        await navigator.clipboard.writeText(fallbackLink);
-        toast({
-          title: "Link copiado!",
-          description: "Seu link de indicação foi copiado para a área de transferência.",
-        });
+        const fallbackLink = `https://${window.location.host}/register?ref=${referralData.referralCode}`;
+        
+        // Tentar usar o método antigo de cópia
+        const textArea = document.createElement('textarea');
+        textArea.value = fallbackLink;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        
+        const successful = document.execCommand('copy');
+        document.body.removeChild(textArea);
+        
+        if (successful) {
+          toast({
+            title: "Link copiado!",
+            description: "Seu link de indicação foi copiado para a área de transferência.",
+          });
+          console.log('Link copiado via fallback:', fallbackLink);
+        } else {
+          throw new Error('Comando de cópia falhou');
+        }
+        
       } catch (fallbackError) {
-        console.error('Erro no fallback também:', fallbackError);
+        console.error('Erro no fallback:', fallbackError);
+        
+        // Último recurso - mostrar modal com link para cópia manual
         toast({
-          title: "Erro ao copiar",
-          description: "Não foi possível copiar o link. Tente novamente.",
-          variant: "destructive"
+          title: "Copie manualmente",
+          description: "Selecione e copie o link na seção abaixo da tela.",
+          variant: "default"
         });
+        
+        // Destacar a seção de cópia manual
+        const manualCopyElement = document.querySelector('.select-all');
+        if (manualCopyElement) {
+          manualCopyElement.scrollIntoView({ behavior: 'smooth' });
+          // Selecionar o texto automaticamente
+          const selection = window.getSelection();
+          const range = document.createRange();
+          range.selectNodeContents(manualCopyElement);
+          selection?.removeAllRanges();
+          selection?.addRange(range);
+        }
       }
     }
   };
@@ -229,18 +284,37 @@ export const ReferralSystem = () => {
             </Button>
             <Button 
               onClick={shareReferralLink}
-              className="flex-1 bg-ap-orange hover:bg-ap-orange/90"
+              className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               <Share className="h-4 w-4 mr-2" />
               Compartilhar
             </Button>
           </div>
           
-          {/* Fallback manual */}
-          <div className="mt-2 p-2 bg-muted rounded text-xs">
-            <p className="font-medium mb-1">Link para cópia manual:</p>
-            <p className="font-mono text-muted-foreground break-all select-all">
-              {referralData.referralLink}
+          {/* Fallback manual com destaque melhorado */}
+          <div className="mt-4 p-3 bg-muted/50 rounded-lg border border-dashed">
+            <p className="font-medium mb-2 text-sm text-muted-foreground">
+              📋 Se a cópia automática não funcionar, copie manualmente:
+            </p>
+            <div 
+              className="p-2 bg-background border rounded cursor-pointer hover:bg-muted/30 transition-colors"
+              onClick={() => {
+                const selection = window.getSelection();
+                const range = document.createRange();
+                const element = document.querySelector('.manual-copy-text');
+                if (element && selection) {
+                  range.selectNodeContents(element);
+                  selection.removeAllRanges();
+                  selection.addRange(range);
+                }
+              }}
+            >
+              <p className="manual-copy-text font-mono text-xs text-muted-foreground break-all select-all">
+                {referralData.referralLink}
+              </p>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              👆 Toque no texto acima para selecioná-lo, depois copie (Ctrl+C)
             </p>
           </div>
         </CardContent>
