@@ -18,6 +18,7 @@ interface Plan {
   icon: React.ReactNode;
   max_participants: number;
   duration_months: number;
+  image_url?: string | null;
 }
 
 // Planos agora vêm do banco de dados
@@ -59,7 +60,8 @@ export const PlansSelection = ({ onSelectPlan, selectedPlanId }: PlansSelectionP
         popular: index === 0, // Primeiro plano é marcado como popular
         icon: getCategoryIcon(plan.category || 'service'),
         max_participants: plan.max_participants || 10,
-        duration_months: plan.duration_months || 1
+        duration_months: plan.duration_months || 1,
+        image_url: plan.image_url
       }));
 
       setPlans(formattedPlans);
@@ -147,7 +149,7 @@ export const PlansSelection = ({ onSelectPlan, selectedPlanId }: PlansSelectionP
         {plans.map((plan) => (
           <Card 
             key={plan.id}
-            className={`relative transition-all duration-200 hover:shadow-lg cursor-pointer ${
+            className={`relative transition-all duration-200 hover:shadow-lg cursor-pointer overflow-hidden ${
               selectedPlanId === plan.id 
                 ? "border-2 border-ap-orange shadow-lg" 
                 : "border hover:border-ap-orange/50"
@@ -155,18 +157,31 @@ export const PlansSelection = ({ onSelectPlan, selectedPlanId }: PlansSelectionP
             onClick={() => handleSelectPlan(plan)}
           >
             {plan.popular && (
-              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
                 <Badge className="bg-primary text-primary-foreground">
                   Mais Popular
                 </Badge>
               </div>
             )}
             
-            <CardHeader className="text-center pb-4">
+            {plan.image_url && (
+              <div className="relative h-32 w-full overflow-hidden">
+                <img
+                  src={plan.image_url}
+                  alt={plan.name}
+                  className="h-full w-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+              </div>
+            )}
+            
+            <CardHeader className={`text-center ${plan.image_url ? 'pb-2' : 'pb-4'}`}>
               <div className="flex justify-center items-center gap-2 mb-3">
-                <div className="p-2 bg-ap-orange/10 rounded-lg text-ap-orange">
-                  {plan.icon}
-                </div>
+                {!plan.image_url && (
+                  <div className="p-2 bg-ap-orange/10 rounded-lg text-ap-orange">
+                    {plan.icon}
+                  </div>
+                )}
                 <Badge variant="secondary" className={getCategoryColor(plan.category)}>
                   {getCategoryLabel(plan.category)}
                 </Badge>

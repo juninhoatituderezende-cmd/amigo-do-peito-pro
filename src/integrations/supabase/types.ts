@@ -199,6 +199,7 @@ export type Database = {
           duration_months: number | null
           features: Json | null
           id: string
+          image_url: string | null
           max_participants: number | null
           name: string
           price: number
@@ -215,6 +216,7 @@ export type Database = {
           duration_months?: number | null
           features?: Json | null
           id?: string
+          image_url?: string | null
           max_participants?: number | null
           name: string
           price: number
@@ -231,6 +233,7 @@ export type Database = {
           duration_months?: number | null
           features?: Json | null
           id?: string
+          image_url?: string | null
           max_participants?: number | null
           name?: string
           price?: number

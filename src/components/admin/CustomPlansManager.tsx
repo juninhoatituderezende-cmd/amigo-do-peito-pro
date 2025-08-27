@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { ImageUpload } from "@/components/ui/image-upload";
 import { useToast } from "@/hooks/use-toast";
 import { useResponsiveDesign } from "@/hooks/useResponsiveDesign";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,6 +27,7 @@ interface CustomPlan {
   active: boolean;
   max_participants: number;
   professional_id: string | null;
+  image_url: string | null;
   created_at: string;
 }
 
@@ -43,7 +45,8 @@ export function CustomPlansManager() {
     features: '',
     category: 'service',
     max_participants: '10',
-    active: true
+    active: true,
+    image_url: null as string | null
   });
   const { toast } = useToast();
   const { isMobile } = useResponsiveDesign();
@@ -99,7 +102,8 @@ export function CustomPlansManager() {
         features: featuresArray,
         category: formData.category,
         max_participants: parseInt(formData.max_participants),
-        active: formData.active
+        active: formData.active,
+        image_url: formData.image_url
       };
 
       console.log('Enviando dados do plano:', planData);
@@ -167,7 +171,8 @@ export function CustomPlansManager() {
       features: plan.features.join('\n'),
       category: plan.category,
       max_participants: plan.max_participants.toString(),
-      active: plan.active
+      active: plan.active,
+      image_url: plan.image_url
     });
     setIsDialogOpen(true);
   };
@@ -245,7 +250,8 @@ export function CustomPlansManager() {
       features: '',
       category: 'service',
       max_participants: '10',
-      active: true
+      active: true,
+      image_url: null
     });
   };
 
@@ -311,6 +317,14 @@ export function CustomPlansManager() {
                   </Select>
                 </div>
               </div>
+
+              <ImageUpload
+                currentImageUrl={formData.image_url}
+                onImageChange={(imageUrl) => setFormData({...formData, image_url: imageUrl})}
+                bucketName="plan-images"
+                path="plans"
+                maxSizeMB={5}
+              />
 
               <div>
                 <label className="text-sm font-medium">Descrição</label>
@@ -417,18 +431,28 @@ export function CustomPlansManager() {
                 <Card key={plan.id} className="border border-border/50">
                   <CardContent className="p-4">
                     <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <h3 className="font-medium text-lg">{plan.name}</h3>
-                        {plan.active ? (
-                          <Badge className="bg-green-500">Ativo</Badge>
-                        ) : (
-                          <Badge variant="secondary">Inativo</Badge>
+                      <div className="flex items-start gap-3">
+                        {plan.image_url && (
+                          <img
+                            src={plan.image_url}
+                            alt={plan.name}
+                            className="w-16 h-16 object-cover rounded-lg border border-border flex-shrink-0"
+                          />
                         )}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <h3 className="font-medium text-lg truncate">{plan.name}</h3>
+                            {plan.active ? (
+                              <Badge className="bg-green-500">Ativo</Badge>
+                            ) : (
+                              <Badge variant="secondary">Inativo</Badge>
+                            )}
+                          </div>
+                          {plan.description && (
+                            <p className="text-sm text-muted-foreground line-clamp-2">{plan.description}</p>
+                          )}
+                        </div>
                       </div>
-                      
-                      {plan.description && (
-                        <p className="text-sm text-muted-foreground">{plan.description}</p>
-                      )}
                       
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
@@ -523,11 +547,20 @@ export function CustomPlansManager() {
                   {plans.map((plan) => (
                     <TableRow key={plan.id}>
                       <TableCell>
-                        <div>
-                          <div className="font-medium">{plan.name}</div>
-                          {plan.description && (
-                            <div className="text-sm text-muted-foreground">{plan.description}</div>
+                        <div className="flex items-center gap-3">
+                          {plan.image_url && (
+                            <img
+                              src={plan.image_url}
+                              alt={plan.name}
+                              className="w-12 h-12 object-cover rounded-lg border border-border flex-shrink-0"
+                            />
                           )}
+                          <div>
+                            <div className="font-medium">{plan.name}</div>
+                            {plan.description && (
+                              <div className="text-sm text-muted-foreground">{plan.description}</div>
+                            )}
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell>
