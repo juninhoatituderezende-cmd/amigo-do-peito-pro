@@ -37,6 +37,7 @@ export function CustomPlansManager() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<CustomPlan | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -89,6 +90,43 @@ export function CustomPlansManager() {
     e.preventDefault();
     
     if (submitting) return;
+
+    // Validação de campos
+    if (!formData.name.trim()) {
+      toast({
+        title: "❌ Erro de Validação",
+        description: "Nome do plano é obrigatório.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.price || parseFloat(formData.price) <= 0) {
+      toast({
+        title: "❌ Erro de Validação", 
+        description: "Preço deve ser maior que zero.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.duration_months || parseInt(formData.duration_months) <= 0) {
+      toast({
+        title: "❌ Erro de Validação",
+        description: "Duração deve ser maior que zero.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.max_participants || parseInt(formData.max_participants) <= 0) {
+      toast({
+        title: "❌ Erro de Validação",
+        description: "Máximo de participantes deve ser maior que zero.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     setSubmitting(true);
     try {
@@ -153,7 +191,7 @@ export function CustomPlansManager() {
       console.error('Erro ao salvar plano:', error);
       toast({
         title: "❌ Erro",
-        description: error.message || "Erro ao salvar plano. Tente novamente.",
+        description: error.message || "Erro ao salvar plano. Verifique os dados e tente novamente.",
         variant: "destructive",
       });
     } finally {
@@ -178,9 +216,27 @@ export function CustomPlansManager() {
   };
 
   const handleDelete = async (planId: string) => {
+    if (deleting) return; // Evitar múltiplas exclusões simultâneas
+    
+    setDeleting(planId);
     try {
       console.log('Tentando excluir plano:', planId);
       
+      // Primeiro verificar se o plano existe
+      const { data: existingPlan, error: fetchError } = await supabase
+        .from('custom_plans')
+        .select('id, name')
+        .eq('id', planId)
+        .single();
+
+      if (fetchError) {
+        console.error('Erro ao buscar plano:', fetchError);
+        throw new Error('Plano não encontrado.');
+      }
+
+      console.log('Plano encontrado:', existingPlan);
+      
+      // Tentar excluir o plano
       const { data, error } = await supabase
         .from('custom_plans')
         .delete()
@@ -189,24 +245,26 @@ export function CustomPlansManager() {
 
       if (error) {
         console.error('Erro detalhado ao excluir:', error);
-        throw error;
+        throw new Error(`Erro ao excluir: ${error.message}`);
       }
 
-      console.log('Plano excluído:', data);
+      console.log('Plano excluído com sucesso:', data);
 
       toast({
         title: "✅ Sucesso",
-        description: "Plano excluído com sucesso!",
+        description: `Plano "${existingPlan.name}" excluído com sucesso!`,
       });
       
       await loadPlans();
     } catch (error: any) {
       console.error('Erro ao excluir plano:', error);
       toast({
-        title: "❌ Erro",
-        description: error.message || "Erro ao excluir plano.",
+        title: "❌ Erro de Exclusão",
+        description: error.message || "Não foi possível excluir o plano. Verifique se não há dependências.",
         variant: "destructive",
       });
+    } finally {
+      setDeleting(null);
     }
   };
 
@@ -304,16 +362,34 @@ export function CustomPlansManager() {
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium">Categoria</label>
-                    <Select value={formData.category} onValueChange={(value) => setFormData({...formData, category: value})}>
-                      <SelectTrigger className="bg-background">
-                        <SelectValue />
+                    <label className="text-sm font-medium">Categoria *</label>
+                    <Select 
+                      value={formData.category} 
+                      onValueChange={(value) => {
+                        console.log('Categoria selecionada:', value);
+                        setFormData(prev => ({...prev, category: value}));
+                      }}
+                    >
+                      <SelectTrigger className="bg-background border focus:ring-2 focus:ring-primary/20">
+                        <SelectValue placeholder="Selecione uma categoria" />
                       </SelectTrigger>
-                      <SelectContent className="bg-background border shadow-md z-50">
-                        <SelectItem value="service">Serviço</SelectItem>
-                        <SelectItem value="tattoo">Tatuagem</SelectItem>
-                        <SelectItem value="dental">Dental</SelectItem>
-                        <SelectItem value="course">Curso</SelectItem>
+                      <SelectContent 
+                        className="bg-background border shadow-lg z-[100]" 
+                        position="popper"
+                        sideOffset={4}
+                      >
+                        <SelectItem value="service" className="hover:bg-muted focus:bg-muted">
+                          🔧 Serviço
+                        </SelectItem>
+                        <SelectItem value="tattoo" className="hover:bg-muted focus:bg-muted">
+                          🎨 Tatuagem
+                        </SelectItem>
+                        <SelectItem value="dental" className="hover:bg-muted focus:bg-muted">
+                          🦷 Dental
+                        </SelectItem>
+                        <SelectItem value="course" className="hover:bg-muted focus:bg-muted">
+                          📚 Curso
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -339,34 +415,41 @@ export function CustomPlansManager() {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label className="text-sm font-medium">Preço (R$)</label>
+                    <label className="text-sm font-medium">Preço (R$) *</label>
                     <Input
                       type="number"
                       step="0.01"
-                      min="0"
+                      min="0.01"
                       value={formData.price}
                       onChange={(e) => setFormData({...formData, price: e.target.value})}
                       placeholder="99.99"
+                      className="bg-background"
                       required
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium">Duração (meses)</label>
+                    <label className="text-sm font-medium">Duração (meses) *</label>
                     <Input
                       type="number"
                       min="1"
+                      max="60"
                       value={formData.duration_months}
                       onChange={(e) => setFormData({...formData, duration_months: e.target.value})}
+                      className="bg-background"
+                      placeholder="1"
                       required
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium">Máx. Participantes</label>
+                    <label className="text-sm font-medium">Máx. Participantes *</label>
                     <Input
                       type="number"
                       min="1"
+                      max="100"
                       value={formData.max_participants}
                       onChange={(e) => setFormData({...formData, max_participants: e.target.value})}
+                      className="bg-background"
+                      placeholder="10"
                       required
                     />
                   </div>
@@ -500,26 +583,43 @@ export function CustomPlansManager() {
                             <MobileButton
                               variant="outline"
                               size="sm"
-                              className="w-full text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
+                              className="w-full text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground disabled:opacity-50"
+                              disabled={deleting === plan.id}
                             >
-                              <Trash2 className="h-4 w-4 mr-1" />
-                              Excluir
+                              {deleting === plan.id ? (
+                                <>
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-1" />
+                                  Excluindo...
+                                </>
+                              ) : (
+                                <>
+                                  <Trash2 className="h-4 w-4 mr-1" />
+                                  Excluir
+                                </>
+                              )}
                             </MobileButton>
                           </AlertDialogTrigger>
-                          <AlertDialogContent className="bg-background border shadow-lg">
+                          <AlertDialogContent className="bg-background border shadow-lg max-w-[90vw]">
                             <AlertDialogHeader>
                               <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Tem certeza que deseja excluir o plano "{plan.name}"? Esta ação não pode ser desfeita.
+                              <AlertDialogDescription className="text-left">
+                                Tem certeza que deseja excluir o plano <strong>"{plan.name}"</strong>?
+                                <br /><br />
+                                ⚠️ Esta ação não pode ser desfeita e removerá permanentemente:
+                                <br />• O plano e suas configurações
+                                <br />• Todos os dados relacionados
                               </AlertDialogDescription>
                             </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel className="bg-background">Cancelar</AlertDialogCancel>
+                            <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                              <AlertDialogCancel className="bg-background w-full sm:w-auto" disabled={deleting === plan.id}>
+                                Cancelar
+                              </AlertDialogCancel>
                               <AlertDialogAction
                                 onClick={() => handleDelete(plan.id)}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90 w-full sm:w-auto"
+                                disabled={deleting === plan.id}
                               >
-                                Excluir
+                                {deleting === plan.id ? 'Excluindo...' : 'Sim, Excluir'}
                               </AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
