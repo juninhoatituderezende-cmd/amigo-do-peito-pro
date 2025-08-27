@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { AvatarUpload } from "@/components/ui/avatar-upload";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { User, Mail, Phone, MapPin, Calendar, Edit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -62,7 +62,7 @@ export const UserProfile = () => {
       setLoading(true);
       if (!user) return;
       
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('user_id', user.id)
@@ -87,7 +87,8 @@ export const UserProfile = () => {
   };
 
   const handleAvatarUpdate = (avatarUrl: string | null) => {
-    setProfile(prev => ({ ...prev, avatar: avatarUrl }));
+    // Esta função será implementada futuramente com upload de imagens
+    console.log('Avatar update:', avatarUrl);
   };
 
   const handleSaveProfile = () => {
@@ -128,12 +129,7 @@ export const UserProfile = () => {
       <Card>
         <CardContent className="pt-6">
           <div className="flex items-center gap-6">
-            <AvatarUpload
-              currentAvatar={profile.avatar}
-              userName={profile.name}
-              size="lg"
-              onAvatarUpdate={handleAvatarUpdate}
-            />
+            <UserAvatar size="lg" />
             
             <div className="flex-1">
               <h2 className="text-2xl font-bold">{profile.name}</h2>

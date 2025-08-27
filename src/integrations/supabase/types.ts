@@ -685,6 +685,7 @@ export type Database = {
       profiles: {
         Row: {
           approved: boolean | null
+          avatar_url: string | null
           cpf: string | null
           created_at: string | null
           email: string | null
@@ -699,6 +700,7 @@ export type Database = {
         }
         Insert: {
           approved?: boolean | null
+          avatar_url?: string | null
           cpf?: string | null
           created_at?: string | null
           email?: string | null
@@ -713,6 +715,7 @@ export type Database = {
         }
         Update: {
           approved?: boolean | null
+          avatar_url?: string | null
           cpf?: string | null
           created_at?: string | null
           email?: string | null

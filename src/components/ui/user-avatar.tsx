@@ -26,15 +26,20 @@ export const UserAvatar = ({ size = "md", className = "", showFallback = true }:
       if (!user) return;
 
       try {
-        // Buscar dados do perfil no Supabase
+        // Buscar dados do perfil no Supabase incluindo avatar_url
         const { data: profile } = await supabase
           .from('profiles')
-          .select('full_name')
+          .select('full_name, avatar_url')
           .eq('user_id', user.id)
           .single();
 
         if (profile) {
           setUserName(profile.full_name || user.email || "Usuário");
+          
+          // Usar avatar_url se disponível
+          if (profile.avatar_url) {
+            setAvatarUrl(profile.avatar_url);
+          }
         } else {
           setUserName(user.email || "Usuário");
         }
