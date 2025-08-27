@@ -169,9 +169,8 @@ export const ParticipationDashboard = () => {
     return Math.min((currentParticipants / maxParticipants) * 100, 100);
   };
 
-  const copyReferralLink = async () => {
+  const copyReferralLink = () => {
     if (!referralData?.referralCode) {
-      console.error('Dados de referência não disponíveis:', referralData);
       toast({
         title: "Erro",
         description: "Código de referência não encontrado. Recarregue a página.",
@@ -181,61 +180,42 @@ export const ParticipationDashboard = () => {
     }
 
     const link = `${window.location.origin}/register?ref=${referralData.referralCode}`;
-    console.log('🔄 Tentando copiar link:', link);
-    console.log('🔑 Código de referência:', referralData.referralCode);
+    console.log('🔄 BOTÃO CLICADO! Tentando copiar:', link);
     
-    // Tentar método mais simples primeiro - funcionará melhor no mobile
-    try {
-      // Criar elemento input temporário
-      const tempInput = document.createElement('input');
-      tempInput.value = link;
-      tempInput.style.position = 'absolute';
-      tempInput.style.left = '-9999px';
-      tempInput.style.opacity = '0';
-      
-      document.body.appendChild(tempInput);
-      tempInput.select();
-      tempInput.setSelectionRange(0, 99999); // Para mobile
-      
-      const successful = document.execCommand('copy');
-      document.body.removeChild(tempInput);
-      
-      if (successful) {
-        console.log('✅ Link copiado com sucesso via execCommand');
-        toast({
-          title: "Link copiado! 🎉",
-          description: "Compartilhe com seus amigos para ganhar indicações!",
-          duration: 4000,
-        });
-        return;
-      }
-    } catch (error) {
-      console.log('⚠️ Método execCommand falhou:', error);
-    }
-
-    // Fallback - tentar clipboard API
-    try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(link);
-        console.log('✅ Link copiado com sucesso via clipboard API');
-        toast({
-          title: "Link copiado! 🎉",
-          description: "Compartilhe com seus amigos para ganhar indicações!",
-          duration: 4000,
-        });
-        return;
-      }
-    } catch (error) {
-      console.log('⚠️ Clipboard API falhou:', error);
-    }
-
-    // Se chegou aqui, mostre mensagem alternativa
-    console.log('❌ Todos os métodos de cópia falharam');
+    // Método que funciona no iOS Safari
+    const input = document.createElement('input');
+    input.value = link;
+    input.type = 'text';
+    input.style.position = 'fixed';
+    input.style.top = '50%';
+    input.style.left = '50%';
+    input.style.transform = 'translate(-50%, -50%)';
+    input.style.zIndex = '9999';
+    input.style.padding = '10px';
+    input.style.border = '2px solid #000';
+    input.style.background = 'white';
+    input.style.fontSize = '16px'; // Evita zoom no iOS
+    
+    document.body.appendChild(input);
+    input.focus();
+    input.select();
+    
+    // Toast imediato para mostrar que funcionou
     toast({
-      title: "Toque no link abaixo para copiar",
-      description: "Pressione e segure no link completo para copiá-lo manualmente",
-      duration: 6000,
+      title: "✅ Campo de texto apareceu!",
+      description: "Toque em 'Copiar' no menu que apareceu ou selecione tudo e copie",
+      duration: 5000,
     });
+    
+    // Remove o input após 5 segundos
+    setTimeout(() => {
+      if (document.body.contains(input)) {
+        document.body.removeChild(input);
+        console.log('🗑️ Input removido após timeout');
+      }
+    }, 5000);
+    
+    console.log('✅ Input field criado e focado!');
   };
 
   if (loading) {
