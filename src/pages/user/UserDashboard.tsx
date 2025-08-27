@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useCredits } from "@/hooks/useCredits";
 import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+import DashboardFooter from "@/components/DashboardFooter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -320,7 +320,7 @@ const UserDashboard = () => {
         </Tabs>
       </main>
 
-      <Footer />
+      <DashboardFooter />
     </div>
   );
 };
