@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -49,6 +50,7 @@ interface ReferralData {
 
 export const ParticipationDashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [participations, setParticipations] = useState<PlanParticipation[]>([]);
   const [referralData, setReferralData] = useState<ReferralData | null>(null);
@@ -157,14 +159,23 @@ export const ParticipationDashboard = () => {
     return Math.min((currentParticipants / maxParticipants) * 100, 100);
   };
 
-  const copyReferralLink = () => {
+  const copyReferralLink = async () => {
     if (referralData) {
       const link = `${window.location.origin}/register?ref=${referralData.referralCode}`;
-      navigator.clipboard.writeText(link);
-      toast({
-        title: "Link copiado!",
-        description: "Seu link de indicação foi copiado para a área de transferência.",
-      });
+      try {
+        await navigator.clipboard.writeText(link);
+        toast({
+          title: "Link copiado!",
+          description: "Seu link de indicação foi copiado para a área de transferência.",
+        });
+      } catch (error) {
+        console.error('Erro ao copiar link:', error);
+        toast({
+          title: "Erro ao copiar",
+          description: "Não foi possível copiar o link. Tente novamente.",
+          variant: "destructive"
+        });
+      }
     }
   };
 
@@ -257,7 +268,7 @@ export const ParticipationDashboard = () => {
             <p className="text-muted-foreground mb-4">
               Participe de um plano para começar a formar seu grupo!
             </p>
-            <Button>Escolher Plano</Button>
+            <Button onClick={() => navigate('/plans')}>Escolher Plano</Button>
           </CardContent>
         </Card>
       )}

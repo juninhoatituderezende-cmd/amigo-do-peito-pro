@@ -1,8 +1,14 @@
+import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Users, Calendar, DollarSign, Clock, Eye } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { formatCurrency } from "@/lib/utils";
 
 interface GroupParticipation {
   id: string;
@@ -16,49 +22,96 @@ interface GroupParticipation {
   maxMembers: number;
   nextDrawDate?: string;
   position?: number;
+  groupId?: string;
 }
 
-const mockParticipations: GroupParticipation[] = [
-  {
-    id: "1",
-    groupName: "Grupo Fechamento Braço #1",
-    productName: "Fechamento de braço",
-    joinDate: "2024-01-15",
-    amountPaid: 400,
-    totalValue: 4000,
-    status: "active",
-    members: 8,
-    maxMembers: 10,
-    nextDrawDate: "2024-02-01",
-    position: 3
-  },
-  {
-    id: "2",
-    groupName: "Grupo Prótese Dental #2", 
-    productName: "Prótese dentária (10 dentes)",
-    joinDate: "2024-01-10",
-    amountPaid: 500,
-    totalValue: 5000,
-    status: "contemplated",
-    members: 10,
-    maxMembers: 10,
-    position: 1
-  },
-  {
-    id: "3",
-    groupName: "Grupo Fechamento Perna #3",
-    productName: "Fechamento de perna",
-    joinDate: "2024-01-05",
-    amountPaid: 0,
-    totalValue: 6000,
-    status: "pending_payment",
-    members: 5,
-    maxMembers: 12,
-    position: 5
-  }
-];
-
 export const UserGroupsHistory = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [participations, setParticipations] = useState<GroupParticipation[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (user) {
+      loadUserParticipations();
+    }
+  }, [user]);
+
+  const loadUserParticipations = async () => {
+    try {
+      setLoading(true);
+      
+      const { data, error } = await supabase
+        .from('group_participants')
+        .select(`
+          *,
+          plan_groups(
+            *,
+            service_id
+          )
+        `)
+        .eq('user_id', user?.id)
+        .order('joined_at', { ascending: false });
+
+      if (error) throw error;
+
+      if (data) {
+        const formattedParticipations: GroupParticipation[] = data.map((participation, index) => ({
+          id: participation.id,
+          groupId: participation.group_id,
+          groupName: `Grupo ${participation.plan_groups?.group_number || (index + 1)}`,
+          productName: `Plano ${participation.plan_groups?.group_number || (index + 1)}`,
+          joinDate: new Date(participation.joined_at).toLocaleDateString('pt-BR'),
+          amountPaid: participation.amount_paid || 0,
+          totalValue: participation.plan_groups?.target_amount || 0,
+          status: participation.status === 'contemplated' ? 'contemplated' : 
+                  participation.plan_groups?.status === 'complete' ? 'completed' :
+                  participation.amount_paid > 0 ? 'active' : 'pending_payment',
+          members: participation.plan_groups?.current_participants || 0,
+          maxMembers: participation.plan_groups?.max_participants || 10,
+          position: index + 1,
+          nextDrawDate: participation.plan_groups?.status === 'forming' ? 
+            new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('pt-BR') : 
+            undefined
+        }));
+        
+        setParticipations(formattedParticipations);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar participações:', error);
+      toast({
+        title: "Erro ao carregar dados",
+        description: "Não foi possível carregar seu histórico de grupos.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleViewDetails = (groupId: string) => {
+    navigate(`/usuario/grupo/${groupId}`);
+  };
+
+  const handleMakePayment = (participationId: string) => {
+    navigate(`/usuario/pagamento/${participationId}`);
+  };
+
+  const handleScheduleAppointment = (groupId: string) => {
+    toast({
+      title: "Agendamento",
+      description: "Em breve você poderá agendar seu procedimento!",
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary" />
+      </div>
+    );
+  }
   const getStatusColor = (status: GroupParticipation["status"]) => {
     switch (status) {
       case "active": return "bg-blue-100 text-blue-800";
@@ -86,9 +139,9 @@ export const UserGroupsHistory = () => {
     }).format(value);
   };
 
-  const totalInvested = mockParticipations.reduce((sum, p) => sum + p.amountPaid, 0);
-  const activeGroups = mockParticipations.filter(p => p.status === "active").length;
-  const contemplatedGroups = mockParticipations.filter(p => p.status === "contemplated").length;
+  const totalInvested = participations.reduce((sum, p) => sum + p.amountPaid, 0);
+  const activeGroups = participations.filter(p => p.status === "active").length;
+  const contemplatedGroups = participations.filter(p => p.status === "contemplated").length;
 
   return (
     <div className="space-y-6">
@@ -104,7 +157,7 @@ export const UserGroupsHistory = () => {
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(totalInvested)}</div>
             <p className="text-xs text-muted-foreground">
-              Em {mockParticipations.length} grupos
+              Em {participations.length} grupos
             </p>
           </CardContent>
         </Card>
@@ -147,7 +200,7 @@ export const UserGroupsHistory = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {mockParticipations.map((group) => (
+            {participations.map((group) => (
               <div key={group.id} className="p-4 border rounded-lg">
                 <div className="flex items-center justify-between mb-3">
                   <div>
@@ -224,17 +277,29 @@ export const UserGroupsHistory = () => {
                 )}
 
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleViewDetails(group.groupId || group.id)}
+                  >
                     <Eye className="h-4 w-4 mr-2" />
                     Ver Detalhes
                   </Button>
                   {group.status === "pending_payment" && (
-                    <Button size="sm" className="bg-ap-orange hover:bg-ap-orange/90">
+                    <Button 
+                      size="sm" 
+                      className="bg-ap-orange hover:bg-ap-orange/90"
+                      onClick={() => handleMakePayment(group.id)}
+                    >
                       Fazer Pagamento
                     </Button>
                   )}
                   {group.status === "contemplated" && (
-                    <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                    <Button 
+                      size="sm" 
+                      className="bg-green-600 hover:bg-green-700"
+                      onClick={() => handleScheduleAppointment(group.groupId || group.id)}
+                    >
                       Agendar Procedimento
                     </Button>
                   )}
@@ -243,7 +308,7 @@ export const UserGroupsHistory = () => {
             ))}
           </div>
 
-          {mockParticipations.length === 0 && (
+          {participations.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
               <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p>Você ainda não participou de nenhum grupo.</p>

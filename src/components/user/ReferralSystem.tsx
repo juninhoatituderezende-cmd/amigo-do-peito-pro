@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,21 +16,89 @@ interface UserReferralData {
 }
 
 export const ReferralSystem = () => {
+  const { user } = useAuth();
   const { toast } = useToast();
   const [referralData, setReferralData] = useState<UserReferralData>({
-    referralCode: "JOAO123",
-    referralLink: "https://amigodopeito.com/register?ref=JOAO123",
-    totalReferrals: 4,
-    groupsFormed: 1,
-    pendingInvites: 2
+    referralCode: "",
+    referralLink: "",
+    totalReferrals: 0,
+    groupsFormed: 0,
+    pendingInvites: 0
   });
+  const [loading, setLoading] = useState(true);
 
-  const copyReferralLink = () => {
-    navigator.clipboard.writeText(referralData.referralLink);
-    toast({
-      title: "Link copiado!",
-      description: "Seu link de indicação foi copiado para a área de transferência.",
-    });
+  useEffect(() => {
+    if (user) {
+      loadReferralData();
+    }
+  }, [user]);
+
+  const loadReferralData = async () => {
+    try {
+      setLoading(true);
+
+      // Buscar dados do perfil do usuário para código de indicação
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('referral_code')
+        .eq('user_id', user?.id)
+        .single();
+
+      if (profileError) throw profileError;
+
+      // Contar total de referências diretas
+      const { count: totalReferrals } = await supabase
+        .from('profiles')
+        .select('id', { count: 'exact' })
+        .eq('referred_by', user?.id);
+
+      // Contar grupos formados (participações ativas)
+      const { count: activeParticipations } = await supabase
+        .from('group_participants')
+        .select('id', { count: 'exact' })
+        .eq('user_id', user?.id)
+        .eq('status', 'active');
+
+      // Para pendentes, vamos calcular como referências não confirmadas ou em análise
+      const pendingCount = Math.max(0, (totalReferrals || 0) - (activeParticipations || 0));
+
+      const referralCode = profileData?.referral_code || user?.id?.slice(-8).toUpperCase() || '';
+      
+      setReferralData({
+        referralCode,
+        referralLink: `${window.location.origin}/register?ref=${referralCode}`,
+        totalReferrals: totalReferrals || 0,
+        groupsFormed: activeParticipations || 0,
+        pendingInvites: pendingCount
+      });
+
+    } catch (error) {
+      console.error('Erro ao carregar dados de indicação:', error);
+      toast({
+        title: "Erro ao carregar dados",
+        description: "Não foi possível carregar os dados de indicação.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const copyReferralLink = async () => {
+    try {
+      await navigator.clipboard.writeText(referralData.referralLink);
+      toast({
+        title: "Link copiado!",
+        description: "Seu link de indicação foi copiado para a área de transferência.",
+      });
+    } catch (error) {
+      console.error('Erro ao copiar link:', error);
+      toast({
+        title: "Erro ao copiar",
+        description: "Não foi possível copiar o link. Tente novamente.",
+        variant: "destructive"
+      });
+    }
   };
 
   const shareReferralLink = () => {
@@ -42,6 +112,14 @@ export const ReferralSystem = () => {
       copyReferralLink();
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
