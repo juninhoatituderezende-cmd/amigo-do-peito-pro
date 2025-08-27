@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Teste Email Fix</title>
+</head>
+<body>
+    <h1>Teste da Ferramenta de Email</h1>
+    <button onclick="checkEmail()">Verificar Email</button>
+    <button onclick="confirmEmail()">Confirmar Email</button>
+    <div id="result"></div>
+
+    <script type="module">
+        import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7'
+        
+        const supabase = createClient(
+            'https://jiqgwevetdkvcqelniaw.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImppcWd3ZXZldGRrdmNxZWxuaWF3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU4NDY3NTMsImV4cCI6MjA3MTQyMjc1M30.tkTy-XuHKWsyMeNSAHu1BE56mxZA0N1F-coDMcdWUyc'
+        )
+        
+        window.checkEmail = async () => {
+            try {
+                const { data, error } = await supabase.functions.invoke('check-email-status', {
+                    body: { email: 'juninhoatitude@icloud.com' }
+                })
+                
+                if (error) throw error
+                
+                document.getElementById('result').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>'
+                console.log('Check result:', data)
+            } catch (error) {
+                console.error('Error checking email:', error)
+                document.getElementById('result').innerHTML = 'Erro: ' + error.message
+            }
+        }
+        
+        window.confirmEmail = async () => {
+            try {
+                const { data, error } = await supabase.functions.invoke('auto-confirm-email', {
+                    body: { email: 'juninhoatitude@icloud.com' }
+                })
+                
+                if (error) throw error
+                
+                document.getElementById('result').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>'
+                console.log('Confirm result:', data)
+            } catch (error) {
+                console.error('Error confirming email:', error)
+                document.getElementById('result').innerHTML = 'Erro: ' + error.message
+            }
+        }
+    </script>
+</body>
+</html>
