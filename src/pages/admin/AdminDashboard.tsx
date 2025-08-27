@@ -43,6 +43,7 @@ import {
   ShoppingCart,
   Settings
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
@@ -136,6 +137,7 @@ interface CategoryStats {
 
 const AdminDashboard = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   const handleGoogleSetup = () => {
     window.open('/google-setup', '_blank');
@@ -898,7 +900,7 @@ const AdminDashboard = () => {
                       Configure a integração com a API do Asaas para automação completa de pagamentos e produtos.
                     </p>
                     <Button 
-                      onClick={() => window.location.href = '/admin/integracao-asaas'}
+                      onClick={() => navigate('/admin/integracao-asaas')}
                       className="w-full"
                     >
                       <Settings className="h-4 w-4 mr-2" />
