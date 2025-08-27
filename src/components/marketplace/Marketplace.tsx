@@ -78,6 +78,11 @@ export const Marketplace = () => {
 
   // Filtrar e ordenar produtos com useMemo para otimização
   const filteredAndSortedProducts = useMemo(() => {
+    // Verificação de segurança para garantir que products é um array
+    if (!products || !Array.isArray(products)) {
+      return [];
+    }
+    
     return products
       .filter(product => {
         const matchesSearch = product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||

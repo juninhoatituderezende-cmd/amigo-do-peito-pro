@@ -5,11 +5,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCredits } from "@/hooks/useCredits";
 import Header from "@/components/Header";
 import DashboardFooter from "@/components/DashboardFooter";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ParticipationDashboard } from "@/components/user/ParticipationDashboard";
 import { 
-  User, 
   ShoppingCart, 
   Wallet,
   Target,
@@ -125,9 +125,7 @@ const UserDashboard = () => {
         <div className="mb-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-6">
             <div className="flex items-center gap-4">
-              <div className="h-16 w-16 bg-primary rounded-full flex items-center justify-center">
-                <User className="h-8 w-8 text-primary-foreground" />
-              </div>
+              <UserAvatar size="lg" />
               <div>
                 <h1 className="text-3xl font-bold">Olá, {userData.name}!</h1>
                 <p className="text-muted-foreground">
