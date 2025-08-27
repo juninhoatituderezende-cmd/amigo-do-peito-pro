@@ -132,7 +132,7 @@ const UserDashboard = () => {
     <div className="min-h-screen bg-background">
       <Header />
       
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 pb-20 lg:pb-8">
         {/* Header com Informações Rápidas */}
         <div className="mb-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-6">
@@ -230,33 +230,66 @@ const UserDashboard = () => {
           </div>
         </div>
 
-        <Tabs defaultValue="dashboard" className="space-y-6">
-          <TabsList className="grid w-full lg:w-auto grid-cols-6">
-            <TabsTrigger value="dashboard" className="flex items-center gap-2">
-              <Target className="h-4 w-4" />
-              Dashboard
-            </TabsTrigger>
-            <TabsTrigger value="groups" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Grupos
-            </TabsTrigger>
-            <TabsTrigger value="referrals" className="flex items-center gap-2">
-              <Share className="h-4 w-4" />
-              Indicações
-            </TabsTrigger>
-            <TabsTrigger value="credits" className="flex items-center gap-2">
-              <Wallet className="h-4 w-4" />
-              Créditos
-            </TabsTrigger>
-            <TabsTrigger value="notifications" className="flex items-center gap-2">
-              <Bell className="h-4 w-4" />
-              Notificações
-            </TabsTrigger>
-            <TabsTrigger value="profile" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              Perfil
-            </TabsTrigger>
-          </TabsList>
+        <Tabs defaultValue="dashboard" className="space-y-6 pb-20 lg:pb-6">
+          {/* Menu Desktop */}
+          <div className="hidden lg:block">
+            <TabsList className="grid w-full grid-cols-6">
+              <TabsTrigger value="dashboard" className="flex items-center gap-2">
+                <Target className="h-4 w-4" />
+                Dashboard
+              </TabsTrigger>
+              <TabsTrigger value="groups" className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Grupos
+              </TabsTrigger>
+              <TabsTrigger value="referrals" className="flex items-center gap-2">
+                <Share className="h-4 w-4" />
+                Indicações
+              </TabsTrigger>
+              <TabsTrigger value="credits" className="flex items-center gap-2">
+                <Wallet className="h-4 w-4" />
+                Créditos
+              </TabsTrigger>
+              <TabsTrigger value="notifications" className="flex items-center gap-2">
+                <Bell className="h-4 w-4" />
+                Notificações
+              </TabsTrigger>
+              <TabsTrigger value="profile" className="flex items-center gap-2">
+                <Settings className="h-4 w-4" />
+                Perfil
+              </TabsTrigger>
+            </TabsList>
+          </div>
+
+          {/* Menu Mobile - Fixo na parte inferior */}
+          <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-card border-t shadow-lg z-50">
+            <TabsList className="grid grid-cols-6 h-16 bg-transparent w-full rounded-none">
+              <TabsTrigger value="dashboard" className="flex flex-col items-center justify-center p-1 h-full data-[state=active]:bg-primary/10">
+                <Target className="h-4 w-4 mb-1" />
+                <span className="text-xs">Dashboard</span>
+              </TabsTrigger>
+              <TabsTrigger value="groups" className="flex flex-col items-center justify-center p-1 h-full data-[state=active]:bg-primary/10">
+                <Users className="h-4 w-4 mb-1" />
+                <span className="text-xs">Grupos</span>
+              </TabsTrigger>
+              <TabsTrigger value="referrals" className="flex flex-col items-center justify-center p-1 h-full data-[state=active]:bg-primary/10">
+                <Share className="h-4 w-4 mb-1" />
+                <span className="text-xs">Indicações</span>
+              </TabsTrigger>
+              <TabsTrigger value="credits" className="flex flex-col items-center justify-center p-1 h-full data-[state=active]:bg-primary/10">
+                <Wallet className="h-4 w-4 mb-1" />
+                <span className="text-xs">Créditos</span>
+              </TabsTrigger>
+              <TabsTrigger value="notifications" className="flex flex-col items-center justify-center p-1 h-full data-[state=active]:bg-primary/10">
+                <Bell className="h-4 w-4 mb-1" />
+                <span className="text-xs">Notificações</span>
+              </TabsTrigger>
+              <TabsTrigger value="profile" className="flex flex-col items-center justify-center p-1 h-full data-[state=active]:bg-primary/10">
+                <Settings className="h-4 w-4 mb-1" />
+                <span className="text-xs">Perfil</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="dashboard">
             <ParticipationDashboard />
@@ -284,7 +317,10 @@ const UserDashboard = () => {
         </Tabs>
       </main>
 
-      <Footer />
+      {/* Footer apenas no desktop */}
+      <div className="hidden lg:block">
+        <Footer />
+      </div>
     </div>
   );
 };
