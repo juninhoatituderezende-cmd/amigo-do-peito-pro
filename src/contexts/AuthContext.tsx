@@ -100,10 +100,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               }
             }
             
-            // Defer profile loading to prevent deadlocks
-            setTimeout(() => {
-              loadUserProfile(session.user.id);
-            }, 100);
+            // Load profile immediately after OAuth processing
+            loadUserProfile(session.user.id);
           } else if (!session?.user) {
             console.log('👋 User signed out');
             setUser(null);
@@ -122,9 +120,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSupabaseUser(session?.user ?? null);
       
       if (session?.user) {
-        setTimeout(() => {
-          loadUserProfile(session.user.id);
-        }, 0);
+        loadUserProfile(session.user.id);
       }
       setLoading(false);
     });
@@ -197,20 +193,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
         
         // Handle automatic redirection based on role
-        setTimeout(() => {
-          // Redirecionar automaticamente baseado no role para usuários logados
-          const targetRoute = profileData.role === 'admin' ? '/admin/dashboard' :
-                             profileData.role === 'professional' ? '/profissional/dashboard' :
-                             profileData.role === 'influencer' ? '/influenciador/dashboard' :
-                             '/usuario/dashboard';
-          
-          // Apenas redirecionar se estiver na página de login ou home
-          const currentPath = location.pathname;
-          if (currentPath === '/' || currentPath === '/auth' || currentPath.includes('login')) {
-            console.log('🎯 Redirecting user to:', targetRoute);
-            navigate(targetRoute, { replace: true });
-          }
-        }, 100);
+        const targetRoute = profileData.role === 'admin' ? '/admin/dashboard' :
+                           profileData.role === 'professional' ? '/profissional/dashboard' :
+                           profileData.role === 'influencer' ? '/influenciador/dashboard' :
+                           '/usuario/dashboard';
+        
+        // Apenas redirecionar se estiver na página de login ou home
+        const currentPath = location.pathname;
+        if (currentPath === '/' || currentPath === '/auth' || currentPath.includes('login')) {
+          console.log('🎯 Redirecting user to:', targetRoute);
+          navigate(targetRoute, { replace: true });
+        }
       }
     } catch (error) {
       console.error('❌ Unexpected error loading profile:', error);

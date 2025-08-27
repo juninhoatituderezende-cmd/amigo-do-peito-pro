@@ -13,7 +13,7 @@ export const ROUTES = {
   INFLUENCER_REGISTER: '/influenciador/cadastro',
   
   // Dashboard routes by role
-  ADMIN_DASHBOARD: '/admin',
+  ADMIN_DASHBOARD: '/admin/dashboard',
   USER_DASHBOARD: '/usuario/dashboard',
   PROFESSIONAL_DASHBOARD: '/profissional/dashboard',
   INFLUENCER_DASHBOARD: '/influenciador/dashboard',
