@@ -1,5 +1,5 @@
-import { CustomPlansManager } from "@/components/admin/CustomPlansManager";
+import { ServicePlansManagerNew } from "@/components/admin/ServicePlansManagerNew";
 
 export default function AdminPlanos() {
-  return <CustomPlansManager />;
+  return <ServicePlansManagerNew />;
 }

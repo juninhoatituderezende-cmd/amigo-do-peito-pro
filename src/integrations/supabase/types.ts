@@ -602,6 +602,84 @@ export type Database = {
           },
         ]
       }
+      planos_dentista: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          max_participants: number
+          name: string
+          price: number
+          professional_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          max_participants?: number
+          name: string
+          price: number
+          professional_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          max_participants?: number
+          name?: string
+          price?: number
+          professional_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      planos_tatuador: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          max_participants: number
+          name: string
+          price: number
+          professional_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          max_participants?: number
+          name: string
+          price: number
+          professional_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          max_participants?: number
+          name?: string
+          price?: number
+          professional_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       product_categories: {
         Row: {
           created_at: string | null
