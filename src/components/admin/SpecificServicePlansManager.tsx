@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Edit, Trash2, ArrowLeft } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -65,13 +65,12 @@ export function SpecificServicePlansManager({ serviceType, onBack }: SpecificSer
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from(serviceType.table as any)
-        .select("*")
-        .order("created_at", { ascending: false });
+        .rpc('get_service_plans', { table_name: serviceType.table });
 
       if (error) throw error;
 
-      setPlans((data as unknown as ServicePlan[]) || []);
+      const plansArray = JSON.parse(String(data) || '[]');
+      setPlans(plansArray);
     } catch (error) {
       console.error("Erro ao carregar planos:", error);
       toast({
@@ -107,10 +106,17 @@ export function SpecificServicePlansManager({ serviceType, onBack }: SpecificSer
       };
 
       if (editingPlan) {
-        const { error } = await supabase
-          .from(serviceType.table as any)
-          .update(planData)
-          .eq("id", editingPlan.id);
+        const { data, error } = await supabase
+          .rpc('update_service_plan', {
+            table_name: serviceType.table,
+            plan_id: editingPlan.id,
+            plan_name: formData.name,
+            plan_description: formData.description,
+            plan_price: parseFloat(formData.price),
+            plan_max_participants: parseInt(formData.max_participants),
+            plan_image_url: formData.image_url,
+            plan_active: formData.active
+          });
 
         if (error) throw error;
 
@@ -119,9 +125,16 @@ export function SpecificServicePlansManager({ serviceType, onBack }: SpecificSer
           description: "Plano atualizado com sucesso!",
         });
       } else {
-        const { error } = await supabase
-          .from(serviceType.table as any)
-          .insert([planData]);
+        const { data, error } = await supabase
+          .rpc('insert_service_plan', {
+            table_name: serviceType.table,
+            plan_name: formData.name,
+            plan_description: formData.description,
+            plan_price: parseFloat(formData.price),
+            plan_max_participants: parseInt(formData.max_participants),
+            plan_image_url: formData.image_url,
+            plan_active: formData.active
+          });
 
         if (error) throw error;
 
@@ -162,10 +175,11 @@ export function SpecificServicePlansManager({ serviceType, onBack }: SpecificSer
   const handleDelete = async (planId: string) => {
     try {
       setDeleting(planId);
-      const { error } = await supabase
-        .from(serviceType.table as any)
-        .delete()
-        .eq("id", planId);
+      const { data, error } = await supabase
+        .rpc('delete_service_plan', {
+          table_name: serviceType.table,
+          plan_id: planId
+        });
 
       if (error) throw error;
 
@@ -189,10 +203,17 @@ export function SpecificServicePlansManager({ serviceType, onBack }: SpecificSer
 
   const togglePlanStatus = async (planId: string, currentStatus: boolean) => {
     try {
-      const { error } = await supabase
-        .from(serviceType.table as any)
-        .update({ active: !currentStatus })
-        .eq("id", planId);
+      const { data, error } = await supabase
+        .rpc('update_service_plan', {
+          table_name: serviceType.table,
+          plan_id: planId,
+          plan_name: plans.find(p => p.id === planId)?.name || '',
+          plan_description: plans.find(p => p.id === planId)?.description || '',
+          plan_price: plans.find(p => p.id === planId)?.price || 0,
+          plan_max_participants: plans.find(p => p.id === planId)?.max_participants || 10,
+          plan_image_url: plans.find(p => p.id === planId)?.image_url || '',
+          plan_active: !currentStatus
+        });
 
       if (error) throw error;
 

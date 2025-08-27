@@ -1095,6 +1095,10 @@ export type Database = {
         Args: { entry_amount: number; plan_uuid: string; user_uuid: string }
         Returns: string
       }
+      delete_service_plan: {
+        Args: { plan_id: string; table_name: string }
+        Returns: boolean
+      }
       generate_group_referral_code: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -1110,6 +1114,23 @@ export type Database = {
           account_type: Database["public"]["Enums"]["user_role"]
           approved: boolean
         }[]
+      }
+      get_service_plans: {
+        Args: { table_name: string }
+        Returns: Json
+      }
+      insert_service_plan: {
+        Args: {
+          plan_active: boolean
+          plan_description: string
+          plan_image_url: string
+          plan_max_participants: number
+          plan_name: string
+          plan_price: number
+          plan_professional_id?: string
+          table_name: string
+        }
+        Returns: Json
       }
       join_group_by_referral: {
         Args: {
@@ -1150,6 +1171,19 @@ export type Database = {
           total_amount: number
         }
         Returns: undefined
+      }
+      update_service_plan: {
+        Args: {
+          plan_active: boolean
+          plan_description: string
+          plan_id: string
+          plan_image_url: string
+          plan_max_participants: number
+          plan_name: string
+          plan_price: number
+          table_name: string
+        }
+        Returns: Json
       }
       user_has_active_plan: {
         Args: { user_uuid: string }
