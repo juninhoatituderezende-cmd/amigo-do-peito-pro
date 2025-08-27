@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 interface AsaasIntegration {
   id: string;
@@ -38,6 +39,7 @@ interface AsaasIntegration {
 }
 
 export function AsaasIntegrationManager() {
+  const navigate = useNavigate();
   const [integration, setIntegration] = useState<AsaasIntegration | null>(null);
   const [loading, setLoading] = useState(true);
   const [testing, setTesting] = useState(false);
@@ -244,21 +246,30 @@ export function AsaasIntegrationManager() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold tracking-tight">Integração Asaas</h2>
-        {integration && (
-          <div className="flex items-center gap-2">
-            <Badge className={getStatusColor(integration.connection_status)}>
-              {integration.connection_status === 'connected' && <Check className="h-3 w-3 mr-1" />}
-              {integration.connection_status === 'disconnected' && <X className="h-3 w-3 mr-1" />}
-              {integration.connection_status === 'error' && <AlertTriangle className="h-3 w-3 mr-1" />}
-              {integration.connection_status === 'connected' ? 'Conectado' : 
-               integration.connection_status === 'disconnected' ? 'Desconectado' : 'Erro'}
-            </Badge>
-            <Badge className={getStatusColor(integration.status)}>
-              {integration.status === 'active' ? 'Ativo' : 
-               integration.status === 'inactive' ? 'Inativo' : 'Erro'}
-            </Badge>
-          </div>
-        )}
+        <div className="flex items-center gap-4">
+          {integration && (
+            <div className="flex items-center gap-2">
+              <Badge className={getStatusColor(integration.connection_status)}>
+                {integration.connection_status === 'connected' && <Check className="h-3 w-3 mr-1" />}
+                {integration.connection_status === 'disconnected' && <X className="h-3 w-3 mr-1" />}
+                {integration.connection_status === 'error' && <AlertTriangle className="h-3 w-3 mr-1" />}
+                {integration.connection_status === 'connected' ? 'Conectado' : 
+                 integration.connection_status === 'disconnected' ? 'Desconectado' : 'Erro'}
+              </Badge>
+              <Badge className={getStatusColor(integration.status)}>
+                {integration.status === 'active' ? 'Ativo' : 
+                 integration.status === 'inactive' ? 'Inativo' : 'Erro'}
+              </Badge>
+            </div>
+          )}
+          <Button 
+            onClick={() => navigate('/admin/dashboard')}
+            variant="outline"
+            className="bg-yellow-500 hover:bg-yellow-600 text-white border-yellow-500 rounded-lg"
+          >
+            Voltar ao Painel
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="configuration" className="space-y-6">
