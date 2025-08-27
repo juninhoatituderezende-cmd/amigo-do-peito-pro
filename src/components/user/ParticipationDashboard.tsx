@@ -179,7 +179,7 @@ export const ParticipationDashboard = () => {
     }
 
     const link = `${window.location.origin}/register?ref=${referralData.referralCode}`;
-    console.log('🚀 FUNÇÃO EXECUTADA - Link:', link);
+    console.log('🚀 COPIANDO LINK:', link);
     
     try {
       // 1º: Tentar Web Share API (funciona no iOS)
@@ -195,7 +195,7 @@ export const ParticipationDashboard = () => {
           setTimeout(() => setCopySuccess(false), 3000);
           return;
         } catch (error) {
-          console.log('⚠️ Web Share cancelado ou falhou:', error);
+          console.log('⚠️ Web Share cancelado');
         }
       }
 
@@ -206,7 +206,7 @@ export const ParticipationDashboard = () => {
       setTimeout(() => setCopySuccess(false), 3000);
       
     } catch (error) {
-      console.log('⚠️ Clipboard falhou, usando modal:', error);
+      console.log('⚠️ Clipboard falhou, usando modal');
       
       // 3º: Mostrar modal com link selecionável
       const modal = document.createElement('div');
@@ -237,7 +237,10 @@ export const ParticipationDashboard = () => {
       };
       
       document.body.appendChild(modal);
-      console.log('✅ Modal criado com sucesso');
+      
+      // Mostrar feedback visual também
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 5000);
     }
   };
 
