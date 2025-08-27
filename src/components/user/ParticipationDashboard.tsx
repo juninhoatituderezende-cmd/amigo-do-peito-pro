@@ -170,32 +170,69 @@ export const ParticipationDashboard = () => {
   };
 
   const copyReferralLink = async () => {
-    if (referralData?.referralCode) {
-      const link = `${window.location.origin}/register?ref=${referralData.referralCode}`;
-      console.log('Tentando copiar link:', link);
-      console.log('Código de referência:', referralData.referralCode);
-      
-      try {
-        await navigator.clipboard.writeText(link);
-        toast({
-          title: "Link copiado!",
-          description: "Seu link de indicação foi copiado para a área de transferência.",
-        });
-        console.log('Link copiado com sucesso');
-      } catch (error) {
-        console.error('Erro ao copiar link:', error);
-        toast({
-          title: "Erro ao copiar",
-          description: "Não foi possível copiar o link. Tente novamente.",
-          variant: "destructive"
-        });
-      }
-    } else {
+    if (!referralData?.referralCode) {
       console.error('Dados de referência não disponíveis:', referralData);
       toast({
         title: "Erro",
         description: "Código de referência não encontrado. Recarregue a página.",
         variant: "destructive"
+      });
+      return;
+    }
+
+    const link = `${window.location.origin}/register?ref=${referralData.referralCode}`;
+    console.log('Tentando copiar link:', link);
+    console.log('Código de referência:', referralData.referralCode);
+    
+    try {
+      // Verificar se navigator.clipboard está disponível
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(link);
+        console.log('Link copiado com sucesso via clipboard API');
+      } else {
+        // Fallback para dispositivos sem suporte ao clipboard API
+        const textArea = document.createElement('textarea');
+        textArea.value = link;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        
+        const successful = document.execCommand('copy');
+        document.body.removeChild(textArea);
+        
+        if (!successful) {
+          throw new Error('Comando de cópia não suportado');
+        }
+        console.log('Link copiado com sucesso via fallback');
+      }
+      
+      // Toast de sucesso
+      toast({
+        title: "✅ Link copiado!",
+        description: "Seu link de indicação foi copiado para a área de transferência.",
+        duration: 3000,
+      });
+      
+    } catch (error) {
+      console.error('Erro ao copiar link:', error);
+      
+      // Exibir o link para cópia manual
+      const linkElement = document.createElement('div');
+      linkElement.innerHTML = `
+        <div style="padding: 12px; background: #f3f4f6; border-radius: 6px; margin-top: 8px;">
+          <p style="margin: 0 0 8px 0; font-weight: 500;">Copie manualmente:</p>
+          <input type="text" value="${link}" readonly style="width: 100%; padding: 4px; border: 1px solid #ccc; border-radius: 4px;" onclick="this.select()" />
+        </div>
+      `;
+      
+      toast({
+        title: "❌ Erro ao copiar automaticamente",
+        description: "Use o link abaixo para copiar manualmente:",
+        variant: "destructive",
+        duration: 5000,
       });
     }
   };
