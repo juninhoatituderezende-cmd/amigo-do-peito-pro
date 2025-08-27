@@ -1,21 +1,21 @@
-import { NotificationCenter } from "@/components/shared/NotificationCenter";
+import { CreditBalance } from "@/components/user/CreditBalance";
 import Header from "@/components/Header";
 import DashboardFooter from "@/components/DashboardFooter";
 
-const UserNotifications = () => {
+const UserCredits = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
       
       <main className="container mx-auto px-4 py-8">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold">Notificações</h1>
+          <h1 className="text-3xl font-bold">Meus Créditos</h1>
           <p className="text-muted-foreground">
-            Acompanhe suas mensagens e alertas
+            Acompanhe seu saldo e transações
           </p>
         </div>
         
-        <NotificationCenter />
+        <CreditBalance />
       </main>
 
       <DashboardFooter />
@@ -23,4 +23,4 @@ const UserNotifications = () => {
   );
 };
 
-export default UserNotifications;
+export default UserCredits;

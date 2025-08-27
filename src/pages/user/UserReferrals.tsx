@@ -1,21 +1,21 @@
-import { NotificationCenter } from "@/components/shared/NotificationCenter";
+import { ReferralSystem } from "@/components/user/ReferralSystem";
 import Header from "@/components/Header";
 import DashboardFooter from "@/components/DashboardFooter";
 
-const UserNotifications = () => {
+const UserReferrals = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
       
       <main className="container mx-auto px-4 py-8">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold">Notificações</h1>
+          <h1 className="text-3xl font-bold">Minhas Indicações</h1>
           <p className="text-muted-foreground">
-            Acompanhe suas mensagens e alertas
+            Gerencie suas indicações e acompanhe comissões
           </p>
         </div>
         
-        <NotificationCenter />
+        <ReferralSystem />
       </main>
 
       <DashboardFooter />
@@ -23,4 +23,4 @@ const UserNotifications = () => {
   );
 };
 
-export default UserNotifications;
+export default UserReferrals;

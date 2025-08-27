@@ -161,42 +161,23 @@ const Header = () => {
                   <LayoutDashboard className="h-5 w-5" />
                   Meu Dashboard
                 </Link>
-                <Link to="/usuario/dashboard" 
+                <Link to="/usuario/creditos" 
                   className="text-foreground hover:text-primary transition-all hover-gold flex items-center gap-3"
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    // Navegar para tab de créditos após um pequeno delay
-                    setTimeout(() => {
-                      const creditsTab = document.querySelector('[value="credits"]') as HTMLElement;
-                      if (creditsTab) creditsTab.click();
-                    }, 100);
-                  }}
+                  onClick={() => setMobileMenuOpen(false)}
                 >
                   <Wallet className="h-5 w-5" />
                   Créditos
                 </Link>
-                <Link to="/usuario/dashboard" 
+                <Link to="/usuario/grupos" 
                   className="text-foreground hover:text-primary transition-all hover-gold flex items-center gap-3"
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    setTimeout(() => {
-                      const groupsTab = document.querySelector('[value="groups"]') as HTMLElement;
-                      if (groupsTab) groupsTab.click();
-                    }, 100);
-                  }}
+                  onClick={() => setMobileMenuOpen(false)}
                 >
                   <Users className="h-5 w-5" />
                   Grupos
                 </Link>
-                <Link to="/usuario/dashboard" 
+                <Link to="/usuario/indicacoes" 
                   className="text-foreground hover:text-primary transition-all hover-gold flex items-center gap-3"
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    setTimeout(() => {
-                      const referralsTab = document.querySelector('[value="referrals"]') as HTMLElement;
-                      if (referralsTab) referralsTab.click();
-                    }, 100);
-                  }}
+                  onClick={() => setMobileMenuOpen(false)}
                 >
                   <TrendingUp className="h-5 w-5" />
                   Indicações
@@ -208,15 +189,9 @@ const Header = () => {
                   <ShoppingCart className="h-5 w-5" />
                   Marketplace
                 </Link>
-                <Link to="/usuario/dashboard" 
+                <Link to="/usuario/perfil" 
                   className="text-foreground hover:text-primary transition-all hover-gold flex items-center gap-3"
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    setTimeout(() => {
-                      const profileTab = document.querySelector('[value="profile"]') as HTMLElement;
-                      if (profileTab) profileTab.click();
-                    }, 100);
-                  }}
+                  onClick={() => setMobileMenuOpen(false)}
                 >
                   <Settings className="h-5 w-5" />
                   Configurações

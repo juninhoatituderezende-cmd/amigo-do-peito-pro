@@ -44,6 +44,10 @@ import UserMarketplace from "./pages/user/UserMarketplace";
 import UserWithdrawals from "./pages/user/UserWithdrawals";
 import UserNotifications from "./pages/user/UserNotifications";
 import UserHistory from "./pages/user/UserHistory";
+import UserGroups from "./pages/user/UserGroups";
+import UserReferrals from "./pages/user/UserReferrals";
+import UserCredits from "./pages/user/UserCredits";
+import UserProfile from "./pages/user/UserProfile";
 import Marketplace from "./pages/Marketplace";
 import InfluencerRegister from "./pages/InfluencerRegister";
 import InfluencerLogin from "./pages/InfluencerLogin";
@@ -111,6 +115,26 @@ const App = () => (
               <Route path="/usuario/dashboard" element={
                 <ProtectedRoute role="user">
                   <UserDashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="/usuario/grupos" element={
+                <ProtectedRoute role="user">
+                  <UserGroups />
+                </ProtectedRoute>
+              } />
+              <Route path="/usuario/indicacoes" element={
+                <ProtectedRoute role="user">
+                  <UserReferrals />
+                </ProtectedRoute>
+              } />
+              <Route path="/usuario/creditos" element={
+                <ProtectedRoute role="user">
+                  <UserCredits />
+                </ProtectedRoute>
+              } />
+              <Route path="/usuario/perfil" element={
+                <ProtectedRoute role="user">
+                  <UserProfile />
                 </ProtectedRoute>
               } />
               <Route path="/usuario/marketplace" element={

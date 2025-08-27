@@ -7,26 +7,14 @@ import Header from "@/components/Header";
 import DashboardFooter from "@/components/DashboardFooter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { UserGroupsHistory } from "@/components/user/UserGroupsHistory";
-import { UserProfile } from "@/components/user/UserProfile";
-import { NotificationCenter } from "@/components/shared/NotificationCenter";
-import { ReferralSystem } from "@/components/user/ReferralSystem";
-import { PlansSelection } from "@/components/plans/PlansSelection";
-import { CreditBalance } from "@/components/user/CreditBalance";
 import { ParticipationDashboard } from "@/components/user/ParticipationDashboard";
 import { 
   User, 
-  Users, 
-  Bell, 
   ShoppingCart, 
-  Settings, 
-  Share, 
   Wallet,
   Target,
-  Package,
   TrendingUp,
-  Gift
+  Bell
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 
@@ -230,94 +218,10 @@ const UserDashboard = () => {
           </div>
         </div>
 
-        <Tabs defaultValue="dashboard" className="space-y-6">
-          {/* Menu de Navegação - Unificado para Desktop e Mobile */}
-          <div className="w-full">
-            {/* Layout Desktop */}
-            <div className="hidden lg:block">
-              <TabsList className="grid w-full grid-cols-6">
-                <TabsTrigger value="dashboard" className="flex items-center gap-2">
-                  <Target className="h-4 w-4" />
-                  Dashboard
-                </TabsTrigger>
-                <TabsTrigger value="groups" className="flex items-center gap-2">
-                  <Users className="h-4 w-4" />
-                  Grupos
-                </TabsTrigger>
-                <TabsTrigger value="referrals" className="flex items-center gap-2">
-                  <Share className="h-4 w-4" />
-                  Indicações
-                </TabsTrigger>
-                <TabsTrigger value="credits" className="flex items-center gap-2">
-                  <Wallet className="h-4 w-4" />
-                  Créditos
-                </TabsTrigger>
-                <TabsTrigger value="notifications" className="flex items-center gap-2">
-                  <Bell className="h-4 w-4" />
-                  Notificações
-                </TabsTrigger>
-                <TabsTrigger value="profile" className="flex items-center gap-2">
-                  <Settings className="h-4 w-4" />
-                  Perfil
-                </TabsTrigger>
-              </TabsList>
-            </div>
-
-            {/* Layout Mobile - Agora no topo também */}
-            <div className="lg:hidden w-full">
-              <TabsList className="grid grid-cols-6 w-full h-14">
-                <TabsTrigger value="dashboard" className="flex flex-col items-center justify-center p-1 h-full">
-                  <Target className="h-4 w-4 mb-1" />
-                  <span className="text-xs">Dashboard</span>
-                </TabsTrigger>
-                <TabsTrigger value="groups" className="flex flex-col items-center justify-center p-1 h-full">
-                  <Users className="h-4 w-4 mb-1" />
-                  <span className="text-xs">Grupos</span>
-                </TabsTrigger>
-                <TabsTrigger value="referrals" className="flex flex-col items-center justify-center p-1 h-full">
-                  <Share className="h-4 w-4 mb-1" />
-                  <span className="text-xs">Indicações</span>
-                </TabsTrigger>
-                <TabsTrigger value="credits" className="flex flex-col items-center justify-center p-1 h-full">
-                  <Wallet className="h-4 w-4 mb-1" />
-                  <span className="text-xs">Créditos</span>
-                </TabsTrigger>
-                <TabsTrigger value="notifications" className="flex flex-col items-center justify-center p-1 h-full">
-                  <Bell className="h-4 w-4 mb-1" />
-                  <span className="text-xs">Notificações</span>
-                </TabsTrigger>
-                <TabsTrigger value="profile" className="flex flex-col items-center justify-center p-1 h-full">
-                  <Settings className="h-4 w-4 mb-1" />
-                  <span className="text-xs">Perfil</span>
-                </TabsTrigger>
-              </TabsList>
-            </div>
-          </div>
-
-          <TabsContent value="dashboard">
-            <ParticipationDashboard />
-          </TabsContent>
-
-          <TabsContent value="groups">
-            <UserGroupsHistory />
-          </TabsContent>
-
-          <TabsContent value="referrals">
-            <ReferralSystem />
-          </TabsContent>
-
-          <TabsContent value="credits">
-            <CreditBalance />
-          </TabsContent>
-
-          <TabsContent value="notifications">
-            <NotificationCenter />
-          </TabsContent>
-
-          <TabsContent value="profile">
-            <UserProfile />
-          </TabsContent>
-        </Tabs>
+        {/* Conteúdo Principal do Dashboard */}
+        <div className="space-y-6">
+          <ParticipationDashboard />
+        </div>
       </main>
 
       <DashboardFooter />
