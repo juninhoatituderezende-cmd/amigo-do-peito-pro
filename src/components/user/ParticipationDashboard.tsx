@@ -169,53 +169,87 @@ export const ParticipationDashboard = () => {
     return Math.min((currentParticipants / maxParticipants) * 100, 100);
   };
 
-  const copyReferralLink = () => {
+  const copyReferralLink = async () => {
     if (!referralData?.referralCode) {
       toast({
         title: "Erro",
-        description: "Código de referência não encontrado. Recarregue a página.",
+        description: "Código de referência não encontrado.",
         variant: "destructive"
       });
       return;
     }
 
     const link = `${window.location.origin}/register?ref=${referralData.referralCode}`;
-    console.log('🔄 BOTÃO CLICADO! Tentando copiar:', link);
+    console.log('🚀 FUNÇÃO EXECUTADA - Link:', link);
     
-    // Método que funciona no iOS Safari
-    const input = document.createElement('input');
-    input.value = link;
-    input.type = 'text';
-    input.style.position = 'fixed';
-    input.style.top = '50%';
-    input.style.left = '50%';
-    input.style.transform = 'translate(-50%, -50%)';
-    input.style.zIndex = '9999';
-    input.style.padding = '10px';
-    input.style.border = '2px solid #000';
-    input.style.background = 'white';
-    input.style.fontSize = '16px'; // Evita zoom no iOS
-    
-    document.body.appendChild(input);
-    input.focus();
-    input.select();
-    
-    // Toast imediato para mostrar que funcionou
-    toast({
-      title: "✅ Campo de texto apareceu!",
-      description: "Toque em 'Copiar' no menu que apareceu ou selecione tudo e copie",
-      duration: 5000,
-    });
-    
-    // Remove o input após 5 segundos
-    setTimeout(() => {
-      if (document.body.contains(input)) {
-        document.body.removeChild(input);
-        console.log('🗑️ Input removido após timeout');
+    // 1º: Tentar Web Share API (funciona no iOS)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Convite - Amigo do Peito',
+          text: 'Junte-se ao meu grupo usando meu código de indicação!',
+          url: link
+        });
+        console.log('✅ Compartilhado via Web Share API');
+        toast({
+          title: "Link compartilhado! 🎉",
+          description: "Obrigado por indicar amigos!",
+        });
+        return;
+      } catch (error) {
+        console.log('⚠️ Web Share cancelado ou falhou:', error);
       }
-    }, 5000);
+    }
+
+    // 2º: Tentar clipboard simples
+    try {
+      await navigator.clipboard.writeText(link);
+      console.log('✅ Copiado via clipboard');
+      toast({
+        title: "Link copiado! 📋",
+        description: "Cole em qualquer conversa para indicar amigos!",
+      });
+      return;
+    } catch (error) {
+      console.log('⚠️ Clipboard falhou:', error);
+    }
+
+    // 3º: Mostrar modal com link selecionável
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.8); z-index: 9999;
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px;
+    `;
     
-    console.log('✅ Input field criado e focado!');
+    modal.innerHTML = `
+      <div style="background: white; padding: 20px; border-radius: 12px; max-width: 90%; text-align: center;">
+        <p style="margin-bottom: 15px; font-weight: bold; color: #333;">Toque e segure para copiar:</p>
+        <input type="text" value="${link}" readonly 
+               style="width: 100%; padding: 12px; font-size: 14px; border: 2px solid #007AFF; 
+                      border-radius: 8px; text-align: center; background: #f0f0f0;" 
+               onclick="this.select()" />
+        <button onclick="document.body.removeChild(this.closest('div'))" 
+                style="margin-top: 15px; padding: 10px 20px; background: #007AFF; 
+                       color: white; border: none; border-radius: 8px; font-size: 16px;">
+          Fechar
+        </button>
+      </div>
+    `;
+    
+    modal.onclick = (e) => {
+      if (e.target === modal) document.body.removeChild(modal);
+    };
+    
+    document.body.appendChild(modal);
+    console.log('✅ Modal criado com sucesso');
+    
+    toast({
+      title: "Toque e segure no link",
+      description: "Selecione 'Copiar' no menu que aparecer",
+      duration: 4000,
+    });
   };
 
   if (loading) {
