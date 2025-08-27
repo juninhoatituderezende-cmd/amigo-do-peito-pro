@@ -40,6 +40,11 @@ export const generateReferralLink = (referralCode: string, baseUrl: string = win
   return `${baseUrl}/register?ref=${referralCode}`;
 };
 
+// Função para gerar link de grupo específico
+export const generateGroupReferralLink = (planId: string, referralCode: string, baseUrl: string = window.location.origin) => {
+  return `${baseUrl}/plano/${planId}?ref=${referralCode}`;
+};
+
 // Função para gerar código de referência único
 export const generateReferralCode = (userName: string) => {
   const cleanName = userName.replace(/\s+/g, '').toUpperCase();

@@ -50,7 +50,7 @@ import UserCredits from "./pages/user/UserCredits";
 import UserProfile from "./pages/user/UserProfile";
 import Marketplace from "./pages/Marketplace";
 import Plans from "./pages/Plans";
-import { PlanSubscription } from "./pages/PlanSubscription";
+import PlanSubscription from "./pages/PlanSubscription";
 import { PlanDetails } from "./pages/PlanDetails";
 import InfluencerRegister from "./pages/InfluencerRegister";
 import InfluencerLogin from "./pages/InfluencerLogin";

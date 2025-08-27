@@ -9,6 +9,7 @@ import { UserAvatar } from "@/components/ui/user-avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ParticipationDashboard } from "@/components/user/ParticipationDashboard";
+import { GroupDashboard } from "@/components/user/GroupDashboard";
 import { 
   ShoppingCart, 
   Wallet,
@@ -218,7 +219,7 @@ const UserDashboard = () => {
 
         {/* Conteúdo Principal do Dashboard */}
         <div className="space-y-6">
-          <ParticipationDashboard />
+          <GroupDashboard />
         </div>
       </main>
 

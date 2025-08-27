@@ -257,6 +257,7 @@ export type Database = {
           group_id: string | null
           id: string
           joined_at: string | null
+          referrer_code: string | null
           referrer_id: string | null
           status: string | null
           user_id: string | null
@@ -266,6 +267,7 @@ export type Database = {
           group_id?: string | null
           id?: string
           joined_at?: string | null
+          referrer_code?: string | null
           referrer_id?: string | null
           status?: string | null
           user_id?: string | null
@@ -275,6 +277,7 @@ export type Database = {
           group_id?: string | null
           id?: string
           joined_at?: string | null
+          referrer_code?: string | null
           referrer_id?: string | null
           status?: string | null
           user_id?: string | null
@@ -552,6 +555,7 @@ export type Database = {
           group_number: number
           id: string
           max_participants: number | null
+          referral_code: string | null
           service_id: string | null
           status: Database["public"]["Enums"]["group_status"] | null
           target_amount: number
@@ -566,6 +570,7 @@ export type Database = {
           group_number: number
           id?: string
           max_participants?: number | null
+          referral_code?: string | null
           service_id?: string | null
           status?: Database["public"]["Enums"]["group_status"] | null
           target_amount: number
@@ -580,6 +585,7 @@ export type Database = {
           group_number?: number
           id?: string
           max_participants?: number | null
+          referral_code?: string | null
           service_id?: string | null
           status?: Database["public"]["Enums"]["group_status"] | null
           target_amount?: number
@@ -1007,6 +1013,14 @@ export type Database = {
         }
         Returns: string
       }
+      create_user_plan_group: {
+        Args: { entry_amount: number; plan_uuid: string; user_uuid: string }
+        Returns: string
+      }
+      generate_group_referral_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       generate_referral_code: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -1018,6 +1032,14 @@ export type Database = {
           account_type: Database["public"]["Enums"]["user_role"]
           approved: boolean
         }[]
+      }
+      join_group_by_referral: {
+        Args: {
+          entry_amount: number
+          referral_code_param: string
+          user_uuid: string
+        }
+        Returns: string
       }
       login_with_account_type: {
         Args: {
@@ -1050,6 +1072,10 @@ export type Database = {
           total_amount: number
         }
         Returns: undefined
+      }
+      user_has_active_plan: {
+        Args: { user_uuid: string }
+        Returns: boolean
       }
       validate_unique_email_by_role: {
         Args: {

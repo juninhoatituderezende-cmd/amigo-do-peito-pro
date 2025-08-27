@@ -1,544 +1,380 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { CheckCircle, Users, DollarSign, Clock, Star, ArrowRight, Gift } from 'lucide-react';
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import Header from '@/components/Header';
+import DashboardFooter from '@/components/DashboardFooter';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { 
+  CheckCircle, 
+  Users, 
+  ArrowLeft, 
+  CreditCard,
+  Share2,
+  Clock
+} from 'lucide-react';
 
-interface PlanData {
+interface Plan {
   id: string;
-  plan_code: string;
   name: string;
   description: string;
-  category_name: string;
-  total_price: number;
-  entry_price: number;
+  price: number;
+  entryPrice: number;
+  category: string;
+  features: string[];
   max_participants: number;
-  allow_professional_choice: boolean;
-  benefits: string[];
-  image_url: string;
+  duration_months: number;
+  image_url?: string;
 }
 
-interface Professional {
-  id: string;
-  nome: string;
-  especialidade: string;
-  local_atendimento: string;
-}
-
-interface ReferrerInfo {
-  name: string;
-  commission: number;
-}
-
-interface UserForm {
-  nome: string;
-  email: string;
-  telefone: string;
-  password: string;
-  confirmPassword: string;
-  selectedProfessional: string;
-}
-
-export function PlanSubscription() {
-  const { planCode } = useParams();
+const PlanSubscription = () => {
+  const { planId } = useParams<{ planId: string }>();
   const [searchParams] = useSearchParams();
   const referralCode = searchParams.get('ref');
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, register, login } = useAuth();
   
-  const [planData, setPlanData] = useState<PlanData | null>(null);
-  const [professionals, setProfessionals] = useState<Professional[]>([]);
-  const [referrerInfo, setReferrerInfo] = useState<ReferrerInfo | null>(null);
+  const [plan, setPlan] = useState<Plan | null>(null);
   const [loading, setLoading] = useState(true);
-  const [enrolling, setEnrolling] = useState(false);
-  const [isNewUser, setIsNewUser] = useState(true);
-  
-  const [userForm, setUserForm] = useState<UserForm>({
-    nome: '',
-    email: '',
-    telefone: '',
-    password: '',
-    confirmPassword: '',
-    selectedProfessional: ''
-  });
+  const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
-    if (planCode) {
-      loadPlanData();
+    if (planId) {
+      loadPlan();
     }
-  }, [planCode]);
+  }, [planId]);
 
-  const loadPlanData = async () => {
-    setLoading(true);
+  const loadPlan = async () => {
     try {
-      // Usar tabela services como proxy para dados do plano
-      const { data: planData, error: planError } = await supabase
-        .from('services')
-        .select(`
-          *,
-          professionals(id, full_name)
-        `)
-        .eq('id', planCode)
+      setLoading(true);
+      
+      const { data, error } = await supabase
+        .from('custom_plans')
+        .select('*')
+        .eq('id', planId)
+        .eq('active', true)
         .single();
 
-      if (planError) throw planError;
-
-      if (planData) {
-        // Simular dados do plano usando service
-        setPlanData({
-          id: planData.id,
-          plan_code: planCode || '',
-          name: planData.name,
-          description: planData.description,
-          category_name: planData.category,
-          total_price: planData.price,
-          entry_price: planData.price * 0.1, // 10% do valor total
-          max_participants: 10,
-          allow_professional_choice: true,
-          benefits: ['Acesso completo ao serviço', 'Suporte técnico', 'Garantia de qualidade'],
-          image_url: ''
+      if (error) throw error;
+      if (!data) {
+        toast({
+          title: "Plano não encontrado",
+          description: "Este plano não existe ou não está mais ativo.",
+          variant: "destructive"
         });
-
-        // Carregar lista de profissionais do plano
-        const { data: professionalsData } = await supabase
-          .from('profiles')
-          .select('id, full_name, phone')
-          .eq('role', 'professional')
-          .order('full_name');
-        
-        if (professionalsData) {
-          setProfessionals(professionalsData.map(p => ({
-            id: p.id,
-            nome: p.full_name || 'Nome não informado',
-            especialidade: 'Categoria não informada',
-            local_atendimento: p.phone || 'Localização não informada'
-          })));
-        }
+        navigate('/plans');
+        return;
       }
 
-      // Se há código de referência, buscar informações do referenciador
-      if (referralCode && planData) {
-        // Simular dados do referenciador
-        setReferrerInfo({
-          name: 'Usuário Referenciador',
-          commission: planData.price * 0.25
-        });
-      }
-
+      setPlan({
+        id: data.id,
+        name: data.name,
+        description: data.description || '',
+        price: data.price,
+        entryPrice: Math.round(data.price * 0.1),
+        category: data.category || 'service',
+        features: Array.isArray(data.features) ? data.features.map(String) : [],
+        max_participants: data.max_participants || 10,
+        duration_months: data.duration_months || 1,
+        image_url: data.image_url
+      });
     } catch (error) {
       console.error('Erro ao carregar plano:', error);
       toast({
         title: "Erro",
-        description: "Plano não encontrado ou inativo.",
-        variant: "destructive",
+        description: "Erro ao carregar detalhes do plano.",
+        variant: "destructive"
       });
+      navigate('/plans');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleEnrollment = async () => {
-    if (!planData) return;
-
-    // Validações
-    if (!userForm.nome || !userForm.email || !userForm.telefone) {
-      toast({
-        title: "Erro",
-        description: "Preencha todos os campos obrigatórios.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (isNewUser && (!userForm.password || userForm.password !== userForm.confirmPassword)) {
-      toast({
-        title: "Erro",
-        description: "Senhas não conferem.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (planData.allow_professional_choice && !userForm.selectedProfessional) {
-      toast({
-        title: "Erro",
-        description: "Selecione um profissional.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setEnrolling(true);
+  const handleSubscribe = async () => {
+    if (!plan || !user) return;
+    
     try {
-      let userId = user?.id;
-
-      // Se é novo usuário, criar conta
-      if (isNewUser && !user) {
-        await register(userForm.email, userForm.password, {
-          nome: userForm.nome,
-          email: userForm.email,
-          telefone: userForm.telefone
-        }, null);
-        
-        // Após registro, fazer login
-        await login(userForm.email, userForm.password, null);
-        
-        // Buscar o usuário atual após login
-        const { data: { user: currentUser } } = await supabase.auth.getUser();
-        userId = currentUser?.id;
+      setProcessing(true);
+      
+      // Verificar se usuário já tem plano ativo
+      const { data: hasActivePlan } = await supabase
+        .rpc('user_has_active_plan', { user_uuid: user.id });
+      
+      if (hasActivePlan) {
+        toast({
+          title: "Já possui plano ativo",
+          description: "Você já está participando de um grupo. Acesse seu dashboard para ver o status.",
+          variant: "destructive"
+        });
+        navigate('/usuario/dashboard');
+        return;
       }
 
-      // Se é usuário existente, fazer login
-      if (!isNewUser && !user) {
-        await login(userForm.email, userForm.password, null);
+      let groupId;
+      
+      if (referralCode) {
+        // Juntar-se a um grupo existente via código de referência
+        const { data, error } = await supabase
+          .rpc('join_group_by_referral', {
+            user_uuid: user.id,
+            referral_code_param: referralCode,
+            entry_amount: plan.entryPrice
+          });
+          
+        if (error) throw error;
+        groupId = data;
         
-        // Buscar o usuário atual após login
-        const { data: { user: currentUser } } = await supabase.auth.getUser();
-        userId = currentUser?.id;
+        toast({
+          title: "✅ Bem-vindo ao grupo!",
+          description: `Você se juntou ao grupo através do código ${referralCode}. Agora você faz parte do grupo para ${plan.name}!`,
+        });
+      } else {
+        // Criar novo grupo
+        const { data, error } = await supabase
+          .rpc('create_user_plan_group', {
+            user_uuid: user.id,
+            plan_uuid: plan.id,
+            entry_amount: plan.entryPrice
+          });
+          
+        if (error) throw error;
+        groupId = data;
+        
+        toast({
+          title: "🎉 Grupo criado!",
+          description: `Seu grupo para ${plan.name} foi criado! Agora você pode compartilhar seu link de convite.`,
+        });
       }
 
-      // Use mock enrollment process since table doesn't exist
-      const enrollmentData = {
-        success: true,
-        plan_id: planCode,
-        participant_id: userId,
-        message: 'Inscrição realizada com sucesso!'
-      };
-
-      const enrollmentError = null;
-
-      if (enrollmentError) throw enrollmentError;
-
-      toast({
-        title: "Inscrição realizada!",
-        description: "Sua inscrição foi processada com sucesso!",
-      });
-
-      // Redirecionar para dashboard do usuário
-      window.location.href = '/usuario';
-
+      // Redirecionar para o dashboard do usuário
+      navigate('/usuario/dashboard');
+      
     } catch (error: any) {
-      console.error('Erro na inscrição:', error);
+      console.error('Erro ao se inscrever no plano:', error);
       toast({
-        title: "Erro",
-        description: error.message || "Erro ao processar inscrição. Tente novamente.",
-        variant: "destructive",
+        title: "Erro na inscrição",
+        description: error.message || "Erro ao processar sua inscrição. Tente novamente.",
+        variant: "destructive"
       });
     } finally {
-      setEnrolling(false);
+      setProcessing(false);
     }
-  };
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Carregando plano...</p>
-        </div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary" />
       </div>
     );
   }
 
-  if (!planData) {
+  if (!plan) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center">
-        <Card className="max-w-md">
-          <CardHeader>
-            <CardTitle>Plano não encontrado</CardTitle>
-            <CardDescription>
-              O plano solicitado não existe ou não está mais disponível.
-            </CardDescription>
-          </CardHeader>
-        </Card>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">Plano não encontrado</h2>
+          <Button onClick={() => navigate('/plans')}>
+            Voltar aos Planos
+          </Button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted">
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          {/* Header do plano */}
-          <Card className="mb-8">
-            <CardHeader className="text-center">
-              <div className="flex justify-center items-center space-x-2 mb-4">
-                <Badge variant="outline">{planData.category_name}</Badge>
-                {referrerInfo && (
-                  <Badge variant="secondary">
-                    <Gift className="mr-1 h-3 w-3" />
-                    Indicado por {referrerInfo.name}
-                  </Badge>
-                )}
-              </div>
-              <CardTitle className="text-3xl font-bold">{planData.name}</CardTitle>
-              <CardDescription className="text-lg mt-2">
-                {planData.description}
-              </CardDescription>
-            </CardHeader>
-          </Card>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Informações do plano */}
-            <div className="lg:col-span-2 space-y-6">
-              {planData.image_url && (
-                <Card>
-                  <img 
-                    src={planData.image_url} 
-                    alt={planData.name}
-                    className="w-full h-48 object-cover rounded-t-lg"
-                  />
-                </Card>
-              )}
-
-              {/* Benefícios */}
-              {planData.benefits.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <Star className="mr-2 h-5 w-5" />
-                      Benefícios Inclusos
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-2">
-                      {planData.benefits.map((benefit, index) => (
-                        <li key={index} className="flex items-start">
-                          <CheckCircle className="mr-2 h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                          <span>{benefit}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Como funciona */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Clock className="mr-2 h-5 w-5" />
-                    Como Funciona
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-start space-x-3">
-                      <div className="bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">1</div>
-                      <div>
-                        <h4 className="font-semibold">Inscreva-se no grupo</h4>
-                        <p className="text-sm text-muted-foreground">Pague a entrada e garante sua vaga</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start space-x-3">
-                      <div className="bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">2</div>
-                      <div>
-                        <h4 className="font-semibold">Forme o grupo</h4>
-                        <p className="text-sm text-muted-foreground">Convide amigos para completar {planData.max_participants} participantes</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start space-x-3">
-                      <div className="bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">3</div>
-                      <div>
-                        <h4 className="font-semibold">Seja contemplado</h4>
-                        <p className="text-sm text-muted-foreground">Quando o grupo estiver completo, um participante é sorteado</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start space-x-3">
-                      <div className="bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">4</div>
-                      <div>
-                        <h4 className="font-semibold">Realize o serviço</h4>
-                        <p className="text-sm text-muted-foreground">Use seu voucher com o profissional</p>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Formulário de inscrição */}
-            <div className="space-y-6">
-              {/* Resumo financeiro */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <DollarSign className="mr-2 h-5 w-5" />
-                    Valor do Plano
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-primary">
-                      {formatCurrency(planData.entry_price)}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      Entrada para participar
-                    </div>
-                    <div className="text-sm mt-2">
-                      Valor total do serviço: {formatCurrency(planData.total_price)}
-                    </div>
-                  </div>
-                  <Separator />
-                  <div className="flex items-center justify-between text-sm">
-                    <span>Participantes por grupo:</span>
-                    <Badge variant="outline">{planData.max_participants}</Badge>
-                  </div>
-                  {referrerInfo && (
-                    <Alert>
-                      <Gift className="h-4 w-4" />
-                      <AlertDescription>
-                        Você foi indicado por <strong>{referrerInfo.name}</strong>. 
-                        Ao se inscrever, ele ganhará {formatCurrency(referrerInfo.commission)} de comissão.
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Formulário */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Inscreva-se Agora</CardTitle>
-                  <CardDescription>
-                    {user ? "Complete sua inscrição" : "Crie sua conta e participe"}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {!user && (
-                    <div className="flex space-x-2 mb-4">
-                      <Button
-                        variant={isNewUser ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setIsNewUser(true)}
-                      >
-                        Nova Conta
-                      </Button>
-                      <Button
-                        variant={!isNewUser ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setIsNewUser(false)}
-                      >
-                        Já Tenho Conta
-                      </Button>
-                    </div>
-                  )}
-
-                  <div className="space-y-2">
-                    <Label htmlFor="nome">Nome Completo *</Label>
-                    <Input
-                      id="nome"
-                      value={userForm.nome}
-                      onChange={(e) => setUserForm(prev => ({ ...prev, nome: e.target.value }))}
-                      placeholder="Seu nome completo"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="email">E-mail *</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={userForm.email}
-                      onChange={(e) => setUserForm(prev => ({ ...prev, email: e.target.value }))}
-                      placeholder="seu@email.com"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="telefone">Telefone *</Label>
-                    <Input
-                      id="telefone"
-                      value={userForm.telefone}
-                      onChange={(e) => setUserForm(prev => ({ ...prev, telefone: e.target.value }))}
-                      placeholder="(11) 99999-9999"
-                    />
-                  </div>
-
-                  {!user && (
-                    <>
-                      <div className="space-y-2">
-                        <Label htmlFor="password">Senha *</Label>
-                        <Input
-                          id="password"
-                          type="password"
-                          value={userForm.password}
-                          onChange={(e) => setUserForm(prev => ({ ...prev, password: e.target.value }))}
-                          placeholder="Sua senha"
-                        />
-                      </div>
-
-                      {isNewUser && (
-                        <div className="space-y-2">
-                          <Label htmlFor="confirmPassword">Confirmar Senha *</Label>
-                          <Input
-                            id="confirmPassword"
-                            type="password"
-                            value={userForm.confirmPassword}
-                            onChange={(e) => setUserForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                            placeholder="Confirme sua senha"
-                          />
-                        </div>
-                      )}
-                    </>
-                  )}
-
-                  {planData.allow_professional_choice && professionals.length > 0 && (
-                    <div className="space-y-2">
-                      <Label htmlFor="professional">Escolha o Profissional</Label>
-                      <Select value={userForm.selectedProfessional} onValueChange={(value) => setUserForm(prev => ({ ...prev, selectedProfessional: value }))}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione um profissional" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {professionals.map((professional) => (
-                            <SelectItem key={professional.id} value={professional.id}>
-                              <div className="text-left">
-                                <div className="font-medium">{professional.nome}</div>
-                                <div className="text-sm text-muted-foreground">
-                                  {professional.especialidade} - {professional.local_atendimento}
-                                </div>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-
-                  <Button onClick={handleEnrollment} disabled={enrolling} className="w-full">
-                    {enrolling ? "Processando..." : (
-                      <>
-                        Inscrever-se por {formatCurrency(planData.entry_price)}
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </>
-                    )}
-                  </Button>
-
-                  <p className="text-xs text-muted-foreground text-center">
-                    Ao se inscrever, você concorda com nossos termos de uso
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
+    <div className="min-h-screen bg-background">
+      <Header />
+      
+      <main className="container mx-auto px-4 py-8 max-w-2xl">
+        <div className="mb-6">
+          <Button 
+            variant="ghost" 
+            onClick={() => navigate('/plans')}
+            className="mb-4"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Voltar aos Planos
+          </Button>
         </div>
-      </div>
+
+        {referralCode && (
+          <Card className="mb-6 border-green-200 bg-green-50">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <Share2 className="h-5 w-5 text-green-600" />
+                </div>
+                <div>
+                  <h4 className="font-medium text-green-800">Convite Detectado!</h4>
+                  <p className="text-sm text-green-600">
+                    Você foi convidado através do código: <strong>{referralCode}</strong>
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-2xl">{plan.name}</CardTitle>
+                <p className="text-muted-foreground mt-1">{plan.description}</p>
+              </div>
+              <Badge variant="secondary" className="capitalize">
+                {plan.category}
+              </Badge>
+            </div>
+          </CardHeader>
+          
+          <CardContent className="space-y-6">
+            {plan.image_url && (
+              <div className="relative h-48 w-full overflow-hidden rounded-lg">
+                <img
+                  src={plan.image_url}
+                  alt={plan.name}
+                  className="h-full w-full object-cover"
+                />
+              </div>
+            )}
+
+            {/* Pricing */}
+            <div className="bg-gray-50 rounded-lg p-6 text-center">
+              <div className="text-sm text-muted-foreground mb-2">
+                Valor total do serviço
+              </div>
+              <div className="text-xl font-medium text-gray-600 line-through mb-2">
+                R$ {plan.price.toLocaleString()}
+              </div>
+              <div className="text-sm text-muted-foreground mb-2">
+                {referralCode ? 'Você paga para entrar no grupo:' : 'Você paga apenas:'}
+              </div>
+              <div className="text-3xl font-bold text-primary">
+                R$ {plan.entryPrice.toLocaleString()}
+              </div>
+              <div className="text-xs text-muted-foreground mt-1">
+                entrada (10% do valor total)
+              </div>
+            </div>
+
+            {/* Group Info */}
+            <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
+              <div className="flex items-center gap-1">
+                <Users className="h-4 w-4" />
+                <span>{plan.max_participants} pessoas por grupo</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Clock className="h-4 w-4" />
+                <span>{plan.duration_months} {plan.duration_months === 1 ? 'mês' : 'meses'}</span>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Features */}
+            <div>
+              <h4 className="font-semibold mb-3">O que está incluído:</h4>
+              <div className="space-y-2">
+                {plan.features.map((feature, index) => (
+                  <div key={index} className="flex items-start gap-2">
+                    <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                    <span className="text-sm">{feature}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* How it works */}
+            <div>
+              <h4 className="font-semibold mb-3">Como funciona:</h4>
+              <div className="space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs font-bold">
+                    1
+                  </div>
+                  <div className="text-sm">
+                    <strong>
+                      {referralCode 
+                        ? 'Entre no grupo existente' 
+                        : 'Crie seu grupo'
+                      }
+                    </strong>
+                    <p className="text-muted-foreground">
+                      {referralCode 
+                        ? 'Você entrará no grupo do seu convite'
+                        : 'Você será o primeiro membro do grupo'
+                      }
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs font-bold">
+                    2
+                  </div>
+                  <div className="text-sm">
+                    <strong>Compartilhe e forme o grupo</strong>
+                    <p className="text-muted-foreground">
+                      {referralCode 
+                        ? 'Ajude a completar o grupo convidando mais pessoas'
+                        : 'Convide amigos para formar um grupo de 10 pessoas'
+                      }
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs font-bold">
+                    3
+                  </div>
+                  <div className="text-sm">
+                    <strong>Grupo completo = serviço liberado</strong>
+                    <p className="text-muted-foreground">
+                      Quando o grupo atingir 10 pessoas, todos poderão agendar o serviço
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Subscribe Button */}
+            <Button 
+              onClick={handleSubscribe}
+              disabled={processing || !user}
+              className="w-full py-6 text-lg font-semibold"
+              size="lg"
+            >
+              <CreditCard className="h-5 w-5 mr-2" />
+              {processing 
+                ? 'Processando...' 
+                : referralCode 
+                  ? `Entrar no Grupo - R$ ${plan.entryPrice.toLocaleString()}`
+                  : `Criar Grupo - R$ ${plan.entryPrice.toLocaleString()}`
+              }
+            </Button>
+
+            {!user && (
+              <p className="text-center text-sm text-muted-foreground">
+                Você precisa estar logado para se inscrever em um plano.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      </main>
+
+      <DashboardFooter />
     </div>
   );
-}
+};
+
+export default PlanSubscription;

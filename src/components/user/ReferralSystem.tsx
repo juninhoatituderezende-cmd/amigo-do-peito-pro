@@ -26,18 +26,58 @@ export const ReferralSystem = () => {
     pendingInvites: 0
   });
   const [loading, setLoading] = useState(true);
+  const [userGroups, setUserGroups] = useState<any[]>([]);
 
   useEffect(() => {
     if (user) {
       loadReferralData();
+      loadUserGroups();
     }
   }, [user]);
+
+  const loadUserGroups = async () => {
+    try {
+      const { data: groups } = await supabase
+        .from('group_participants')
+        .select(`
+          plan_groups!inner(
+            id,
+            referral_code,
+            service_id
+          )
+        `)
+        .eq('user_id', user?.id)
+        .eq('status', 'active');
+      
+      // Para cada grupo, buscar os detalhes do plano
+      const groupsWithPlans = await Promise.all(
+        (groups || []).map(async (group) => {
+          const { data: planData } = await supabase
+            .from('custom_plans')
+            .select('name')
+            .eq('id', group.plan_groups.service_id)
+            .single();
+
+          return {
+            plan_groups: {
+              ...group.plan_groups,
+              custom_plans: planData
+            }
+          };
+        })
+      );
+      
+      setUserGroups(groupsWithPlans);
+    } catch (error) {
+      console.error('Erro ao carregar grupos do usuário:', error);
+    }
+  };
 
   const loadReferralData = async () => {
     try {
       setLoading(true);
 
-      // Buscar dados do perfil do usuário para código de indicação
+      // Buscar dados do perfil do usuário para código de indicação pessoal
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('referral_code')
@@ -46,30 +86,46 @@ export const ReferralSystem = () => {
 
       if (profileError) throw profileError;
 
-      // Contar total de referências diretas
-      const { count: totalReferrals } = await supabase
-        .from('profiles')
-        .select('id', { count: 'exact' })
-        .eq('referred_by', user?.id);
+      // Contar referrals diretos através dos grupos (pessoas que usaram códigos dos grupos do usuário)
+      const { data: groupReferrals } = await supabase
+        .from('group_participants')
+        .select(`
+          referrer_code,
+          plan_groups!inner(
+            referral_code
+          )
+        `)
+        .neq('user_id', user?.id)
+        .not('referrer_code', 'is', null);
 
-      // Contar grupos formados (participações ativas)
+      // Buscar códigos dos grupos do usuário
+      const { data: userGroupCodes } = await supabase
+        .from('group_participants')
+        .select(`
+          plan_groups!inner(
+            referral_code
+          )
+        `)
+        .eq('user_id', user?.id);
+
+      const myGroupCodes = userGroupCodes?.map(ug => ug.plan_groups.referral_code) || [];
+      const totalReferrals = groupReferrals?.filter(gr => myGroupCodes.includes(gr.referrer_code)).length || 0;
+
+      // Contar grupos formados (participações ativas do usuário)
       const { count: activeParticipations } = await supabase
         .from('group_participants')
         .select('id', { count: 'exact' })
         .eq('user_id', user?.id)
         .eq('status', 'active');
 
-      // Para pendentes, vamos calcular como referências não confirmadas ou em análise
-      const pendingCount = Math.max(0, (totalReferrals || 0) - (activeParticipations || 0));
-
       const referralCode = profileData?.referral_code || user?.id?.slice(-8).toUpperCase() || '';
       
       setReferralData({
         referralCode,
-        referralLink: `https://${window.location.host}/register?ref=${referralCode}`,
-        totalReferrals: totalReferrals || 0,
+        referralLink: `${window.location.origin}/register?ref=${referralCode}`,
+        totalReferrals,
         groupsFormed: activeParticipations || 0,
-        pendingInvites: pendingCount
+        pendingInvites: 0 // Será calculado baseado no progresso dos grupos
       });
 
     } catch (error) {
@@ -84,24 +140,29 @@ export const ReferralSystem = () => {
     }
   };
 
-  const copyReferralLink = async () => {
-    if (!referralData.referralLink || !referralData.referralCode) {
-      toast({
-        title: "Erro",
-        description: "Link de referência não disponível. Tente recarregar a página.",
-        variant: "destructive"
-      });
-      return;
+  const copyReferralLink = async (groupId?: string, groupCode?: string) => {
+    // Se tiver um grupo específico, usar o link do grupo, senão usar o link geral de cadastro
+    let linkToCopy;
+    if (groupId && groupCode) {
+      linkToCopy = `${window.location.origin}/plano/${groupId}?ref=${groupCode}`;
+    } else {
+      if (!referralData.referralCode) {
+        toast({
+          title: "Erro",
+          description: "Código de referência não disponível.",
+          variant: "destructive"
+        });
+        return;
+      }
+      linkToCopy = `${window.location.origin}/register?ref=${referralData.referralCode}`;
     }
-
-    const linkToCopy = `https://${window.location.host}/register?ref=${referralData.referralCode}`;
 
     try {
       await navigator.clipboard.writeText(linkToCopy);
       
       toast({
         title: "✅ Link copiado!",
-        description: "Seu link de indicação foi copiado com sucesso.",
+        description: groupId ? "Link do grupo copiado!" : "Seu link de indicação foi copiado!",
         duration: 3000
       });
       
@@ -122,7 +183,7 @@ export const ReferralSystem = () => {
         
         toast({
           title: "✅ Link copiado!",
-          description: "Seu link de indicação foi copiado com sucesso.",
+          description: groupId ? "Link do grupo copiado!" : "Seu link de indicação foi copiado!",
           duration: 3000
         });
         
@@ -134,32 +195,25 @@ export const ReferralSystem = () => {
           description: "Selecione o link abaixo e copie (Ctrl+C)",
           duration: 5000
         });
-        
-        // Focar na área de cópia manual
-        setTimeout(() => {
-          const manualElement = document.querySelector('.manual-copy-text');
-          if (manualElement) {
-            manualElement.scrollIntoView({ behavior: 'smooth' });
-            const selection = window.getSelection();
-            const range = document.createRange();
-            range.selectNodeContents(manualElement);
-            selection?.removeAllRanges();
-            selection?.addRange(range);
-          }
-        }, 100);
       }
     }
   };
 
-  const shareReferralLink = () => {
+  const shareReferralLink = (groupId?: string, groupCode?: string, serviceName?: string) => {
+    const linkToShare = groupId && groupCode 
+      ? `${window.location.origin}/plano/${groupId}?ref=${groupCode}`
+      : `${window.location.origin}/register?ref=${referralData.referralCode}`;
+      
     if (navigator.share) {
       navigator.share({
-        title: "Participe do Amigo do Peito",
-        text: "Venha formar um grupo comigo e economizar em serviços estéticos!",
-        url: referralData.referralLink,
+        title: groupId ? "Participe do meu grupo!" : "Cadastre-se com minha indicação!",
+        text: groupId 
+          ? `Venha formar grupo comigo para ${serviceName} e economizar!`
+          : "Venha formar um grupo comigo e economizar em serviços estéticos!",
+        url: linkToShare,
       });
     } else {
-      copyReferralLink();
+      copyReferralLink(groupId, groupCode);
     }
   };
 
@@ -230,18 +284,66 @@ export const ReferralSystem = () => {
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Links dos Grupos */}
+          {userGroups.length > 0 && (
+            <div className="space-y-3">
+              <h4 className="font-medium">Links dos Seus Grupos:</h4>
+              {userGroups.map((group, index) => {
+                const groupCode = group.plan_groups.referral_code;
+                const serviceName = group.plan_groups.custom_plans?.name || 'Serviço';
+                const groupLink = `${window.location.origin}/plano/${group.plan_groups.service_id}?ref=${groupCode}`;
+                
+                return (
+                  <div key={index} className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium text-blue-800">{serviceName}</span>
+                      <Badge variant="secondary" className="font-mono text-xs">
+                        {groupCode}
+                      </Badge>
+                    </div>
+                    
+                    <div className="flex gap-2 mb-2">
+                      <Button 
+                        size="sm"
+                        variant="outline" 
+                        onClick={() => copyReferralLink(group.plan_groups.service_id, groupCode)}
+                        className="flex-1"
+                      >
+                        <Copy className="h-3 w-3 mr-1" />
+                        Copiar
+                      </Button>
+                      <Button 
+                        size="sm"
+                        onClick={() => shareReferralLink(group.plan_groups.service_id, groupCode, serviceName)}
+                        className="flex-1"
+                      >
+                        <Share className="h-3 w-3 mr-1" />
+                        Compartilhar
+                      </Button>
+                    </div>
+                    
+                    <div className="text-xs font-mono text-blue-600 bg-white p-2 rounded border break-all">
+                      {groupLink}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Link Geral de Indicação */}
           <div className="p-4 bg-gray-50 rounded-lg border">
-            <div className="flex items-center justify-between">
-              <div className="flex-1 mr-4">
-                <p className="text-sm font-medium text-gray-700 mb-1">Seu código:</p>
-                <Badge variant="secondary" className="text-lg font-mono">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-sm font-medium text-gray-700">Seu código pessoal:</p>
+                <Badge variant="secondary" className="font-mono">
                   {referralData.referralCode}
                 </Badge>
               </div>
             </div>
             
-            <div className="mt-4">
-              <p className="text-sm font-medium text-gray-700 mb-2">Link completo:</p>
+            <div className="mb-3">
+              <p className="text-sm font-medium text-gray-700 mb-2">Link de cadastro geral:</p>
               <div className="flex items-center gap-2 p-3 bg-card border rounded">
                 <ExternalLink className="h-4 w-4 text-gray-400" />
                 <span className="flex-1 text-sm font-mono text-gray-600 truncate">
@@ -249,51 +351,26 @@ export const ReferralSystem = () => {
                 </span>
               </div>
             </div>
-          </div>
 
-          <div className="flex gap-2">
-            <Button 
-              onClick={copyReferralLink}
-              variant="outline" 
-              className="flex-1"
-            >
-              <Copy className="h-4 w-4 mr-2" />
-              Copiar Link
-            </Button>
-            <Button 
-              onClick={shareReferralLink}
-              className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
-            >
-              <Share className="h-4 w-4 mr-2" />
-              Compartilhar
-            </Button>
-          </div>
-          
-          {/* Fallback manual com destaque melhorado */}
-          <div className="mt-4 p-3 bg-muted/50 rounded-lg border border-dashed">
-            <p className="font-medium mb-2 text-sm text-muted-foreground">
-              📋 Se a cópia automática não funcionar, copie manualmente:
-            </p>
-            <div 
-              className="p-2 bg-background border rounded cursor-pointer hover:bg-muted/30 transition-colors"
-              onClick={() => {
-                const selection = window.getSelection();
-                const range = document.createRange();
-                const element = document.querySelector('.manual-copy-text');
-                if (element && selection) {
-                  range.selectNodeContents(element);
-                  selection.removeAllRanges();
-                  selection.addRange(range);
-                }
-              }}
-            >
-              <p className="manual-copy-text font-mono text-xs text-muted-foreground break-all select-all">
-                {referralData.referralLink}
-              </p>
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => copyReferralLink()}
+                variant="outline" 
+                size="sm"
+                className="flex-1"
+              >
+                <Copy className="h-4 w-4 mr-2" />
+                Copiar Link
+              </Button>
+              <Button 
+                onClick={() => shareReferralLink()}
+                size="sm"
+                className="flex-1"
+              >
+                <Share className="h-4 w-4 mr-2" />
+                Compartilhar
+              </Button>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              👆 Toque no texto acima para selecioná-lo, depois copie (Ctrl+C)
-            </p>
           </div>
         </CardContent>
       </Card>

@@ -11,10 +11,10 @@ export interface ActivePlan {
 }
 
 /**
- * Verifica se o usuário possui algum plano ativo
+ * Verifica se o usuário possui algum plano ativo usando a nova estrutura
  * Um plano é considerado ativo se:
  * - Usuário tem participação ativa em um grupo
- * - O grupo não foi contemplado/finalizado ainda
+ * - O grupo está em formação ou completo (não cancelado)
  */
 export const checkUserActivePlan = async (userId: string): Promise<{
   hasActivePlan: boolean;
@@ -24,66 +24,87 @@ export const checkUserActivePlan = async (userId: string): Promise<{
   try {
     console.log('🔍 Verificando planos ativos para usuário:', userId);
 
-    // Buscar participações ativas do usuário
-    const { data: participations, error: participationError } = await supabase
-      .from('group_participants')
-      .select(`
-        id,
-        status,
-        group_id,
-        amount_paid,
-        joined_at,
-        plan_groups!inner(
-          id,
-          status,
-          service_id,
-          services(name)
-        )
-      `)
-      .eq('user_id', userId)
-      .eq('status', 'active');
+    // Usar a função do banco para verificar se tem plano ativo
+    const { data: hasActivePlan, error: checkError } = await supabase
+      .rpc('user_has_active_plan', { user_uuid: userId });
 
-    if (participationError) {
-      console.error('❌ Erro ao buscar participações:', participationError);
+    if (checkError) {
+      console.error('❌ Erro ao verificar planos:', checkError);
       return {
         hasActivePlan: false,
         activePlans: [],
-        error: participationError.message
+        error: checkError.message
       };
     }
 
-    console.log('📊 Participações encontradas:', participations);
-
-    if (!participations || participations.length === 0) {
-      console.log('📭 Nenhuma participação ativa encontrada');
+    // Se não tem plano ativo, retornar vazio
+    if (!hasActivePlan) {
+      console.log('📭 Nenhum plano ativo encontrado');
       return {
         hasActivePlan: false,
         activePlans: []
       };
     }
 
-    // Filtrar apenas grupos que não foram contemplados/finalizados
-    const activePlans: ActivePlan[] = participations
-      .filter(p => p.plan_groups?.status !== 'complete')
-      .map(p => ({
-        id: p.id,
-        status: p.status,
-        group_id: p.group_id,
-        amount_paid: p.amount_paid,
-        joined_at: p.joined_at,
-        group_status: p.plan_groups?.status,
-        service_name: p.plan_groups?.services?.name || 'Serviço não definido'
-      }));
+      // Buscar detalhes das participações ativas
+      const { data: participations, error: participationError } = await supabase
+        .from('group_participants')
+        .select(`
+          id,
+          status,
+          group_id,
+          amount_paid,
+          joined_at,
+          plan_groups!inner(
+            id,
+            status,
+            service_id,
+            referral_code,
+            current_participants,
+            max_participants
+          )
+        `)
+        .eq('user_id', userId)
+        .eq('status', 'active')
+        .in('plan_groups.status', ['forming', 'complete']);
 
-    const hasActivePlan = activePlans.length > 0;
+      if (participationError) {
+        console.error('❌ Erro ao buscar detalhes das participações:', participationError);
+        return {
+          hasActivePlan: true,
+          activePlans: [],
+          error: participationError.message
+        };
+      }
+
+      // Para cada participação, buscar o nome do serviço
+      const activePlans: ActivePlan[] = await Promise.all(
+        (participations || []).map(async (p) => {
+          const { data: planData } = await supabase
+            .from('custom_plans')
+            .select('name')
+            .eq('id', p.plan_groups?.service_id)
+            .single();
+
+          return {
+            id: p.id,
+            status: p.status,
+            group_id: p.group_id,
+            amount_paid: p.amount_paid,
+            joined_at: p.joined_at,
+            group_status: p.plan_groups?.status,
+            service_name: planData?.name || 'Serviço não definido'
+          };
+        })
+      );
 
     console.log('✅ Verificação concluída:', {
-      hasActivePlan,
+      hasActivePlan: true,
       totalPlans: activePlans.length
     });
 
     return {
-      hasActivePlan,
+      hasActivePlan: true,
       activePlans
     };
 
