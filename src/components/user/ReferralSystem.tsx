@@ -85,10 +85,6 @@ export const ReferralSystem = () => {
   };
 
   const copyReferralLink = async () => {
-    console.log('Tentando copiar link do ReferralSystem');
-    console.log('ReferralData:', referralData);
-    console.log('ReferralLink:', referralData.referralLink);
-    
     if (!referralData.referralLink || !referralData.referralCode) {
       toast({
         title: "Erro",
@@ -98,77 +94,59 @@ export const ReferralSystem = () => {
       return;
     }
 
+    const linkToCopy = `https://${window.location.host}/register?ref=${referralData.referralCode}`;
+
     try {
-      // Verificar se clipboard está disponível
-      if (!navigator.clipboard) {
-        throw new Error('Clipboard API não disponível');
-      }
-
-      // Garantir que o link está correto
-      const linkToCopy = referralData.referralLink.startsWith('http') 
-        ? referralData.referralLink 
-        : `https://${window.location.host}/register?ref=${referralData.referralCode}`;
-
       await navigator.clipboard.writeText(linkToCopy);
       
       toast({
-        title: "Link copiado!",
-        description: "Seu link de indicação foi copiado para a área de transferência.",
+        title: "✅ Link copiado!",
+        description: "Seu link de indicação foi copiado com sucesso.",
+        duration: 3000
       });
       
-      console.log('Link copiado com sucesso:', linkToCopy);
-      
     } catch (error) {
-      console.error('Erro ao copiar link:', error);
+      // Fallback para dispositivos móveis ou browsers antigos
+      const textArea = document.createElement('textarea');
+      textArea.value = linkToCopy;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-9999px';
+      textArea.style.top = '-9999px';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
       
-      // Fallback mais robusto
       try {
-        const fallbackLink = `https://${window.location.host}/register?ref=${referralData.referralCode}`;
-        
-        // Tentar usar o método antigo de cópia
-        const textArea = document.createElement('textarea');
-        textArea.value = fallbackLink;
-        textArea.style.position = 'fixed';
-        textArea.style.left = '-999999px';
-        textArea.style.top = '-999999px';
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-        
-        const successful = document.execCommand('copy');
+        document.execCommand('copy');
         document.body.removeChild(textArea);
         
-        if (successful) {
-          toast({
-            title: "Link copiado!",
-            description: "Seu link de indicação foi copiado para a área de transferência.",
-          });
-          console.log('Link copiado via fallback:', fallbackLink);
-        } else {
-          throw new Error('Comando de cópia falhou');
-        }
-        
-      } catch (fallbackError) {
-        console.error('Erro no fallback:', fallbackError);
-        
-        // Último recurso - mostrar modal com link para cópia manual
         toast({
-          title: "Copie manualmente",
-          description: "Selecione e copie o link na seção abaixo da tela.",
-          variant: "default"
+          title: "✅ Link copiado!",
+          description: "Seu link de indicação foi copiado com sucesso.",
+          duration: 3000
         });
         
-        // Destacar a seção de cópia manual
-        const manualCopyElement = document.querySelector('.select-all');
-        if (manualCopyElement) {
-          manualCopyElement.scrollIntoView({ behavior: 'smooth' });
-          // Selecionar o texto automaticamente
-          const selection = window.getSelection();
-          const range = document.createRange();
-          range.selectNodeContents(manualCopyElement);
-          selection?.removeAllRanges();
-          selection?.addRange(range);
-        }
+      } catch (fallbackError) {
+        document.body.removeChild(textArea);
+        
+        toast({
+          title: "📋 Copie manualmente",
+          description: "Selecione o link abaixo e copie (Ctrl+C)",
+          duration: 5000
+        });
+        
+        // Focar na área de cópia manual
+        setTimeout(() => {
+          const manualElement = document.querySelector('.manual-copy-text');
+          if (manualElement) {
+            manualElement.scrollIntoView({ behavior: 'smooth' });
+            const selection = window.getSelection();
+            const range = document.createRange();
+            range.selectNodeContents(manualElement);
+            selection?.removeAllRanges();
+            selection?.addRange(range);
+          }
+        }, 100);
       }
     }
   };
