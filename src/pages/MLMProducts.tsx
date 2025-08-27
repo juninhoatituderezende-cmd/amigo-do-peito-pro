@@ -43,7 +43,7 @@ export default function MLMProducts() {
   const loadProducts = async () => {
     try {
       const { data, error } = await supabase
-        .from("services")
+        .from("products")
         .select("*")
         .order("price");
 

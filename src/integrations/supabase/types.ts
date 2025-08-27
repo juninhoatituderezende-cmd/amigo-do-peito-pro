@@ -402,53 +402,6 @@ export type Database = {
         }
         Relationships: []
       }
-      pagamentos_participacao: {
-        Row: {
-          created_at: string | null
-          data_pagamento: string | null
-          data_vencimento: string | null
-          id: string
-          metodo: string | null
-          participation_id: string | null
-          referencia_externa: string | null
-          status: string | null
-          updated_at: string | null
-          valor: number
-        }
-        Insert: {
-          created_at?: string | null
-          data_pagamento?: string | null
-          data_vencimento?: string | null
-          id?: string
-          metodo?: string | null
-          participation_id?: string | null
-          referencia_externa?: string | null
-          status?: string | null
-          updated_at?: string | null
-          valor: number
-        }
-        Update: {
-          created_at?: string | null
-          data_pagamento?: string | null
-          data_vencimento?: string | null
-          id?: string
-          metodo?: string | null
-          participation_id?: string | null
-          referencia_externa?: string | null
-          status?: string | null
-          updated_at?: string | null
-          valor?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "pagamentos_participacao_participation_id_fkey"
-            columns: ["participation_id"]
-            isOneToOne: false
-            referencedRelation: "group_participants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       payment_split_rules: {
         Row: {
           created_at: string | null
@@ -537,13 +490,6 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "payment_splits_service_id_fkey"
-            columns: ["service_id"]
-            isOneToOne: false
-            referencedRelation: "services"
-            referencedColumns: ["id"]
-          },
         ]
       }
       plan_groups: {
@@ -592,15 +538,7 @@ export type Database = {
           updated_at?: string | null
           winner_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "plan_groups_service_id_fkey"
-            columns: ["service_id"]
-            isOneToOne: false
-            referencedRelation: "services"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       planos_dentista: {
         Row: {
@@ -825,101 +763,6 @@ export type Database = {
           },
         ]
       }
-      referrals: {
-        Row: {
-          bonus_valor: number | null
-          codigo_referencia: string
-          created_at: string | null
-          id: string
-          indicado_id: string | null
-          status: string | null
-          updated_at: string | null
-          usuario_id: string | null
-        }
-        Insert: {
-          bonus_valor?: number | null
-          codigo_referencia: string
-          created_at?: string | null
-          id?: string
-          indicado_id?: string | null
-          status?: string | null
-          updated_at?: string | null
-          usuario_id?: string | null
-        }
-        Update: {
-          bonus_valor?: number | null
-          codigo_referencia?: string
-          created_at?: string | null
-          id?: string
-          indicado_id?: string | null
-          status?: string | null
-          updated_at?: string | null
-          usuario_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "referrals_indicado_id_fkey"
-            columns: ["indicado_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "referrals_usuario_id_fkey"
-            columns: ["usuario_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      services: {
-        Row: {
-          active: boolean | null
-          category: string | null
-          created_at: string | null
-          description: string | null
-          id: string
-          image_url: string | null
-          name: string
-          price: number
-          professional_id: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          active?: boolean | null
-          category?: string | null
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          image_url?: string | null
-          name: string
-          price: number
-          professional_id?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          active?: boolean | null
-          category?: string | null
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          image_url?: string | null
-          name?: string
-          price?: number
-          professional_id?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "services_professional_id_fkey"
-            columns: ["professional_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       user_credits: {
         Row: {
           available_credits: number | null
@@ -949,67 +792,6 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
-      }
-      user_purchases: {
-        Row: {
-          amount_paid: number
-          created_at: string | null
-          id: string
-          payment_method: string | null
-          plan_id: string | null
-          product_id: string | null
-          purchase_type: string | null
-          status: string | null
-          transaction_id: string | null
-          user_id: string
-        }
-        Insert: {
-          amount_paid: number
-          created_at?: string | null
-          id?: string
-          payment_method?: string | null
-          plan_id?: string | null
-          product_id?: string | null
-          purchase_type?: string | null
-          status?: string | null
-          transaction_id?: string | null
-          user_id: string
-        }
-        Update: {
-          amount_paid?: number
-          created_at?: string | null
-          id?: string
-          payment_method?: string | null
-          plan_id?: string | null
-          product_id?: string | null
-          purchase_type?: string | null
-          status?: string | null
-          transaction_id?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_purchases_plan_id_fkey"
-            columns: ["plan_id"]
-            isOneToOne: false
-            referencedRelation: "custom_plans"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_purchases_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_purchases_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       withdrawal_requests: {
         Row: {

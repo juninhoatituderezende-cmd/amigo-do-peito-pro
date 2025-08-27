@@ -70,7 +70,7 @@ class DiagnosticsManager {
       // Check if table name is valid - using actual table names from database
       const validTables = [
         "profiles", 
-        "services", 
+        "products", 
         "plan_groups", 
         "credit_transactions", 
         "notification_triggers",
@@ -114,7 +114,7 @@ class DiagnosticsManager {
     results.supabaseConnection = await this.testSupabaseConnection();
 
     // Test critical tables - using actual database table names
-    const criticalTables = ["profiles", "services", "plan_groups", "credit_transactions", "user_credits"];
+    const criticalTables = ["profiles", "products", "plan_groups", "credit_transactions", "user_credits"];
     
     for (const table of criticalTables) {
       results.tableAccess[table] = await this.testTableAccess(table);

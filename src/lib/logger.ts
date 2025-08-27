@@ -181,7 +181,7 @@ class Logger {
       console.log(`🔍 TESTING QUERY ON ${tableName}:`, query);
       
       // Check if table name is valid
-      const validTables = ["users", "services", "professionals", "groups", "transactions", "activity_logs", "error_logs", "performance_metrics"];
+      const validTables = ["users", "products", "professionals", "groups", "transactions", "activity_logs", "error_logs", "performance_metrics"];
       
       if (!validTables.includes(tableName)) {
         throw new Error(`Invalid table name: ${tableName}`);
