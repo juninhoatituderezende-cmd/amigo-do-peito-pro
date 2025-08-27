@@ -359,7 +359,14 @@ export function CustomPlansManager() {
               </DialogDescription>
             </DialogHeader>
             <div className="flex-1 overflow-y-auto pr-2">
-              <form onSubmit={handleSubmit} className="space-y-4 pb-4">
+              <form 
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleSubmit(e);
+                }} 
+                className="space-y-4 pb-4"
+              >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium">Nome do Plano</label>
@@ -379,24 +386,26 @@ export function CustomPlansManager() {
                         setFormData(prev => ({...prev, category: value}));
                       }}
                     >
-                      <SelectTrigger className="bg-background border focus:ring-2 focus:ring-primary/20">
+                      <SelectTrigger 
+                        className="bg-background border focus:ring-2 focus:ring-primary/20"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <SelectValue placeholder="Selecione uma categoria" />
                       </SelectTrigger>
                       <SelectContent 
-                        className="bg-background border shadow-lg z-[100]" 
-                        position="popper"
-                        sideOffset={4}
+                        className="bg-background border shadow-lg z-[9999] max-h-60" 
+                        align="start"
                       >
-                        <SelectItem value="service" className="hover:bg-muted focus:bg-muted">
+                        <SelectItem value="service" className="hover:bg-muted focus:bg-muted cursor-pointer">
                           🔧 Serviço
                         </SelectItem>
-                        <SelectItem value="tattoo" className="hover:bg-muted focus:bg-muted">
+                        <SelectItem value="tattoo" className="hover:bg-muted focus:bg-muted cursor-pointer">
                           🎨 Tatuagem
                         </SelectItem>
-                        <SelectItem value="dental" className="hover:bg-muted focus:bg-muted">
+                        <SelectItem value="dental" className="hover:bg-muted focus:bg-muted cursor-pointer">
                           🦷 Dental
                         </SelectItem>
-                        <SelectItem value="course" className="hover:bg-muted focus:bg-muted">
+                        <SelectItem value="course" className="hover:bg-muted focus:bg-muted cursor-pointer">
                           📚 Curso
                         </SelectItem>
                       </SelectContent>
