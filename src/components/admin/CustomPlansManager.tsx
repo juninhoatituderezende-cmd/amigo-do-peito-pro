@@ -328,16 +328,25 @@ export function CustomPlansManager() {
   }
 
   return (
-    <div className="space-y-6 p-4 md:p-6">
+    <div className="space-y-4 md:space-y-6 p-2 md:p-4 lg:p-6 min-h-screen">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h2 className="text-2xl md:text-3xl font-bold tracking-tight">
-          {isMobile ? 'Planos' : 'Gerenciar Planos Customizados'}
-        </h2>
+        <div>
+          <h2 className="text-xl md:text-2xl lg:text-3xl font-bold tracking-tight">
+            {isMobile ? 'Planos' : 'Gerenciar Planos Customizados'}
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            {isMobile ? 'Gerencie seus planos' : 'Crie, edite e gerencie todos os planos disponíveis'}
+          </p>
+        </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <MobileButton onClick={handleNewPlan} className="w-full sm:w-auto">
+            <MobileButton 
+              onClick={handleNewPlan} 
+              className="w-full sm:w-auto"
+              size={isMobile ? "default" : "default"}
+            >
               <Plus className="mr-2 h-4 w-4" />
-              Novo Plano
+              {isMobile ? 'Novo' : 'Novo Plano'}
             </MobileButton>
           </DialogTrigger>
           <DialogContent className="w-[95vw] max-w-2xl h-[85vh] flex flex-col">
@@ -478,7 +487,10 @@ export function CustomPlansManager() {
                   <Button 
                     type="button" 
                     variant="outline" 
-                    onClick={() => setIsDialogOpen(false)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setIsDialogOpen(false);
+                    }}
                     className="w-full sm:w-auto"
                     disabled={submitting}
                   >
@@ -487,9 +499,21 @@ export function CustomPlansManager() {
                   <MobileButton 
                     type="submit" 
                     className="w-full sm:w-auto"
-                    disabled={submitting}
+                    disabled={submitting || !formData.name.trim() || !formData.price || parseFloat(formData.price) <= 0}
+                    onClick={(e) => {
+                      // Força preventDefault para evitar comportamento padrão do form
+                      e.preventDefault();
+                      handleSubmit(e as any);
+                    }}
                   >
-                    {submitting ? 'Salvando...' : (editingPlan ? 'Atualizar' : 'Criar')} Plano
+                    {submitting ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2" />
+                        Salvando...
+                      </>
+                    ) : (
+                      `${editingPlan ? 'Atualizar' : 'Criar'} Plano`
+                    )}
                   </MobileButton>
                 </div>
               </form>
@@ -510,61 +534,69 @@ export function CustomPlansManager() {
         </CardHeader>
         <CardContent className="p-0">
           {isMobile ? (
-            // Mobile Card Layout
-            <div className="space-y-4 p-4">
+            // Layout Mobile Otimizado
+            <div className="space-y-3 p-3">
               {plans.map((plan) => (
-                <Card key={plan.id} className="border border-border/50">
-                  <CardContent className="p-4">
+                <Card key={plan.id} className="border border-border/50 hover:border-border transition-colors">
+                  <CardContent className="p-3">
                     <div className="space-y-3">
                       <div className="flex items-start gap-3">
                         {plan.image_url && (
                           <img
                             src={plan.image_url}
                             alt={plan.name}
-                            className="w-16 h-16 object-cover rounded-lg border border-border flex-shrink-0"
+                            className="w-14 h-14 object-cover rounded-lg border border-border flex-shrink-0"
                           />
                         )}
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between gap-2">
-                            <h3 className="font-medium text-lg truncate">{plan.name}</h3>
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                              <h3 className="font-medium text-base truncate">{plan.name}</h3>
+                              {plan.description && (
+                                <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
+                                  {plan.description}
+                                </p>
+                              )}
+                            </div>
                             {plan.active ? (
-                              <Badge className="bg-green-500">Ativo</Badge>
+                              <Badge className="bg-green-500 text-xs flex-shrink-0">Ativo</Badge>
                             ) : (
-                              <Badge variant="secondary">Inativo</Badge>
+                              <Badge variant="secondary" className="text-xs flex-shrink-0">Inativo</Badge>
                             )}
                           </div>
-                          {plan.description && (
-                            <p className="text-sm text-muted-foreground line-clamp-2">{plan.description}</p>
-                          )}
                         </div>
                       </div>
                       
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <span className="text-muted-foreground">Categoria:</span>
-                          <Badge variant="outline" className="ml-2">{plan.category}</Badge>
+                      <div className="grid grid-cols-2 gap-3 text-xs">
+                        <div className="space-y-1">
+                          <div>
+                            <span className="text-muted-foreground">Categoria:</span>
+                            <Badge variant="outline" className="ml-1 text-xs">{plan.category}</Badge>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Duração:</span>
+                            <span className="ml-1 font-medium">{plan.duration_months} {plan.duration_months === 1 ? 'mês' : 'meses'}</span>
+                          </div>
                         </div>
-                        <div>
-                          <span className="text-muted-foreground">Preço:</span>
-                          <span className="ml-2 font-medium">R$ {plan.price.toFixed(2)}</span>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Duração:</span>
-                          <span className="ml-2">{plan.duration_months} {plan.duration_months === 1 ? 'mês' : 'meses'}</span>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Máx. usuários:</span>
-                          <span className="ml-2">{plan.max_participants}</span>
+                        <div className="space-y-1">
+                          <div>
+                            <span className="text-muted-foreground">Preço:</span>
+                            <span className="ml-1 font-medium">R$ {plan.price.toFixed(2)}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Máx.:</span>
+                            <span className="ml-1">{plan.max_participants} usuários</span>
+                          </div>
                         </div>
                       </div>
                       
-                      <div className="flex flex-col gap-2">
-                        <div className="flex gap-2">
+                      <div className="flex flex-col gap-2 pt-2 border-t border-border/50">
+                        <div className="grid grid-cols-2 gap-2">
                           <MobileButton
                             variant="outline"
                             size="sm"
                             onClick={() => togglePlanStatus(plan.id, plan.active)}
-                            className="flex-1"
+                            className="text-xs"
                           >
                             {plan.active ? 'Desativar' : 'Ativar'}
                           </MobileButton>
@@ -572,9 +604,9 @@ export function CustomPlansManager() {
                             variant="outline"
                             size="sm"
                             onClick={() => handleEdit(plan)}
-                            className="flex-1"
+                            className="text-xs"
                           >
-                            <Edit className="h-4 w-4 mr-1" />
+                            <Edit className="h-3 w-3 mr-1" />
                             Editar
                           </MobileButton>
                         </div>
@@ -583,43 +615,51 @@ export function CustomPlansManager() {
                             <MobileButton
                               variant="outline"
                               size="sm"
-                              className="w-full text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground disabled:opacity-50"
+                              className="w-full text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground disabled:opacity-50 text-xs"
                               disabled={deleting === plan.id}
                             >
                               {deleting === plan.id ? (
                                 <>
-                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-1" />
+                                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current mr-1" />
                                   Excluindo...
                                 </>
                               ) : (
                                 <>
-                                  <Trash2 className="h-4 w-4 mr-1" />
-                                  Excluir
+                                  <Trash2 className="h-3 w-3 mr-1" />
+                                  Excluir Plano
                                 </>
                               )}
                             </MobileButton>
                           </AlertDialogTrigger>
-                          <AlertDialogContent className="bg-background border shadow-lg max-w-[90vw]">
+                          <AlertDialogContent className="bg-background border shadow-lg w-[95vw] max-w-md">
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-                              <AlertDialogDescription className="text-left">
+                              <AlertDialogTitle className="text-left">Confirmar exclusão</AlertDialogTitle>
+                              <AlertDialogDescription className="text-left text-sm">
                                 Tem certeza que deseja excluir o plano <strong>"{plan.name}"</strong>?
                                 <br /><br />
-                                ⚠️ Esta ação não pode ser desfeita e removerá permanentemente:
+                                ⚠️ <strong>Esta ação não pode ser desfeita</strong> e removerá:
                                 <br />• O plano e suas configurações
                                 <br />• Todos os dados relacionados
                               </AlertDialogDescription>
                             </AlertDialogHeader>
-                            <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-                              <AlertDialogCancel className="bg-background w-full sm:w-auto" disabled={deleting === plan.id}>
+                            <AlertDialogFooter className="flex flex-col gap-2 sm:flex-row">
+                              <AlertDialogCancel className="bg-background w-full sm:w-auto order-2 sm:order-1" disabled={deleting === plan.id}>
                                 Cancelar
                               </AlertDialogCancel>
                               <AlertDialogAction
-                                onClick={() => handleDelete(plan.id)}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90 w-full sm:w-auto"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  handleDelete(plan.id);
+                                }}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90 w-full sm:w-auto order-1 sm:order-2"
                                 disabled={deleting === plan.id}
                               >
-                                {deleting === plan.id ? 'Excluindo...' : 'Sim, Excluir'}
+                                {deleting === plan.id ? (
+                                  <>
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2" />
+                                    Excluindo...
+                                  </>
+                                ) : 'Sim, Excluir'}
                               </AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
