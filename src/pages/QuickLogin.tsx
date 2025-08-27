@@ -54,9 +54,23 @@ const QuickLogin = () => {
       }
     } catch (error: any) {
       console.error('QuickLogin error:', error);
+      
+      // Mensagens de erro mais específicas
+      let errorMessage = "Ocorreu um erro. Tente novamente.";
+      
+      if (error.message?.includes('Email not confirmed')) {
+        errorMessage = "Email não confirmado. Aguarde alguns minutos e tente novamente, ou entre em contato com o suporte.";
+      } else if (error.message?.includes('Invalid login credentials')) {
+        errorMessage = "Email ou senha incorretos. Verifique seus dados e tente novamente.";
+      } else if (error.message?.includes('User not found')) {
+        errorMessage = "Usuário não encontrado. Verifique o email digitado.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
-        title: "Erro",
-        description: error.message || "Ocorreu um erro. Tente novamente.",
+        title: isLogin ? "Erro no Login" : "Erro no Cadastro",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {

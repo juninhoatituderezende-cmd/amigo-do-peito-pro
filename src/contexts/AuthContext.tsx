@@ -260,7 +260,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setLoading(true);
       
-      // Cadastro com configuração personalizada para contornar confirmação de email
+      // Cadastro com configuração personalizada
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -269,27 +269,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           data: {
             full_name: userData.fullName || userData.nome || 'Usuário',
             phone: userData.phone || userData.telefone || '',
-            role: role,
-            email_confirmed: true // Adicionar flag para indicar que queremos confirmar automaticamente
+            role: role
           }
         }
       });
 
       if (error) throw error;
 
-      // Se o usuário foi criado com sucesso
-      if (data.user && !data.session) {
-        console.log('✅ User registered successfully, email confirmation required');
-        console.log('ℹ️  User will be redirected to email confirmation help page');
+      // Se o usuário foi criado, confirmar email automaticamente
+      if (data.user) {
+        console.log('✅ User registered, confirming email automatically...');
         
-        // Redirecionar para página de ajuda após um tempo
-        setTimeout(() => {
-          navigate('/confirmacao-email');
-        }, 2000);
-        return { error: null };
-      } else if (data.session) {
-        console.log('✅ User registered and logged in successfully');
-        return { error: null };
+        try {
+          // Chamar função para confirmar email automaticamente
+          const { data: confirmData, error: confirmError } = await supabase.functions.invoke('auto-confirm-email', {
+            body: { email }
+          });
+
+          if (confirmError) {
+            console.warn('⚠️ Email confirmation failed:', confirmError);
+          } else {
+            console.log('✅ Email confirmed automatically');
+          }
+        } catch (confirmError) {
+          console.warn('⚠️ Email confirmation failed:', confirmError);
+        }
+
+        // Se não há sessão ainda, tentar fazer login
+        if (!data.session) {
+          console.log('🔄 No session after signup, attempting automatic login...');
+          
+          // Aguardar um momento para o email ser confirmado
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // Tentar fazer login automaticamente
+          const loginResult = await login(email, password);
+          if (loginResult.error) {
+            console.warn('⚠️ Auto-login failed, user will need to login manually');
+            navigate('/confirmacao-email');
+          }
+        } else {
+          console.log('✅ User registered and logged in successfully');
+        }
       }
 
       return { error: null };

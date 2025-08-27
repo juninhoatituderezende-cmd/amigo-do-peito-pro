@@ -48,6 +48,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { NotificationTriggersManager } from "@/components/admin/NotificationTriggersManager";
+import EmailDiagnosticTool from "@/components/admin/EmailDiagnosticTool";
 import { MaterialUploadPanel } from "@/components/admin/MaterialUploadPanel";
 import { PaymentManagement } from "@/components/admin/PaymentManagement";
 import { CustomPlansManager } from "@/components/admin/CustomPlansManager";
@@ -816,7 +817,7 @@ const AdminDashboard = () => {
 
           <Tabs defaultValue="overview" onValueChange={setActiveTab} className="space-y-6">
             <div className="border-b">
-              <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-13 h-auto p-1 bg-gray-100">
+              <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-14 h-auto p-1 bg-gray-100">
                 <TabsTrigger value="overview" className="text-sm py-3">
                   <BarChart3 className="h-4 w-4 mr-2" />
                   Visão Geral
@@ -880,6 +881,10 @@ const AdminDashboard = () => {
                 <TabsTrigger value="sales" className="text-sm py-3">
                   <ShoppingCart className="h-4 w-4 mr-2" />
                   Vendas
+                </TabsTrigger>
+                <TabsTrigger value="diagnostics" className="text-sm py-3">
+                  <Activity className="h-4 w-4 mr-2" />
+                  Diagnósticos
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -1604,6 +1609,39 @@ const AdminDashboard = () => {
             {/* LISTA DE VENDAS */}
             <TabsContent value="sales" className="space-y-6">
               <SalesManager />
+            </TabsContent>
+
+            {/* DIAGNÓSTICOS */}
+            <TabsContent value="diagnostics" className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <EmailDiagnosticTool />
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle>🔧 Ferramentas de Suporte</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="p-4 bg-blue-50 rounded-lg">
+                      <h4 className="font-medium mb-2">Como usar:</h4>
+                      <ul className="text-sm space-y-1">
+                        <li>• Digite o email do usuário com problema</li>
+                        <li>• Clique em "Verificar Status" para ver detalhes</li>
+                        <li>• Se o email não estiver confirmado, use "Confirmar Email"</li>
+                        <li>• Peça para o usuário tentar fazer login novamente</li>
+                      </ul>
+                    </div>
+                    
+                    <div className="p-4 bg-yellow-50 rounded-lg">
+                      <h4 className="font-medium mb-2">⚠️ Problemas Comuns:</h4>
+                      <ul className="text-sm space-y-1">
+                        <li>• <strong>Email não confirmado:</strong> Use a ferramenta de confirmação</li>
+                        <li>• <strong>Usuário não encontrado:</strong> Verifique se fez cadastro</li>
+                        <li>• <strong>Login falha:</strong> Confirmar email resolve na maioria dos casos</li>
+                      </ul>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
           </Tabs>
         </div>
