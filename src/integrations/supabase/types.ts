@@ -14,6 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      agendamentos: {
+        Row: {
+          created_at: string | null
+          data_procedimento: string
+          id: string
+          observacoes: string | null
+          participation_id: string | null
+          profissional: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          data_procedimento: string
+          id?: string
+          observacoes?: string | null
+          participation_id?: string | null
+          profissional?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          data_procedimento?: string
+          id?: string
+          observacoes?: string | null
+          participation_id?: string | null
+          profissional?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agendamentos_participation_id_fkey"
+            columns: ["participation_id"]
+            isOneToOne: false
+            referencedRelation: "group_participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       asaas_integration: {
         Row: {
           api_key_encrypted: string
@@ -355,6 +396,53 @@ export type Database = {
         }
         Relationships: []
       }
+      pagamentos_participacao: {
+        Row: {
+          created_at: string | null
+          data_pagamento: string | null
+          data_vencimento: string | null
+          id: string
+          metodo: string | null
+          participation_id: string | null
+          referencia_externa: string | null
+          status: string | null
+          updated_at: string | null
+          valor: number
+        }
+        Insert: {
+          created_at?: string | null
+          data_pagamento?: string | null
+          data_vencimento?: string | null
+          id?: string
+          metodo?: string | null
+          participation_id?: string | null
+          referencia_externa?: string | null
+          status?: string | null
+          updated_at?: string | null
+          valor: number
+        }
+        Update: {
+          created_at?: string | null
+          data_pagamento?: string | null
+          data_vencimento?: string | null
+          id?: string
+          metodo?: string | null
+          participation_id?: string | null
+          referencia_externa?: string | null
+          status?: string | null
+          updated_at?: string | null
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pagamentos_participacao_participation_id_fkey"
+            columns: ["participation_id"]
+            isOneToOne: false
+            referencedRelation: "group_participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_split_rules: {
         Row: {
           created_at: string | null
@@ -647,6 +735,54 @@ export type Database = {
           },
         ]
       }
+      referrals: {
+        Row: {
+          bonus_valor: number | null
+          codigo_referencia: string
+          created_at: string | null
+          id: string
+          indicado_id: string | null
+          status: string | null
+          updated_at: string | null
+          usuario_id: string | null
+        }
+        Insert: {
+          bonus_valor?: number | null
+          codigo_referencia: string
+          created_at?: string | null
+          id?: string
+          indicado_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+          usuario_id?: string | null
+        }
+        Update: {
+          bonus_valor?: number | null
+          codigo_referencia?: string
+          created_at?: string | null
+          id?: string
+          indicado_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referrals_indicado_id_fkey"
+            columns: ["indicado_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referrals_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       services: {
         Row: {
           active: boolean | null
@@ -865,6 +1001,10 @@ export type Database = {
         }
         Returns: string
       }
+      generate_referral_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_existing_account_types: {
         Args: { check_email: string }
         Returns: {
@@ -892,6 +1032,10 @@ export type Database = {
       process_marketplace_commission: {
         Args: { p_sale_id: string; p_total_amount: number }
         Returns: undefined
+      }
+      process_referral: {
+        Args: { new_user_id: string; referrer_code: string }
+        Returns: string
       }
       simple_commission_process: {
         Args: {
