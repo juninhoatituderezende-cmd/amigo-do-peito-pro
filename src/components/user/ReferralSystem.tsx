@@ -85,19 +85,36 @@ export const ReferralSystem = () => {
   };
 
   const copyReferralLink = async () => {
+    console.log('Tentando copiar link do ReferralSystem');
+    console.log('ReferralData:', referralData);
+    console.log('ReferralLink:', referralData.referralLink);
+    
     try {
       await navigator.clipboard.writeText(referralData.referralLink);
       toast({
         title: "Link copiado!",
         description: "Seu link de indicação foi copiado para a área de transferência.",
       });
+      console.log('Link copiado com sucesso do ReferralSystem');
     } catch (error) {
-      console.error('Erro ao copiar link:', error);
-      toast({
-        title: "Erro ao copiar",
-        description: "Não foi possível copiar o link. Tente novamente.",
-        variant: "destructive"
-      });
+      console.error('Erro ao copiar link do ReferralSystem:', error);
+      
+      // Fallback: criar link manual
+      const fallbackLink = `${window.location.origin}/register?ref=${referralData.referralCode}`;
+      try {
+        await navigator.clipboard.writeText(fallbackLink);
+        toast({
+          title: "Link copiado!",
+          description: "Seu link de indicação foi copiado para a área de transferência.",
+        });
+      } catch (fallbackError) {
+        console.error('Erro no fallback também:', fallbackError);
+        toast({
+          title: "Erro ao copiar",
+          description: "Não foi possível copiar o link. Tente novamente.",
+          variant: "destructive"
+        });
+      }
     }
   };
 
@@ -217,6 +234,14 @@ export const ReferralSystem = () => {
               <Share className="h-4 w-4 mr-2" />
               Compartilhar
             </Button>
+          </div>
+          
+          {/* Fallback manual */}
+          <div className="mt-2 p-2 bg-muted rounded text-xs">
+            <p className="font-medium mb-1">Link para cópia manual:</p>
+            <p className="font-mono text-muted-foreground break-all select-all">
+              {referralData.referralLink}
+            </p>
           </div>
         </CardContent>
       </Card>

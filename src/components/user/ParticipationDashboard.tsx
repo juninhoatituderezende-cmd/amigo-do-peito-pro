@@ -120,16 +120,26 @@ export const ParticipationDashboard = () => {
         .select('id', { count: 'exact' })
         .eq('referred_by', user?.id);
 
+      console.log('Profile data:', profileData);
+      console.log('User ID:', user?.id);
+
       if (profileData?.referral_code) {
+        const referralCode = profileData.referral_code;
+        console.log('Código de referência encontrado:', referralCode);
+        
         setReferralData({
-          referralCode: profileData.referral_code,
+          referralCode: referralCode,
           totalReferrals: totalReferrals || 0,
           confirmedReferrals: totalReferrals || 0,
           pendingReferrals: 0
         });
       } else {
+        // Fallback: usar parte do ID do usuário
+        const fallbackCode = user?.id?.slice(-8).toUpperCase() || 'N/A';
+        console.log('Usando código fallback:', fallbackCode);
+        
         setReferralData({
-          referralCode: user?.id?.slice(-8).toUpperCase() || 'N/A',
+          referralCode: fallbackCode,
           totalReferrals: totalReferrals || 0,
           confirmedReferrals: totalReferrals || 0,
           pendingReferrals: 0
@@ -160,14 +170,18 @@ export const ParticipationDashboard = () => {
   };
 
   const copyReferralLink = async () => {
-    if (referralData) {
+    if (referralData?.referralCode) {
       const link = `${window.location.origin}/register?ref=${referralData.referralCode}`;
+      console.log('Tentando copiar link:', link);
+      console.log('Código de referência:', referralData.referralCode);
+      
       try {
         await navigator.clipboard.writeText(link);
         toast({
           title: "Link copiado!",
           description: "Seu link de indicação foi copiado para a área de transferência.",
         });
+        console.log('Link copiado com sucesso');
       } catch (error) {
         console.error('Erro ao copiar link:', error);
         toast({
@@ -176,6 +190,13 @@ export const ParticipationDashboard = () => {
           variant: "destructive"
         });
       }
+    } else {
+      console.error('Dados de referência não disponíveis:', referralData);
+      toast({
+        title: "Erro",
+        description: "Código de referência não encontrado. Recarregue a página.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -343,6 +364,14 @@ export const ParticipationDashboard = () => {
 
               <div className="text-xs text-muted-foreground">
                 Compartilhe este link para que amigos se juntem ao seu grupo
+              </div>
+              
+              {/* Fallback: mostrar link para cópia manual */}
+              <div className="mt-2 p-2 bg-muted rounded text-xs">
+                <p className="font-medium mb-1">Link completo (caso precise copiar manualmente):</p>
+                <p className="font-mono text-muted-foreground break-all select-all">
+                  {referralData ? `${window.location.origin}/register?ref=${referralData.referralCode}` : 'Carregando...'}
+                </p>
               </div>
             </CardContent>
           </Card>
