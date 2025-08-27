@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -16,14 +15,14 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, role }) => {
     console.log('ProtectedRoute Debug:', { loading, user, requiredRole: role });
     
     if (!loading && !user) {
-      console.log('User not logged in, redirecting to home');
-      // User not logged in, redirect to login
-      navigate("/");
+      console.log('User not logged in, redirecting to auth');
+      // User not logged in, redirect to auth
+      navigate("/auth");
     } else if (!loading && user && user.role !== role) {
       console.log('User role mismatch:', { userRole: user.role, requiredRole: role });
-      // User doesn't have the required role
+      // User doesn't have the required role, redirect to correct dashboard
       if (user.role === "admin") {
-        navigate("/admin");
+        navigate("/admin/dashboard");
       } else if (user.role === "professional") {
         navigate("/profissional/dashboard");
       } else if (user.role === "influencer") {
