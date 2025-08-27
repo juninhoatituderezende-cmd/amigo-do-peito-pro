@@ -181,60 +181,61 @@ export const ParticipationDashboard = () => {
     }
 
     const link = `${window.location.origin}/register?ref=${referralData.referralCode}`;
-    console.log('Tentando copiar link:', link);
-    console.log('Código de referência:', referralData.referralCode);
+    console.log('🔄 Tentando copiar link:', link);
+    console.log('🔑 Código de referência:', referralData.referralCode);
     
+    // Tentar método mais simples primeiro - funcionará melhor no mobile
     try {
-      // Verificar se navigator.clipboard está disponível
-      if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(link);
-        console.log('Link copiado com sucesso via clipboard API');
-      } else {
-        // Fallback para dispositivos sem suporte ao clipboard API
-        const textArea = document.createElement('textarea');
-        textArea.value = link;
-        textArea.style.position = 'fixed';
-        textArea.style.left = '-999999px';
-        textArea.style.top = '-999999px';
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-        
-        const successful = document.execCommand('copy');
-        document.body.removeChild(textArea);
-        
-        if (!successful) {
-          throw new Error('Comando de cópia não suportado');
-        }
-        console.log('Link copiado com sucesso via fallback');
+      // Criar elemento input temporário
+      const tempInput = document.createElement('input');
+      tempInput.value = link;
+      tempInput.style.position = 'absolute';
+      tempInput.style.left = '-9999px';
+      tempInput.style.opacity = '0';
+      
+      document.body.appendChild(tempInput);
+      tempInput.select();
+      tempInput.setSelectionRange(0, 99999); // Para mobile
+      
+      const successful = document.execCommand('copy');
+      document.body.removeChild(tempInput);
+      
+      if (successful) {
+        console.log('✅ Link copiado com sucesso via execCommand');
+        toast({
+          title: "Link copiado! 🎉",
+          description: "Compartilhe com seus amigos para ganhar indicações!",
+          duration: 4000,
+        });
+        return;
       }
-      
-      // Toast de sucesso
-      toast({
-        title: "✅ Link copiado!",
-        description: "Seu link de indicação foi copiado para a área de transferência.",
-        duration: 3000,
-      });
-      
     } catch (error) {
-      console.error('Erro ao copiar link:', error);
-      
-      // Exibir o link para cópia manual
-      const linkElement = document.createElement('div');
-      linkElement.innerHTML = `
-        <div style="padding: 12px; background: #f3f4f6; border-radius: 6px; margin-top: 8px;">
-          <p style="margin: 0 0 8px 0; font-weight: 500;">Copie manualmente:</p>
-          <input type="text" value="${link}" readonly style="width: 100%; padding: 4px; border: 1px solid #ccc; border-radius: 4px;" onclick="this.select()" />
-        </div>
-      `;
-      
-      toast({
-        title: "❌ Erro ao copiar automaticamente",
-        description: "Use o link abaixo para copiar manualmente:",
-        variant: "destructive",
-        duration: 5000,
-      });
+      console.log('⚠️ Método execCommand falhou:', error);
     }
+
+    // Fallback - tentar clipboard API
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(link);
+        console.log('✅ Link copiado com sucesso via clipboard API');
+        toast({
+          title: "Link copiado! 🎉",
+          description: "Compartilhe com seus amigos para ganhar indicações!",
+          duration: 4000,
+        });
+        return;
+      }
+    } catch (error) {
+      console.log('⚠️ Clipboard API falhou:', error);
+    }
+
+    // Se chegou aqui, mostre mensagem alternativa
+    console.log('❌ Todos os métodos de cópia falharam');
+    toast({
+      title: "Toque no link abaixo para copiar",
+      description: "Pressione e segure no link completo para copiá-lo manualmente",
+      duration: 6000,
+    });
   };
 
   if (loading) {
