@@ -282,8 +282,8 @@ export function CustomPlansManager() {
               Novo Plano
             </MobileButton>
           </DialogTrigger>
-          <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
+          <DialogContent className="w-[95vw] max-w-2xl h-[85vh] flex flex-col">
+            <DialogHeader className="flex-shrink-0">
               <DialogTitle>
                 {editingPlan ? 'Editar Plano' : 'Criar Novo Plano'}
               </DialogTitle>
@@ -291,124 +291,126 @@ export function CustomPlansManager() {
                 {editingPlan ? 'Modifique as informações do plano.' : 'Preencha os dados para criar um novo plano.'}
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium">Nome do Plano</label>
-                  <Input
-                    value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    placeholder="Ex: Plano Premium"
-                    required
-                  />
+            <div className="flex-1 overflow-y-auto pr-2">
+              <form onSubmit={handleSubmit} className="space-y-4 pb-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium">Nome do Plano</label>
+                    <Input
+                      value={formData.name}
+                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                      placeholder="Ex: Plano Premium"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Categoria</label>
+                    <Select value={formData.category} onValueChange={(value) => setFormData({...formData, category: value})}>
+                      <SelectTrigger className="bg-background">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background border shadow-md z-50">
+                        <SelectItem value="service">Serviço</SelectItem>
+                        <SelectItem value="tattoo">Tatuagem</SelectItem>
+                        <SelectItem value="dental">Dental</SelectItem>
+                        <SelectItem value="course">Curso</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-                <div>
-                  <label className="text-sm font-medium">Categoria</label>
-                  <Select value={formData.category} onValueChange={(value) => setFormData({...formData, category: value})}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="service">Serviço</SelectItem>
-                      <SelectItem value="tattoo">Tatuagem</SelectItem>
-                      <SelectItem value="dental">Dental</SelectItem>
-                      <SelectItem value="course">Curso</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
 
-              <ImageUpload
-                currentImageUrl={formData.image_url}
-                onImageChange={(imageUrl) => setFormData({...formData, image_url: imageUrl})}
-                bucketName="plan-images"
-                path="plans"
-                maxSizeMB={5}
-              />
-
-              <div>
-                <label className="text-sm font-medium">Descrição</label>
-                <Textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  placeholder="Descreva o plano..."
-                  rows={3}
+                <ImageUpload
+                  currentImageUrl={formData.image_url}
+                  onImageChange={(imageUrl) => setFormData({...formData, image_url: imageUrl})}
+                  bucketName="plan-images"
+                  path="plans"
+                  maxSizeMB={5}
                 />
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="text-sm font-medium">Preço (R$)</label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={formData.price}
-                    onChange={(e) => setFormData({...formData, price: e.target.value})}
-                    placeholder="99.99"
-                    required
+                  <label className="text-sm font-medium">Descrição</label>
+                  <Textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    placeholder="Descreva o plano..."
+                    rows={3}
                   />
                 </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="text-sm font-medium">Preço (R$)</label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.price}
+                      onChange={(e) => setFormData({...formData, price: e.target.value})}
+                      placeholder="99.99"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Duração (meses)</label>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={formData.duration_months}
+                      onChange={(e) => setFormData({...formData, duration_months: e.target.value})}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Máx. Participantes</label>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={formData.max_participants}
+                      onChange={(e) => setFormData({...formData, max_participants: e.target.value})}
+                      required
+                    />
+                  </div>
+                </div>
+
                 <div>
-                  <label className="text-sm font-medium">Duração (meses)</label>
-                  <Input
-                    type="number"
-                    min="1"
-                    value={formData.duration_months}
-                    onChange={(e) => setFormData({...formData, duration_months: e.target.value})}
-                    required
+                  <label className="text-sm font-medium">Recursos (um por linha)</label>
+                  <Textarea
+                    value={formData.features}
+                    onChange={(e) => setFormData({...formData, features: e.target.value})}
+                    placeholder="Acesso à plataforma&#10;Suporte prioritário&#10;Materiais exclusivos"
+                    rows={4}
                   />
                 </div>
-                <div>
-                  <label className="text-sm font-medium">Máx. Participantes</label>
-                  <Input
-                    type="number"
-                    min="1"
-                    value={formData.max_participants}
-                    onChange={(e) => setFormData({...formData, max_participants: e.target.value})}
-                    required
+
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="active"
+                    checked={formData.active}
+                    onCheckedChange={(checked) => setFormData({...formData, active: Boolean(checked)})}
                   />
+                  <label htmlFor="active" className="text-sm font-medium">Plano ativo</label>
                 </div>
-              </div>
 
-              <div>
-                <label className="text-sm font-medium">Recursos (um por linha)</label>
-                <Textarea
-                  value={formData.features}
-                  onChange={(e) => setFormData({...formData, features: e.target.value})}
-                  placeholder="Acesso à plataforma&#10;Suporte prioritário&#10;Materiais exclusivos"
-                  rows={4}
-                />
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="active"
-                  checked={formData.active}
-                  onCheckedChange={(checked) => setFormData({...formData, active: Boolean(checked)})}
-                />
-                <label htmlFor="active" className="text-sm font-medium">Plano ativo</label>
-              </div>
-
-              <div className="flex flex-col-reverse sm:flex-row justify-end gap-2">
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setIsDialogOpen(false)}
-                  className="w-full sm:w-auto"
-                  disabled={submitting}
-                >
-                  Cancelar
-                </Button>
-                <MobileButton 
-                  type="submit" 
-                  className="w-full sm:w-auto"
-                  disabled={submitting}
-                >
-                  {submitting ? 'Salvando...' : (editingPlan ? 'Atualizar' : 'Criar')} Plano
-                </MobileButton>
-              </div>
-            </form>
+                <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-4 border-t">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setIsDialogOpen(false)}
+                    className="w-full sm:w-auto"
+                    disabled={submitting}
+                  >
+                    Cancelar
+                  </Button>
+                  <MobileButton 
+                    type="submit" 
+                    className="w-full sm:w-auto"
+                    disabled={submitting}
+                  >
+                    {submitting ? 'Salvando...' : (editingPlan ? 'Atualizar' : 'Criar')} Plano
+                  </MobileButton>
+                </div>
+              </form>
+            </div>
           </DialogContent>
         </Dialog>
       </div>
@@ -504,7 +506,7 @@ export function CustomPlansManager() {
                               Excluir
                             </MobileButton>
                           </AlertDialogTrigger>
-                          <AlertDialogContent>
+                          <AlertDialogContent className="bg-background border shadow-lg">
                             <AlertDialogHeader>
                               <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
                               <AlertDialogDescription>
@@ -512,7 +514,7 @@ export function CustomPlansManager() {
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogCancel className="bg-background">Cancelar</AlertDialogCancel>
                               <AlertDialogAction
                                 onClick={() => handleDelete(plan.id)}
                                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -611,7 +613,7 @@ export function CustomPlansManager() {
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             </AlertDialogTrigger>
-                            <AlertDialogContent>
+                            <AlertDialogContent className="bg-background border shadow-lg">
                               <AlertDialogHeader>
                                 <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
                                 <AlertDialogDescription>
@@ -619,7 +621,7 @@ export function CustomPlansManager() {
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogCancel className="bg-background">Cancelar</AlertDialogCancel>
                                 <AlertDialogAction
                                   onClick={() => handleDelete(plan.id)}
                                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
