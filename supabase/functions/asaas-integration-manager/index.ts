@@ -82,30 +82,55 @@ async function testAsaasConnection(data: any) {
     : 'https://sandbox.asaas.com/api/v3';
 
   try {
+    // Teste com endpoint de contas/informações básicas
     const response = await fetch(`${baseUrl}/myAccount`, {
       method: 'GET',
       headers: {
         'access_token': data.api_key,
         'Content-Type': 'application/json',
+        'User-Agent': 'Asaas Integration Client 1.0'
       },
+    });
+
+    logStep("API Response received", { 
+      status: response.status, 
+      statusText: response.statusText,
+      headers: Object.fromEntries(response.headers.entries())
     });
 
     if (response.ok) {
       const accountData = await response.json();
-      logStep("Asaas connection successful", { account: accountData.name });
+      logStep("Asaas connection successful", { account: accountData.name || 'Account found' });
       
       return {
         success: true,
         message: "Conexão com Asaas estabelecida com sucesso",
         account_info: {
-          name: accountData.name,
-          email: accountData.email,
+          name: accountData.name || 'Account validated',
+          email: accountData.email || 'N/A',
           environment: data.environment
         }
       };
     } else {
-      const errorText = await response.text();
-      throw new Error(`Erro na API Asaas: ${response.status} - ${errorText}`);
+      // Tentar ler o erro específico
+      let errorText;
+      try {
+        const errorData = await response.json();
+        errorText = errorData.errors ? errorData.errors.map((e: any) => e.description || e.code).join(', ') : JSON.stringify(errorData);
+      } catch {
+        errorText = await response.text();
+      }
+      
+      logStep("API Error details", { status: response.status, error: errorText });
+      
+      // Tratamento específico para erros de autenticação
+      if (response.status === 401) {
+        throw new Error(`API Key inválida ou expirada. Verifique se a chave está correta para o ambiente ${data.environment}`);
+      } else if (response.status === 403) {
+        throw new Error(`Acesso negado. Verifique as permissões da API Key para o ambiente ${data.environment}`);
+      } else {
+        throw new Error(`Erro na API Asaas: ${response.status} - ${errorText}`);
+      }
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
