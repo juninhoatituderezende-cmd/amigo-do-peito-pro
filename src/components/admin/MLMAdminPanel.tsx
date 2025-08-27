@@ -62,13 +62,7 @@ export function MLMAdminPanel() {
       // Carregar dados dos grupos
       const { data: groupsData, error: groupsError } = await supabase
         .from('plan_groups')
-        .select(`
-          *,
-          services (
-            name,
-            price
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (groupsError) throw groupsError;
@@ -81,7 +75,7 @@ export function MLMAdminPanel() {
       // Processar dados
       const mappedGroups: Group[] = (groupsData || []).map(group => ({
         id: group.id,
-        service_name: group.services?.name || 'Serviço',
+        service_name: `Grupo #${group.group_number || group.id.slice(-4)}`,
         current_participants: group.current_participants || 0,
         max_participants: group.max_participants || 10,
         status: group.status || 'forming',

@@ -49,28 +49,15 @@ const UserMarketplace = () => {
     try {
       setLoading(true);
       
-      // Load from both services and products tables
-      const [servicesResponse, productsResponse] = await Promise.all([
-        supabase.from('services').select('*').eq('active', true).order('name'),
-        supabase.from('products').select('*').eq('active', true).eq('target_audience', 'user').order('name')
-      ]);
+      // Load from products table only
+      const productsResponse = await supabase
+        .from('products')
+        .select('*')
+        .eq('active', true)
+        .eq('target_audience', 'user')
+        .order('name');
 
-      if (servicesResponse.error) throw servicesResponse.error;
       if (productsResponse.error) throw productsResponse.error;
-
-      // Transform services to marketplace products format
-      const serviceProducts = (servicesResponse.data || []).map(service => ({
-        id: service.id,
-        name: service.name,
-        description: service.description || '',
-        valor_total: service.price,
-        category: service.category || 'Serviços',
-        ativo: service.active,
-        approved: true,
-        image_url: service.image_url,
-        created_at: service.created_at,
-        type: 'service' as const
-      }));
 
       // Transform products to marketplace products format
       const productItems = (productsResponse.data || []).map(product => ({
@@ -86,7 +73,7 @@ const UserMarketplace = () => {
         type: 'product' as const
       }));
 
-      const allProducts = [...serviceProducts, ...productItems];
+      const allProducts = [...productItems];
       setProducts(allProducts);
       
       // Extrair categorias únicas

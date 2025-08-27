@@ -69,9 +69,9 @@ export const InfluencerProducts = () => {
 
   const loadProducts = async () => {
     try {
-      // Use services table as a substitute for products
+      // Use products table
       const { data: servicesData, error } = await supabase
-        .from('services')
+        .from('products')
         .select('*')
         .order('created_at', { ascending: false });
 

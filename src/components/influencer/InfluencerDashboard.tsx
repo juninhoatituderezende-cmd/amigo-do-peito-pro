@@ -83,9 +83,9 @@ export function InfluencerDashboard() {
         return;
       }
 
-      // Carregar links de referência usando services como mock
+      // Carregar links de referência usando products como mock
       const { data: servicesData } = await supabase
-        .from('services')
+        .from('products')
         .select('*')
         .limit(5);
 

@@ -18,7 +18,8 @@ import AdminLogin from "./pages/AdminLogin";
 import Auth from "./pages/Auth";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUsuarios from "./pages/admin/AdminUsuarios";
-import AdminPlanos from "./pages/admin/AdminPlanos";
+import AdminPlanosTatuagem from "./pages/admin/AdminPlanosTatuagem";
+import AdminPlanosOdontologia from "./pages/admin/AdminPlanosOdontologia";
 import AdminProdutos from "./pages/admin/AdminProdutos";
 import AdminMarketplace from "./pages/admin/AdminMarketplace";
 import AdminPagamentos from "./pages/admin/AdminPagamentos";
@@ -267,9 +268,14 @@ const App = () => (
                   <AdminUsuarios />
                 </AdminProtectedRoute>
               } />
-              <Route path="/admin/planos" element={
+              <Route path="/admin/planos-tatuagem" element={
                 <AdminProtectedRoute>
-                  <AdminPlanos />
+                  <AdminPlanosTatuagem />
+                </AdminProtectedRoute>
+              } />
+              <Route path="/admin/planos-odontologia" element={
+                <AdminProtectedRoute>
+                  <AdminPlanosOdontologia />
                 </AdminProtectedRoute>
               } />
               <Route path="/admin/pagamentos" element={

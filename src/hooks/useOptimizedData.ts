@@ -126,7 +126,7 @@ export const useMarketplaceProducts = () => {
     'marketplace-products',
     async () => {
       const { data, error } = await supabase
-        .from('services')
+        .from('products')
         .select('*')
         .eq('active', true)
         .order('created_at', { ascending: false });
@@ -164,7 +164,7 @@ export const useAdminStats = () => {
       // Buscar estatísticas reais
       const [profilesResult, servicesResult, creditsResult] = await Promise.all([
         supabase.from('profiles').select('count', { count: 'exact', head: true }),
-        supabase.from('services').select('count', { count: 'exact', head: true }),
+        supabase.from('products').select('count', { count: 'exact', head: true }),
         supabase.from('user_credits').select('count', { count: 'exact', head: true })
       ]);
 

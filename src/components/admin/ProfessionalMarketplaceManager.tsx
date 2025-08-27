@@ -52,12 +52,12 @@ export function ProfessionalMarketplaceManager() {
 
       if (profError) throw profError;
 
-      // Load services with professional info
+      // Load products with professional info
       const { data: servicesData, error: servError } = await supabase
-        .from('services')
+        .from('products')
         .select(`
           *,
-          professional:profiles!services_professional_id_fkey(full_name)
+          professional:profiles!products_professional_id_fkey(full_name)
         `)
         .order('created_at', { ascending: false });
 
@@ -115,7 +115,7 @@ export function ProfessionalMarketplaceManager() {
   const handleToggleService = async (serviceId: string, currentStatus: boolean) => {
     try {
       const { error } = await supabase
-        .from('services')
+        .from('products')
         .update({ active: !currentStatus })
         .eq('id', serviceId);
 

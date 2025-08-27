@@ -77,14 +77,14 @@ export const ProductForm = () => {
       }
 
       const { data, error } = await supabase
-        .from('services')
+        .from('products')
         .insert({
           professional_id: professional.id,
           name: formData.name,
           description: formData.description,
           category: formData.category,
           price: formData.price,
-          duration: formData.duration
+          stock_quantity: -1
         })
         .select()
         .single();

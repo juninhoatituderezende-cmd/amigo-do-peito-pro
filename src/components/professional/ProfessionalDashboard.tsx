@@ -61,9 +61,9 @@ export function ProfessionalDashboard() {
         return;
       }
 
-      // Load services count
+      // Load products count
       const { data: services } = await supabase
-        .from('services')
+        .from('products')
         .select('*')
         .eq('professional_id', professional.id);
 

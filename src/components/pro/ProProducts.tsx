@@ -62,9 +62,9 @@ export const ProProducts = () => {
         return;
       }
 
-      // Load services
+      // Load products
       const { data: servicesData, error } = await supabase
-        .from('services')
+        .from('products')
         .select('*')
         .eq('professional_id', professional.id)
         .order('created_at', { ascending: false });
