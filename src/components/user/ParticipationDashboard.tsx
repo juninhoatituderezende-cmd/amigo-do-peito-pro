@@ -173,74 +173,29 @@ export const ParticipationDashboard = () => {
 
   const copyReferralLink = async () => {
     if (!referralData?.referralCode) {
-      setCopySuccess(false);
-      setTimeout(() => setCopySuccess(false), 3000);
       return;
     }
 
     const link = `${window.location.origin}/register?ref=${referralData.referralCode}`;
-    console.log('🚀 COPIANDO LINK:', link);
+    console.log('🚀 Copiando link:', link);
     
     try {
-      // 1º: Tentar Web Share API (funciona no iOS)
-      if (navigator.share) {
-        try {
-          await navigator.share({
-            title: 'Convite - Amigo do Peito',
-            text: 'Junte-se ao meu grupo usando meu código de indicação!',
-            url: link
-          });
-          console.log('✅ Compartilhado via Web Share API');
-          setCopySuccess(true);
-          setTimeout(() => setCopySuccess(false), 3000);
-          return;
-        } catch (error) {
-          console.log('⚠️ Web Share cancelado');
-        }
-      }
-
-      // 2º: Tentar clipboard simples
       await navigator.clipboard.writeText(link);
-      console.log('✅ Copiado via clipboard');
+      console.log('✅ Link copiado!');
       setCopySuccess(true);
-      setTimeout(() => setCopySuccess(false), 3000);
-      
+      setTimeout(() => setCopySuccess(false), 2000);
     } catch (error) {
-      console.log('⚠️ Clipboard falhou, usando modal');
+      console.log('⚠️ Erro ao copiar, usando fallback');
+      // Fallback simples
+      const input = document.createElement('input');
+      input.value = link;
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand('copy');
+      document.body.removeChild(input);
       
-      // 3º: Mostrar modal com link selecionável
-      const modal = document.createElement('div');
-      modal.style.cssText = `
-        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(0,0,0,0.8); z-index: 9999;
-        display: flex; align-items: center; justify-content: center;
-        padding: 20px;
-      `;
-      
-      modal.innerHTML = `
-        <div style="background: white; padding: 20px; border-radius: 12px; max-width: 90%; text-align: center;">
-          <p style="margin-bottom: 15px; font-weight: bold; color: #333;">Toque e segure para copiar:</p>
-          <input type="text" value="${link}" readonly 
-                 style="width: 100%; padding: 12px; font-size: 14px; border: 2px solid #007AFF; 
-                        border-radius: 8px; text-align: center; background: #f0f0f0;" 
-                 onclick="this.select()" />
-          <button onclick="document.body.removeChild(this.closest('div'))" 
-                  style="margin-top: 15px; padding: 10px 20px; background: #007AFF; 
-                         color: white; border: none; border-radius: 8px; font-size: 16px;">
-            Fechar
-          </button>
-        </div>
-      `;
-      
-      modal.onclick = (e) => {
-        if (e.target === modal) document.body.removeChild(modal);
-      };
-      
-      document.body.appendChild(modal);
-      
-      // Mostrar feedback visual também
       setCopySuccess(true);
-      setTimeout(() => setCopySuccess(false), 5000);
+      setTimeout(() => setCopySuccess(false), 2000);
     }
   };
 
@@ -407,10 +362,10 @@ export const ParticipationDashboard = () => {
                 Copiar Link de Indicação
               </Button>
               
-              {/* Mensagem de sucesso próxima ao botão */}
+              {/* Mensagem de sucesso diretamente abaixo do botão */}
               {copySuccess && (
-                <div className="mt-2 p-2 bg-green-100 text-green-800 rounded-lg text-center text-sm font-medium animate-in fade-in duration-300">
-                  ✅ Link copiado com sucesso!
+                <div className="mt-2 text-green-400 text-center font-semibold animate-in fade-in duration-300">
+                  ✅ Link copiado!
                 </div>
               )}
 
