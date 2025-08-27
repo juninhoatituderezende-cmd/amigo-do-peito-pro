@@ -188,21 +188,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           name: profileData.full_name, // Compatibility
           phone: profileData.phone,
           role: profileData.role as UserRole,
-          avatar_url: null, // Not available in current schema
+          avatar_url: profileData.avatar_url, // Now available
           ...additionalData
         });
         
-        // Handle automatic redirection based on role
-        const targetRoute = profileData.role === 'admin' ? '/admin/dashboard' :
-                           profileData.role === 'professional' ? '/profissional/dashboard' :
-                           profileData.role === 'influencer' ? '/influenciador/dashboard' :
-                           '/usuario/dashboard';
-        
-        // Apenas redirecionar se estiver na página de login ou home
+        // Handle automatic redirection with plan verification for users
         const currentPath = location.pathname;
-        if (currentPath === '/' || currentPath === '/auth' || currentPath.includes('login')) {
-          console.log('🎯 Redirecting user to:', targetRoute);
-          navigate(targetRoute, { replace: true });
+        const shouldRedirect = currentPath === '/' || currentPath === '/auth' || currentPath.includes('login');
+        
+        if (shouldRedirect) {
+          // Para usuários comuns, verificar plano ativo antes de redirecionar
+          if (profileData.role === 'user') {
+            console.log('👤 Usuário comum detectado, verificando planos ativos...');
+            
+            // Usar setTimeout para evitar problemas de concorrência
+            setTimeout(async () => {
+              const { checkUserActivePlan, redirectBasedOnPlanStatus } = await import('@/lib/planUtils');
+              
+              const planStatus = await checkUserActivePlan(userId);
+              console.log('📋 Status do plano:', planStatus);
+              
+              redirectBasedOnPlanStatus(planStatus.hasActivePlan, profileData.role, navigate);
+            }, 100);
+            
+          } else {
+            // Outros tipos de usuário seguem fluxo normal
+            const targetRoute = profileData.role === 'admin' ? '/admin/dashboard' :
+                               profileData.role === 'professional' ? '/profissional/dashboard' :
+                               profileData.role === 'influencer' ? '/influenciador/dashboard' :
+                               '/usuario/dashboard';
+            
+            console.log('🎯 Redirecting user to:', targetRoute);
+            navigate(targetRoute, { replace: true });
+          }
         }
       }
     } catch (error) {
