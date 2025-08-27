@@ -250,12 +250,19 @@ export function CustomPlansManager() {
 
       console.log('Plano excluído com sucesso:', data);
 
+      // Atualizar estado local imediatamente
+      setPlans(prev => prev.filter(plan => plan.id !== planId));
+
       toast({
         title: "✅ Sucesso",
         description: `Plano "${existingPlan.name}" excluído com sucesso!`,
       });
       
-      await loadPlans();
+      // Forçar reload da lista após um pequeno delay para garantir consistência
+      setTimeout(() => {
+        loadPlans();
+      }, 500);
+      
     } catch (error: any) {
       console.error('Erro ao excluir plano:', error);
       toast({
