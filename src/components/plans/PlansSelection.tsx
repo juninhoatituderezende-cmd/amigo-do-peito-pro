@@ -101,7 +101,49 @@ export const PlansSelection = ({ onSelectPlan, selectedPlanId }: PlansSelectionP
     }
   };
 
-  const handleSelectPlan = (plan: Plan) => {
+  const handleSelectPlan = async (plan: Plan) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: "Login necessário",
+          description: "Faça login para comprar um plano.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Chamar a função de criar pagamento
+      const { data, error } = await supabase.functions.invoke('create-asaas-payment', {
+        body: {
+          plan_id: plan.id,
+          plan_category: plan.category,
+          user_id: session.user.id,
+          payment_method: 'pix' // Pode ser alterado para permitir escolha
+        }
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        toast({
+          title: "Pagamento criado!",
+          description: `PIX de R$ ${data.amount} gerado para o plano ${data.plan_name}`,
+        });
+        
+        // Aqui você pode redirecionar para uma página de checkout
+        // ou abrir um modal com os dados do pagamento
+        console.log('Dados do pagamento:', data);
+      }
+    } catch (error) {
+      console.error('Erro ao processar pagamento:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao processar pagamento. Tente novamente.",
+        variant: "destructive",
+      });
+    }
+
     if (onSelectPlan) {
       onSelectPlan(plan);
     }
@@ -239,17 +281,13 @@ export const PlansSelection = ({ onSelectPlan, selectedPlanId }: PlansSelectionP
 
               {/* CTA Button */}
               <Button 
-                className={`w-full mt-4 font-semibold text-white ${
-                  selectedPlanId === plan.id 
-                    ? "bg-primary hover:bg-primary/90 text-black" 
-                    : "bg-ap-orange hover:bg-ap-orange-dark text-white"
-                } transition-all duration-200`}
+                className="w-full mt-4 font-semibold text-white bg-ap-orange hover:bg-ap-orange-dark transition-all duration-200"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleSelectPlan(plan);
                 }}
               >
-                {selectedPlanId === plan.id ? "Plano Selecionado" : "Formar Grupo"}
+                Comprar Plano
               </Button>
 
               {/* Group Info */}
