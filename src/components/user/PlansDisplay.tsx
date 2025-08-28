@@ -36,36 +36,33 @@ export const PlansDisplay = ({ category, title, onSelectPlan }: PlansDisplayProp
   const loadPlans = async () => {
     try {
       setLoading(true);
+      console.log('🔍 Carregando planos para categoria:', category);
       
-      // Buscar planos diretamente da tabela baseado na categoria
-      let data, error;
-      
-      if (category === 'tatuador') {
-        const response = await supabase
-          .from('planos_tatuador')
-          .select('*')
-          .eq('active', true)
-          .order('created_at', { ascending: false });
-        data = response.data;
-        error = response.error;
-      } else {
-        const response = await supabase
-          .from('planos_dentista')
-          .select('*')
-          .eq('active', true)
-          .order('created_at', { ascending: false });
-        data = response.data;
-        error = response.error;
-      }
+      // **SOLUÇÃO: Usar edge function unificada com filtro de categoria**
+      const { data: response, error } = await supabase.functions.invoke('unified-plans-loader', {
+        body: {
+          category_filter: category === 'tatuador' ? 'tattoo' : 'dental'
+        }
+      });
 
       if (error) {
+        console.error('❌ Erro na edge function unified-plans-loader:', error);
         throw error;
       }
 
-      setPlans(data || []);
+      if (!response?.success) {
+        console.error('❌ Resposta inválida da edge function:', response);
+        throw new Error(response?.error || 'Resposta inválida do servidor');
+      }
+
+      const plans = response.plans || [];
+      console.log('📊 Estatísticas dos planos filtrados:', response.stats);
+      console.log('📝 Planos encontrados para', category, ':', plans.length);
+
+      setPlans(plans);
 
     } catch (error) {
-      console.error('Erro ao carregar planos:', error);
+      console.error('❌ Erro ao carregar planos:', error);
       toast({
         title: "Erro",
         description: "Erro ao carregar planos. Tente novamente.",

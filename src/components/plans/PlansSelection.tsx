@@ -47,50 +47,60 @@ export const PlansSelection = ({ onSelectPlan, selectedPlanId }: PlansSelectionP
 
   const loadPlans = async () => {
     try {
-      // Buscar planos de todas as tabelas específicas
-      const tattooPlansPromise = supabase
-        .from('planos_tatuador')
-        .select('*')
-        .eq('active', true);
-        
-      const dentalPlansPromise = supabase
-        .from('planos_dentista')
-        .select('*')
-        .eq('active', true);
+      console.log('🔍 Carregando planos unificados...');
+      
+      // **SOLUÇÃO: Usar edge function unificada para buscar TODOS os planos**
+      const { data: response, error } = await supabase.functions.invoke('unified-plans-loader', {
+        body: {}
+      });
 
-      const [tattooResponse, dentalResponse] = await Promise.all([
-        tattooPlansPromise,
-        dentalPlansPromise
-      ]);
+      if (error) {
+        console.error('❌ Erro na edge function unified-plans-loader:', error);
+        throw error;
+      }
 
-      // Combinar todos os planos
-      const allPlans = [
-        ...(tattooResponse.data || []).map(plan => ({ ...plan, category: 'tattoo' })),
-        ...(dentalResponse.data || []).map(plan => ({ ...plan, category: 'dental' }))
-      ];
+      if (!response?.success || !response?.plans) {
+        console.error('❌ Resposta inválida da edge function:', response);
+        throw new Error('Resposta inválida do servidor');
+      }
 
-      const formattedPlans: Plan[] = allPlans.map((plan, index) => ({
+      const allPlans = response.plans;
+      console.log('📊 Estatísticas dos planos:', response.stats);
+      console.log('📝 Planos carregados:', allPlans.length);
+
+      // Formatar planos para o frontend
+      const formattedPlans: Plan[] = allPlans.map((plan: any, index: number) => ({
         id: plan.id,
         name: plan.name,
         description: plan.description || `Plano ${plan.name}`,
         price: plan.price,
         entryPrice: Math.round(plan.price * 0.1), // 10% do preço como entrada
         category: plan.category,
-        features: plan.description ? [plan.description] : [`Plano completo de ${plan.category === 'tattoo' ? 'tatuagem' : 'odontologia'}`],
+        features: plan.description ? [plan.description] : [`Plano completo de ${getCategoryLabel(plan.category)}`],
         popular: index === 0, // Primeiro plano é marcado como popular
         icon: getCategoryIcon(plan.category),
         max_participants: plan.max_participants || 10,
-        duration_months: 1, // padrão
+        duration_months: plan.duration_months || 1,
         image_url: plan.image_url
       }));
 
       setPlans(formattedPlans);
-      console.log('Planos carregados:', formattedPlans);
+      console.log('✅ Planos formatados e carregados:', formattedPlans.length);
+      
+      if (formattedPlans.length === 0) {
+        console.warn('⚠️ Nenhum plano ativo encontrado');
+        toast({
+          title: "Aviso",
+          description: "Nenhum plano ativo encontrado. Verifique com o administrador.",
+          variant: "default",
+        });
+      }
+      
     } catch (error) {
-      console.error('Erro ao carregar planos:', error);
+      console.error('❌ Erro ao carregar planos:', error);
       toast({
         title: "Erro",
-        description: "Erro ao carregar planos disponíveis.",
+        description: "Erro ao carregar planos disponíveis. Tente recarregar a página.",
         variant: "destructive",
       });
     } finally {

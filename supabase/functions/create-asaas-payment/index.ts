@@ -122,14 +122,21 @@ serve(async (req) => {
       customerId = existingCustomers.data[0].id;
       console.log('Cliente existente encontrado:', customerId);
     } else {
-      // Criar novo cliente
+      // Criar novo cliente - CORREÇÃO: Incluir CPF obrigatoriamente
+      if (!user.cpf) {
+        console.error('❌ CPF obrigatório para criar novo cliente no Asaas');
+        throw new Error('CPF é obrigatório para criar clientes no Asaas');
+      }
+
       const newCustomerData = {
         name: user.full_name || user.email,
         email: user.email,
-        cpfCnpj: user.cpf || undefined,
+        cpfCnpj: user.cpf, // CORREÇÃO: Sempre incluir CPF
         phone: user.phone || undefined
       };
 
+      console.log('🆕 Criando novo cliente com dados:', newCustomerData);
+      
       const createCustomerResponse = await fetch(`${asaasBaseUrl}/customers`, {
         method: 'POST',
         headers: {
@@ -142,12 +149,12 @@ serve(async (req) => {
       const newCustomer = await createCustomerResponse.json();
       
       if (!createCustomerResponse.ok) {
-        console.error('Erro ao criar cliente:', newCustomer);
-        throw new Error(newCustomer.errors?.[0]?.description || 'Erro ao criar cliente');
+        console.error('❌ Erro ao criar cliente no Asaas:', newCustomer);
+        throw new Error(newCustomer.errors?.[0]?.description || 'Erro ao criar cliente no Asaas');
       }
       
       customerId = newCustomer.id;
-      console.log('Novo cliente criado:', customerId);
+      console.log('✅ Novo cliente criado com sucesso:', customerId);
     }
 
     const paymentData = {
