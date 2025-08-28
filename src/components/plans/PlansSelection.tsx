@@ -47,37 +47,49 @@ export const PlansSelection = ({ onSelectPlan, selectedPlanId }: PlansSelectionP
 
   const loadPlans = async () => {
     try {
-      console.log('🔍 Carregando planos unificados...');
+      console.log('🔍 [PLANS] Carregando planos unificados...');
       
-      // **SOLUÇÃO: Usar edge function unificada para buscar TODOS os planos**
       const { data: response, error } = await supabase.functions.invoke('unified-plans-loader', {
-        body: {}
+        body: { include_inactive: false, admin_view: false }
       });
 
       if (error) {
-        console.error('❌ Erro na edge function unified-plans-loader:', error);
+        console.error('❌ [PLANS] Erro na edge function:', error);
         throw error;
       }
 
-      if (!response?.success || !response?.plans) {
-        console.error('❌ Resposta inválida da edge function:', response);
-        throw new Error('Resposta inválida do servidor');
+      if (!response?.success) {
+        console.error('❌ [PLANS] Resposta inválida:', response);
+        throw new Error(response?.errors?.join(', ') || 'Resposta inválida do servidor');
       }
 
-      const allPlans = response.plans;
-      console.log('📊 Estatísticas dos planos:', response.stats);
-      console.log('📝 Planos carregados:', allPlans.length);
+      const allPlans = response.plans || [];
+      console.log('📊 [PLANS] Estatísticas:', response.stats);
+      console.log('📝 [PLANS] Total carregados:', allPlans.length);
 
-      // Formatar planos para o frontend
-      const formattedPlans: Plan[] = allPlans.map((plan: any, index: number) => ({
+      // **VALIDAÇÃO ROBUSTA DOS PLANOS**
+      const validPlans = allPlans.filter((plan: any) => {
+        const isValid = plan.id && plan.name && plan.price > 0 && plan.active;
+        if (!isValid) {
+          console.warn('⚠️ [PLANS] Plano inválido ignorado:', plan);
+        }
+        return isValid;
+      });
+
+      console.log('✅ [PLANS] Planos válidos:', validPlans.length);
+
+      // **FORMATAÇÃO PARA O FRONTEND**
+      const formattedPlans: Plan[] = validPlans.map((plan: any, index: number) => ({
         id: plan.id,
         name: plan.name,
-        description: plan.description || `Plano ${plan.name}`,
+        description: plan.description || `${getCategoryLabel(plan.category)} - ${plan.name}`,
         price: plan.price,
-        entryPrice: Math.round(plan.price * 0.1), // 10% do preço como entrada
+        entryPrice: Math.round(plan.price * 0.1), // 10% entrada
         category: plan.category,
-        features: plan.description ? [plan.description] : [`Plano completo de ${getCategoryLabel(plan.category)}`],
-        popular: index === 0, // Primeiro plano é marcado como popular
+        features: plan.description 
+          ? [plan.description, `Tipo: ${plan.tipo_transacao}`, `Fonte: ${plan.table_source}`] 
+          : [`${getCategoryLabel(plan.category)} completo`, `Tipo: ${plan.tipo_transacao}`],
+        popular: plan.categoria === 'tattoo' && index === 0, // Primeiro tattoo é popular
         icon: getCategoryIcon(plan.category),
         max_participants: plan.max_participants || 10,
         duration_months: plan.duration_months || 1,
@@ -85,22 +97,32 @@ export const PlansSelection = ({ onSelectPlan, selectedPlanId }: PlansSelectionP
       }));
 
       setPlans(formattedPlans);
-      console.log('✅ Planos formatados e carregados:', formattedPlans.length);
+      console.log('✅ [PLANS] Planos formatados:', formattedPlans.length);
       
       if (formattedPlans.length === 0) {
-        console.warn('⚠️ Nenhum plano ativo encontrado');
+        console.warn('⚠️ [PLANS] Nenhum plano válido encontrado');
+        toast({
+          title: "Nenhum plano disponível",
+          description: "Não há planos ativos no momento. Contate o administrador.",
+          variant: "default",
+        });
+      }
+      
+      // **LOG DE ERROS SE HOUVER**
+      if (response.errors && response.errors.length > 0) {
+        console.warn('⚠️ [PLANS] Erros durante carregamento:', response.errors);
         toast({
           title: "Aviso",
-          description: "Nenhum plano ativo encontrado. Verifique com o administrador.",
+          description: `${formattedPlans.length} planos carregados com alguns problemas.`,
           variant: "default",
         });
       }
       
     } catch (error) {
-      console.error('❌ Erro ao carregar planos:', error);
+      console.error('❌ [PLANS] Erro crítico ao carregar:', error);
       toast({
-        title: "Erro",
-        description: "Erro ao carregar planos disponíveis. Tente recarregar a página.",
+        title: "Erro no Sistema",
+        description: "Falha ao carregar planos. Recarregue a página ou contate o suporte.",
         variant: "destructive",
       });
     } finally {

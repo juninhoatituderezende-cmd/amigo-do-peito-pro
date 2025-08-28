@@ -59,15 +59,44 @@ serve(async (req) => {
       throw new Error('Plano não encontrado ou inativo')
     }
 
-    planData = plan
+    // **4. BUSCAR PLANO USANDO EDGE FUNCTION UNIFICADA**
+    console.log('🔍 [PLAN-SEARCH] Buscando plano via unified-plans-loader...')
     
-    // Determinar tipo de transação baseado na categoria/tabela
-    let tipoTransacao = 'servico'; // Default para serviços
-    if (plan_category === 'product' || tableName === 'products') {
-      tipoTransacao = 'produto';
+    const { data: plansResponse, error: plansError } = await supabaseClient.functions.invoke('unified-plans-loader', {
+      body: { include_inactive: false, admin_view: false }
+    })
+    
+    if (plansError || !plansResponse?.success) {
+      console.error('❌ [PLAN-SEARCH] Erro ao buscar planos:', plansError)
+      throw new Error('Erro ao carregar planos disponíveis')
     }
+    
+    const foundPlan = plansResponse.plans.find((plan: any) => plan.id === plan_id)
+    
+    if (!foundPlan) {
+      console.error('❌ [PLAN-SEARCH] Plano não encontrado:', { plan_id, plan_category })
+      console.log('📋 [PLAN-SEARCH] Planos disponíveis:', plansResponse.plans.map((p: any) => ({ id: p.id, name: p.name, active: p.active })))
+      throw new Error(`Plano não encontrado ou inativo: ${plan_id}`)
+    }
+    
+    if (!foundPlan.active) {
+      console.error('❌ [PLAN-SEARCH] Plano inativo:', foundPlan)
+      throw new Error(`Plano está inativo: ${foundPlan.name}`)
+    }
+    
+    const planData = foundPlan
+    const planTableSource = foundPlan.table_source
+    
+    console.log('✅ [PLAN-SEARCH] Plano encontrado:', {
+      id: planData.id,
+      name: planData.name,
+      price: planData.price,
+      source: planTableSource,
+      tipo_transacao: planData.tipo_transacao
+    })
 
-    // Buscar dados do usuário
+    // **5. BUSCAR E VALIDAR DADOS DO USUÁRIO**
+    console.log('👤 [USER-DATA] Buscando dados do usuário...')
     const { data: user, error: userError } = await supabaseClient
       .from('profiles')
       .select('*')
@@ -75,27 +104,34 @@ serve(async (req) => {
       .single()
 
     if (userError || !user) {
+      console.error('❌ [USER-DATA] Usuário não encontrado:', userError)
       throw new Error('Usuário não encontrado')
     }
 
-    // Calcular valor da entrada (10% do preço total) e impostos
-    const entryAmount = Math.round(planData.price * 0.1)
+    if (!user.cpf) {
+      console.error('❌ [USER-DATA] CPF obrigatório não informado')
+      throw new Error('CPF é obrigatório para criar pagamentos')
+    }
+
+    console.log('✅ [USER-DATA] Usuário validado:', { id: user.id, email: user.email, cpf_provided: !!user.cpf })
+
+    // **6. CALCULAR IMPOSTOS BASEADO NO TIPO DE TRANSAÇÃO**
+    console.log('💰 [TAX-CALC] Calculando impostos para:', planData.tipo_transacao)
     
-    // Calcular impostos usando a função do banco
     const { data: impostos, error: impostosError } = await supabaseClient
       .rpc('calcular_impostos', {
-        valor_base: entryAmount,
-        tipo: tipoTransacao,
-        municipio: municipio,
+        valor_base: planData.price,
+        tipo: planData.tipo_transacao,
+        municipio: 'sao_paulo',
         regime: 'simples_nacional'
       });
 
     if (impostosError) {
-      console.error('Erro ao calcular impostos:', impostosError);
-      // Continuar sem impostos se houver erro
+      console.error('⚠️ [TAX-CALC] Erro no cálculo de impostos:', impostosError);
+      // Continuar sem impostos se cálculo falhar
     }
 
-    console.log('Cálculo de impostos:', impostos);
+    console.log('📊 [TAX-CALC] Impostos calculados:', impostos);
 
     // Preparar dados para o Asaas
     const asaasBaseUrl = asaasConfig.environment === 'production' 

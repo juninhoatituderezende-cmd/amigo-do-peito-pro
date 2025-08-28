@@ -29,6 +29,7 @@ import AdminNotificacoes from "./pages/admin/AdminNotificacoes";
 import AdminRelatorios from "./pages/admin/AdminRelatorios";
 import { RelatoriosContabeis } from "./components/admin/RelatoriosContabeis";
 import { ContratacaoMonitor } from "./components/admin/ContratacaoMonitor";
+import { PlansMonitor } from "./components/admin/PlansMonitor";
 import Register from "./pages/Register";
 import ProfessionalLogin from "./pages/ProfessionalLogin";
 import Confirmation from "./pages/Confirmation";
@@ -330,6 +331,11 @@ const App = () => (
                <Route path="/admin/monitor-contratacoes" element={
                  <AdminProtectedRoute>
                    <ContratacaoMonitor />
+                 </AdminProtectedRoute>
+               } />
+               <Route path="/admin/monitor-planos" element={
+                 <AdminProtectedRoute>
+                   <PlansMonitor />
                  </AdminProtectedRoute>
                } />
               
