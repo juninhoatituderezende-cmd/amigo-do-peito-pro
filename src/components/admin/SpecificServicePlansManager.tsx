@@ -64,23 +64,23 @@ export function SpecificServicePlansManager({ serviceType, onBack }: SpecificSer
   const loadPlans = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .rpc('get_service_plans', { table_name: serviceType.table });
-
-      if (error) throw error;
-
-      // A função RPC retorna JSON como string, precisamos fazer parse
-      let plansArray = [];
-      if (data) {
-        try {
-          plansArray = typeof data === 'string' ? JSON.parse(data) : data;
-        } catch (parseError) {
-          console.error("Erro ao fazer parse dos dados:", parseError);
-          plansArray = [];
-        }
-      }
+      console.log("Carregando planos da tabela:", serviceType.table);
       
-      setPlans(Array.isArray(plansArray) ? plansArray : []);
+      // BUSCA DIRETA NA TABELA - SEM RPC (com casting seguro)
+      const { data, error } = await supabase
+        .from(serviceType.table as any)
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error("Erro detalhado:", error);
+        throw error;
+      }
+
+      console.log("Planos carregados:", data);
+      // Cast seguro para ServicePlan[] com verificação
+      const typedPlans = data ? (data as unknown as ServicePlan[]) : [];
+      setPlans(typedPlans);
     } catch (error) {
       console.error("Erro ao carregar planos:", error);
       toast({
@@ -88,6 +88,7 @@ export function SpecificServicePlansManager({ serviceType, onBack }: SpecificSer
         description: "Erro ao carregar planos. Tente novamente.",
         variant: "destructive",
       });
+      setPlans([]); // Garantir que plans não seja undefined
     } finally {
       setLoading(false);
     }
@@ -116,37 +117,54 @@ export function SpecificServicePlansManager({ serviceType, onBack }: SpecificSer
       };
 
       if (editingPlan) {
+        // ATUALIZAÇÃO DIRETA NA TABELA - SEM RPC
         const { data, error } = await supabase
-          .rpc('update_service_plan', {
-            table_name: serviceType.table,
-            plan_id: editingPlan.id,
-            plan_name: formData.name,
-            plan_description: formData.description,
-            plan_price: parseFloat(formData.price),
-            plan_max_participants: parseInt(formData.max_participants),
-            plan_image_url: formData.image_url,
-            plan_active: formData.active
-          });
+          .from(serviceType.table as any)
+          .update({
+            name: formData.name,
+            description: formData.description,
+            price: parseFloat(formData.price),
+            max_participants: parseInt(formData.max_participants),
+            image_url: formData.image_url,
+            active: formData.active,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', editingPlan.id)
+          .select()
+          .single();
 
-        if (error) throw error;
+        if (error) {
+          console.error("Erro detalhado:", error);
+          throw error;
+        }
 
+        console.log("Plano atualizado:", data);
+        
         toast({
           title: "Sucesso",
           description: "Plano atualizado com sucesso!",
         });
       } else {
+        // CRIAÇÃO DIRETA NA TABELA - SEM RPC
         const { data, error } = await supabase
-          .rpc('insert_service_plan', {
-            table_name: serviceType.table,
-            plan_name: formData.name,
-            plan_description: formData.description,
-            plan_price: parseFloat(formData.price),
-            plan_max_participants: parseInt(formData.max_participants),
-            plan_image_url: formData.image_url,
-            plan_active: formData.active
-          });
+          .from(serviceType.table as any)
+          .insert({
+            name: formData.name,
+            description: formData.description,
+            price: parseFloat(formData.price),
+            max_participants: parseInt(formData.max_participants),
+            image_url: formData.image_url,
+            active: formData.active
+          })
+          .select()
+          .single();
 
-        if (error) throw error;
+        if (error) {
+          console.error("Erro detalhado:", error);
+          throw error;
+        }
+
+        console.log("Plano criado:", data);
 
         toast({
           title: "Sucesso",
@@ -156,12 +174,15 @@ export function SpecificServicePlansManager({ serviceType, onBack }: SpecificSer
 
       resetForm();
       setDialogOpen(false);
-      loadPlans();
+      
+      // RECARREGAR LISTA IMEDIATAMENTE APÓS SALVAR
+      await loadPlans();
     } catch (error) {
       console.error("Erro ao salvar plano:", error);
+      const errorMessage = error?.message || "Erro desconhecido";
       toast({
         title: "Erro",
-        description: "Erro ao salvar plano",
+        description: `Erro ao salvar plano: ${errorMessage}`,
         variant: "destructive",
       });
     } finally {
@@ -170,8 +191,17 @@ export function SpecificServicePlansManager({ serviceType, onBack }: SpecificSer
   };
 
   const handleEdit = (plan: ServicePlan) => {
+    console.log("Editando plano:", plan);
     setEditingPlan(plan);
     setFormData({
+      name: plan.name,
+      description: plan.description || "",
+      price: plan.price.toString(),
+      max_participants: plan.max_participants.toString(),
+      image_url: plan.image_url || "",
+      active: plan.active,
+    });
+    console.log("FormData carregado para edição:", {
       name: plan.name,
       description: plan.description || "",
       price: plan.price.toString(),
@@ -185,25 +215,32 @@ export function SpecificServicePlansManager({ serviceType, onBack }: SpecificSer
   const handleDelete = async (planId: string) => {
     try {
       setDeleting(planId);
-      const { data, error } = await supabase
-        .rpc('delete_service_plan', {
-          table_name: serviceType.table,
-          plan_id: planId
-        });
+      
+      // EXCLUSÃO DIRETA NA TABELA - SEM RPC
+      const { error } = await supabase
+        .from(serviceType.table as any)
+        .delete()
+        .eq('id', planId);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Erro detalhado na exclusão:", error);
+        throw error;
+      }
+
+      console.log("Plano excluído com sucesso:", planId);
 
       toast({
         title: "Sucesso",
         description: "Plano excluído com sucesso!",
       });
       
+      // ATUALIZAR LISTA IMEDIATAMENTE
       loadPlans();
     } catch (error) {
       console.error("Erro ao excluir plano:", error);
       toast({
         title: "Erro",
-        description: "Erro ao excluir plano",
+        description: "Erro ao excluir plano. Tente novamente.",
         variant: "destructive",
       });
     } finally {
@@ -213,26 +250,27 @@ export function SpecificServicePlansManager({ serviceType, onBack }: SpecificSer
 
   const togglePlanStatus = async (planId: string, currentStatus: boolean) => {
     try {
-      const { data, error } = await supabase
-        .rpc('update_service_plan', {
-          table_name: serviceType.table,
-          plan_id: planId,
-          plan_name: plans.find(p => p.id === planId)?.name || '',
-          plan_description: plans.find(p => p.id === planId)?.description || '',
-          plan_price: plans.find(p => p.id === planId)?.price || 0,
-          plan_max_participants: plans.find(p => p.id === planId)?.max_participants || 10,
-          plan_image_url: plans.find(p => p.id === planId)?.image_url || '',
-          plan_active: !currentStatus
-        });
+      // ATUALIZAÇÃO DIRETA DO STATUS - SEM RPC
+      const { error } = await supabase
+        .from(serviceType.table as any)
+        .update({
+          active: !currentStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', planId);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Erro detalhado:", error);
+        throw error;
+      }
 
       toast({
         title: "Sucesso",
         description: `Plano ${!currentStatus ? "ativado" : "desativado"} com sucesso!`,
       });
       
-      loadPlans();
+      // Recarregar lista
+      await loadPlans();
     } catch (error) {
       console.error("Erro ao alterar status:", error);
       toast({
