@@ -23,18 +23,33 @@ serve(async (req) => {
     console.log('Iniciando criação de pagamento:', { plan_id, plan_category, user_id, payment_method, municipio })
 
     // Obter configuração ativa da integração Asaas
-    const { data: asaasConfig, error: configError } = await supabaseClient
+    const { data: asaasConfigs, error: configError } = await supabaseClient
       .from('asaas_integration')
       .select('*')
-      .eq('status', 'active')
-      .eq('connection_status', 'connected')
       .order('created_at', { ascending: false })
-      .limit(1)
-      .single()
 
-    if (configError || !asaasConfig) {
-      throw new Error('Integração Asaas não configurada ou inativa')
+    if (configError) {
+      console.error('❌ Erro ao buscar config Asaas:', configError)
+      throw new Error('Erro ao carregar configuração Asaas: ' + configError.message)
     }
+
+    if (!asaasConfigs || asaasConfigs.length === 0) {
+      throw new Error('Nenhuma configuração Asaas encontrada')
+    }
+
+    // Buscar primeiro ativo, ou pegar o mais recente
+    const asaasConfig = asaasConfigs.find(config => config.status === 'active') || asaasConfigs[0]
+    
+    if (!asaasConfig) {
+      throw new Error('Configuração Asaas não encontrada')
+    }
+
+    console.log('✅ Config Asaas encontrada:', {
+      id: asaasConfig.id,
+      status: asaasConfig.status,
+      environment: asaasConfig.environment,
+      connection_status: asaasConfig.connection_status
+    })
 
     // **4. BUSCAR PLANO USANDO EDGE FUNCTION UNIFICADA**
     console.log('🔍 [PLAN-SEARCH] Buscando plano via unified-plans-loader...')

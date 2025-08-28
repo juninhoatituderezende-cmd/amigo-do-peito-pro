@@ -86,50 +86,52 @@ export const PaymentDebugTool = () => {
 
       // Step 4: Verificar integração Asaas
       console.log('🔍 DEBUG Step 4: Verificando integração Asaas...');
-      const { data: asaasConfig, error: asaasError } = await supabase
+      const { data: asaasConfigs, error: asaasError } = await supabase
         .from('asaas_integration')
         .select('*')
-        .eq('status', 'active')
-        .eq('connection_status', 'connected')
-        .single();
+        .order('created_at', { ascending: false });
+
+      let asaasConfig = null;
+      if (asaasConfigs && asaasConfigs.length > 0) {
+        // Buscar primeiro ativo, ou pegar o mais recente
+        asaasConfig = asaasConfigs.find(config => config.status === 'active') || asaasConfigs[0];
+      }
 
       results.step4 = {
-        success: !asaasError,
+        success: !asaasError && !!asaasConfig,
         data: asaasConfig,
         error: asaasError,
-        integration_active: asaasConfig?.status === 'active'
+        total_configs: asaasConfigs?.length || 0,
+        integration_active: asaasConfig?.status === 'active',
+        connection_status: asaasConfig?.connection_status
       };
 
-      // Final: Tentar criar pagamento de teste (sem executar na API)
-      console.log('🔍 DEBUG Final: Simulando chamada create-asaas-payment...');
+      // Final: Tentar criar pagamento de teste
+      console.log('🔍 DEBUG Final: Testando create-asaas-payment...');
       
-      if (results.step1.success && results.step2.success && results.step3.success && results.step4.success) {
-        try {
-          const { data: paymentResponse, error: paymentError } = await supabase.functions.invoke('create-asaas-payment', {
-            body: {
-              plan_id: planId,
-              plan_category: 'tatuador',
-              user_id: user.id,
-              payment_method: 'pix',
-              municipio: 'sao_paulo'
-            }
-          });
+      try {
+        const { data: paymentResponse, error: paymentError } = await supabase.functions.invoke('create-asaas-payment', {
+          body: {
+            plan_id: planId,
+            plan_category: 'tattoo',
+            user_id: user.id,
+            payment_method: 'pix',
+            municipio: 'sao_paulo'
+          }
+        });
 
-          results.final = {
-            success: paymentResponse?.success,
-            data: paymentResponse,
-            error: paymentError
-          };
-        } catch (error) {
-          results.final = {
-            success: false,
-            error: error
-          };
-        }
-      } else {
+        results.final = {
+          success: paymentResponse?.success || false,
+          data: paymentResponse,
+          error: paymentError,
+          error_details: paymentError?.message || paymentError?.details
+        };
+      } catch (error) {
         results.final = {
           success: false,
-          error: 'Pré-requisitos falharam'
+          error: error,
+          error_type: 'exception',
+          error_message: error instanceof Error ? error.message : 'Erro desconhecido'
         };
       }
 
