@@ -411,7 +411,7 @@ export function SpecificServicePlansManager({ serviceType, onBack }: SpecificSer
                       <img
                         src={plan.image_url}
                         alt={plan.name}
-                        className="w-full h-32 object-cover rounded-md mb-2"
+                        className="w-full h-48 object-cover rounded-md mb-2"
                       />
                     )}
                     <div className="flex justify-between items-start">
