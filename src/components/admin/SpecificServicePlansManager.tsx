@@ -293,7 +293,7 @@ export function SpecificServicePlansManager({ serviceType, onBack }: SpecificSer
               Novo Plano
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogContent className="max-w-4xl max-h-[95vh] overflow-hidden flex flex-col">
             <DialogHeader className="flex-shrink-0">
               <DialogTitle>
                 {editingPlan ? "Editar Plano" : "Novo Plano"}
@@ -302,7 +302,7 @@ export function SpecificServicePlansManager({ serviceType, onBack }: SpecificSer
                 {editingPlan ? "Edite as informações do plano" : "Preencha os dados para criar um novo plano"}
               </DialogDescription>
             </DialogHeader>
-            <div className="flex-1 overflow-y-auto px-1">
+            <div className="flex-1 overflow-y-auto px-2">
               <form onSubmit={handleSubmit} className="space-y-4 pb-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -357,6 +357,8 @@ export function SpecificServicePlansManager({ serviceType, onBack }: SpecificSer
                   <SimpleImageUpload
                     onUpload={(url) => setFormData({ ...formData, image_url: url })}
                     label="Escolher imagem do plano"
+                    currentImageUrl={formData.image_url}
+                    showPreview={true}
                   />
                 </div>
 
@@ -389,30 +391,42 @@ export function SpecificServicePlansManager({ serviceType, onBack }: SpecificSer
 
       <Card>
         <CardHeader>
-          <CardTitle>Planos Cadastrados</CardTitle>
+          <CardTitle className="flex items-center justify-between">
+            <span>Planos Cadastrados</span>
+            <span className="text-sm font-normal text-muted-foreground">
+              {plans.length} {plans.length === 1 ? 'plano' : 'planos'}
+            </span>
+          </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="max-h-[80vh] overflow-y-auto">
           {plans.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">
-                Nenhum plano cadastrado ainda.
+            <div className="text-center py-12">
+              <div className="mx-auto w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-4">
+                <Plus className="h-12 w-12 text-muted-foreground" />
+              </div>
+              <p className="text-lg font-medium mb-2">Nenhum plano cadastrado</p>
+              <p className="text-muted-foreground mb-6">
+                Comece criando seu primeiro plano de {serviceType.name.toLowerCase()}
               </p>
-              <Button onClick={handleNewPlan} className="mt-4">
-                <Plus className="h-4 w-4 mr-2" />
+              <Button onClick={handleNewPlan} size="lg">
+                <Plus className="h-5 w-5 mr-2" />
                 Criar Primeiro Plano
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {plans.map((plan) => (
-                <Card key={plan.id} className="border-2">
-                  <CardHeader className="pb-2">
+                <Card key={plan.id} className="border-2 hover:shadow-lg transition-shadow overflow-hidden">
+                  <CardHeader className="pb-3">
                     {plan.image_url && (
-                      <img
-                        src={plan.image_url}
-                        alt={plan.name}
-                        className="w-full h-48 object-cover rounded-md mb-2"
-                      />
+                      <div className="relative mb-2">
+                        <img
+                          src={plan.image_url}
+                          alt={plan.name}
+                          className="w-full h-56 object-cover rounded-md"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-md" />
+                      </div>
                     )}
                     <div className="flex justify-between items-start">
                       <div>

@@ -10,13 +10,17 @@ interface SimpleImageUploadProps {
   accept?: string;
   maxFiles?: number;
   label?: string;
+  currentImageUrl?: string;
+  showPreview?: boolean;
 }
 
 const SimpleImageUpload: React.FC<SimpleImageUploadProps> = ({
   onUpload,
   accept = "image/*",
   maxFiles = 1,
-  label = "Escolher imagens"
+  label = "Escolher imagens",
+  currentImageUrl,
+  showPreview = true
 }) => {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -41,6 +45,16 @@ const SimpleImageUpload: React.FC<SimpleImageUploadProps> = ({
     try {
       for (let i = 0; i < Math.min(files.length, maxFiles); i++) {
         const file = files[i];
+        
+        // Validar tamanho da imagem (máximo 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          toast({
+            title: "Arquivo muito grande",
+            description: "A imagem deve ter no máximo 5MB.",
+            variant: "destructive",
+          });
+          continue;
+        }
         
         // Create a unique filename
         const fileExt = file.name.split('.').pop();
@@ -85,7 +99,22 @@ const SimpleImageUpload: React.FC<SimpleImageUploadProps> = ({
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-4">
+      {showPreview && currentImageUrl && (
+        <div className="flex justify-center">
+          <div className="relative">
+            <img
+              src={currentImageUrl}
+              alt="Preview"
+              className="w-48 h-48 object-cover rounded-lg border-2 border-dashed border-muted-foreground/25"
+            />
+            <div className="absolute top-2 right-2 bg-background/80 rounded-md px-2 py-1">
+              <span className="text-xs text-muted-foreground">Atual</span>
+            </div>
+          </div>
+        </div>
+      )}
+      
       <input
         ref={fileInputRef}
         type="file"
@@ -111,10 +140,16 @@ const SimpleImageUpload: React.FC<SimpleImageUploadProps> = ({
         ) : (
           <>
             <Camera className="h-4 w-4" />
-            {label}
+            {currentImageUrl ? "Alterar Imagem" : label}
           </>
         )}
       </Button>
+      
+      <div className="text-xs text-muted-foreground text-center">
+        Recomendado: Proporção quadrada (1:1) ou 4:3 • Máximo 5MB
+        <br />
+        Formatos: JPG, PNG, WebP
+      </div>
     </div>
   );
 };
