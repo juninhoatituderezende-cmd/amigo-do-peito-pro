@@ -56,10 +56,8 @@ export function AsaasPaymentConfig() {
       const { data, error } = await supabase.functions.invoke('asaas-integration-manager', {
         body: {
           action: 'test_connection',
-          data: {
-            api_key: apiKey,
-            environment: environment
-          }
+          api_key: apiKey,
+          environment: environment
         }
       });
 
@@ -116,10 +114,8 @@ export function AsaasPaymentConfig() {
       const { data, error } = await supabase.functions.invoke('asaas-integration-manager', {
         body: {
           action: 'save_configuration',
-          data: {
-            api_key: apiKey,
-            environment: environment
-          }
+          api_key: apiKey,
+          environment: environment
         }
       });
 
