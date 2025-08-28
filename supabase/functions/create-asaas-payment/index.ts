@@ -83,7 +83,7 @@ serve(async (req) => {
     })
 
     // **5. BUSCAR E VALIDAR DADOS DO USUÁRIO**
-    console.log('👤 [USER-DATA] Buscando dados do usuário...')
+    console.log('👤 [USER-DATA] Buscando dados do usuário...', user_id)
     const { data: user, error: userError } = await supabaseClient
       .from('profiles')
       .select('*')
@@ -95,12 +95,15 @@ serve(async (req) => {
       throw new Error('Usuário não encontrado')
     }
 
+    console.log('🔍 [USER-DATA] Dados completos do usuário:', user)
+    console.log('🔍 [CPF-DEBUG] CPF do usuário:', user.cpf, 'Tipo:', typeof user.cpf, 'Existe:', !!user.cpf)
+
     if (!user.cpf) {
       console.error('❌ [USER-DATA] CPF obrigatório não informado')
       throw new Error('CPF é obrigatório para criar pagamentos')
     }
 
-    console.log('✅ [USER-DATA] Usuário validado:', { id: user.id, email: user.email, cpf_provided: !!user.cpf })
+    console.log('✅ [USER-DATA] Usuário validado:', { id: user.id, email: user.email, cpf_provided: !!user.cpf, cpf_value: user.cpf })
 
     // **6. CALCULAR IMPOSTOS BASEADO NO TIPO DE TRANSAÇÃO**
     console.log('💰 [TAX-CALC] Calculando impostos para:', tipoTransacao)
@@ -191,8 +194,17 @@ serve(async (req) => {
     }
 
     // Validar se CPF foi fornecido antes de criar cobrança
+    console.log('🔍 [CPF-FINAL-CHECK] Verificação final do CPF antes da cobrança:');
+    console.log('🔍 [CPF-FINAL-CHECK] user.cpf:', user.cpf);
+    console.log('🔍 [CPF-FINAL-CHECK] typeof user.cpf:', typeof user.cpf);
+    console.log('🔍 [CPF-FINAL-CHECK] !!user.cpf:', !!user.cpf);
+    console.log('🔍 [CPF-FINAL-CHECK] user.cpf === null:', user.cpf === null);
+    console.log('🔍 [CPF-FINAL-CHECK] user.cpf === undefined:', user.cpf === undefined);
+    console.log('🔍 [CPF-FINAL-CHECK] user.cpf === "":', user.cpf === "");
+    
     if (!user.cpf) {
       console.error('❌ CPF/CNPJ não fornecido para criação da cobrança - usuário:', user_id);
+      console.error('❌ Objeto user completo:', JSON.stringify(user, null, 2));
       throw new Error('Para criar esta cobrança é necessário preencher o CPF ou CNPJ do cliente.');
     }
     

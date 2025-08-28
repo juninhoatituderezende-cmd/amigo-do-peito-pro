@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { PlansDisplay } from "@/components/user/PlansDisplay";
 import { PaymentCheckout } from "@/components/PaymentCheckout";
+import { PaymentDebugTool } from "@/components/PaymentDebugTool";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useToast } from "@/hooks/use-toast";
@@ -79,6 +80,9 @@ const UserPlans = () => {
             Escolha entre nossos planos de tatuagem e odontologia com as melhores condições
           </p>
         </div>
+
+        {/* Ferramenta de Debug Temporária */}
+        <PaymentDebugTool />
 
         <PlansDisplay 
           category="tatuador" 
