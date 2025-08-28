@@ -25,26 +25,22 @@ const UserPlans = () => {
   const navigate = useNavigate();
 
   const handleSelectPlan = (plan: Plan) => {
-    console.log('🎯 Plano selecionado para PIX:', plan);
+    console.log('🎯 DIRETO PARA PIX - Plano:', plan.name, 'Preço:', plan.price);
     setSelectedPlan(plan);
     setShowPaymentModal(true);
   };
 
   const handlePaymentSuccess = (paymentData: any) => {
-    console.log('✅ Pagamento processado:', paymentData);
+    console.log('✅ PIX processado:', paymentData);
     
     toast({
-      title: "Pagamento Iniciado!",
-      description: `Seu PIX para "${selectedPlan?.name}" foi gerado. Efetue o pagamento para ativar o plano.`,
+      title: "PIX Gerado!",
+      description: `PIX de R$ ${selectedPlan?.price} para "${selectedPlan?.name}" está aguardando pagamento.`,
     });
 
+    // Fechar modal mas manter na tela para ver status
     setShowPaymentModal(false);
     setSelectedPlan(null);
-
-    // Redirecionar para dashboard após alguns segundos
-    setTimeout(() => {
-      navigate('/usuario/dashboard');
-    }, 3000);
   };
 
   const handleCloseModal = () => {

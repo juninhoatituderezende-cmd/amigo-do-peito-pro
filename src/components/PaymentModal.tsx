@@ -35,7 +35,7 @@ export const PaymentModal = ({ plan, isOpen, onClose, onSuccess }: PaymentModalP
 
     try {
       setLoading(true);
-      console.log('🚀 Gerando PIX para:', plan.name);
+      console.log('🚀 DIRETO PIX - Gerando para:', plan.name, 'R$', plan.price);
 
       const { data: paymentResponse, error } = await supabase.functions.invoke('create-asaas-payment', {
         body: {
@@ -48,7 +48,7 @@ export const PaymentModal = ({ plan, isOpen, onClose, onSuccess }: PaymentModalP
       });
 
       if (error) {
-        console.error('❌ Erro na edge function:', error);
+        console.error('❌ Erro PIX:', error);
         throw new Error(error.message || 'Erro ao gerar PIX');
       }
 
@@ -56,18 +56,18 @@ export const PaymentModal = ({ plan, isOpen, onClose, onSuccess }: PaymentModalP
         throw new Error(paymentResponse?.error || 'Falha ao gerar PIX');
       }
 
-      console.log('✅ PIX gerado:', paymentResponse);
+      console.log('✅ PIX INSTANTÂNEO gerado:', paymentResponse);
       setPixData(paymentResponse);
 
       toast({
-        title: "PIX Gerado!",
-        description: "Escaneie o QR Code ou copie o código PIX para pagar",
+        title: "PIX Pronto!",
+        description: "Escaneie o QR Code ou copie o código para pagar",
       });
 
     } catch (error) {
-      console.error('💥 Erro ao gerar PIX:', error);
+      console.error('💥 Erro PIX:', error);
       toast({
-        title: "Erro",
+        title: "Erro no PIX",
         description: error instanceof Error ? error.message : "Erro ao gerar PIX",
         variant: "destructive"
       });
@@ -75,6 +75,14 @@ export const PaymentModal = ({ plan, isOpen, onClose, onSuccess }: PaymentModalP
       setLoading(false);
     }
   };
+
+  // Auto-gerar PIX quando modal abre
+  React.useEffect(() => {
+    if (isOpen && plan && !pixData && !loading) {
+      console.log('🎯 Modal aberto - Gerando PIX automaticamente');
+      generatePixPayment();
+    }
+  }, [isOpen, plan]);
 
   const copyPixCode = async () => {
     if (pixData?.pix_code) {
@@ -100,7 +108,7 @@ export const PaymentModal = ({ plan, isOpen, onClose, onSuccess }: PaymentModalP
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
-            <span>Pagamento PIX</span>
+            <span>PIX Instantâneo</span>
             <Button variant="ghost" size="sm" onClick={handleClose}>
               <X className="h-4 w-4" />
             </Button>
@@ -117,43 +125,37 @@ export const PaymentModal = ({ plan, isOpen, onClose, onSuccess }: PaymentModalP
                   <p className="text-sm text-muted-foreground">{plan?.description}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-2xl font-bold text-primary">R$ {plan?.price}</p>
+                  <p className="text-2xl font-bold text-green-600">R$ {plan?.price}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Botão Gerar PIX ou QR Code */}
-          {!pixData ? (
-            <Button 
-              onClick={generatePixPayment} 
-              disabled={loading}
-              className="w-full bg-green-600 hover:bg-green-700"
-              size="lg"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Gerando PIX...
-                </>
-              ) : (
-                <>
-                  <QrCode className="mr-2 h-4 w-4" />
-                  Gerar PIX - R$ {plan?.price}
-                </>
-              )}
-            </Button>
+          {/* Status de Loading ou QR Code */}
+          {loading ? (
+            <div className="text-center py-8">
+              <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
+              <p className="mt-2 text-sm text-muted-foreground">
+                Gerando PIX instantâneo...
+              </p>
+            </div>
+          ) : !pixData ? (
+            <div className="text-center py-4">
+              <p className="text-sm text-muted-foreground">
+                PIX será gerado automaticamente...
+              </p>
+            </div>
           ) : (
             <div className="space-y-4">
               {/* QR Code */}
               {pixData.qr_code && (
                 <div className="text-center space-y-2">
-                  <p className="text-sm font-medium">Escaneie o QR Code:</p>
+                  <p className="text-sm font-medium">📱 Escaneie o QR Code:</p>
                   <div className="flex justify-center">
                     <img 
                       src={`data:image/png;base64,${pixData.qr_code}`}
                       alt="QR Code PIX"
-                      className="w-48 h-48 border rounded-lg"
+                      className="w-48 h-48 border rounded-lg shadow-md"
                     />
                   </div>
                 </div>
@@ -162,7 +164,7 @@ export const PaymentModal = ({ plan, isOpen, onClose, onSuccess }: PaymentModalP
               {/* Código PIX */}
               {pixData.pix_code && (
                 <div className="space-y-2">
-                  <p className="text-sm font-medium">Ou copie o código PIX:</p>
+                  <p className="text-sm font-medium">💳 Ou copie o código PIX:</p>
                   <div className="flex gap-2">
                     <input
                       type="text"
@@ -178,9 +180,12 @@ export const PaymentModal = ({ plan, isOpen, onClose, onSuccess }: PaymentModalP
               )}
 
               {/* Status */}
-              <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <p className="text-sm text-blue-700">
-                  Aguardando pagamento... O status será atualizado automaticamente.
+              <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200">
+                <p className="text-sm text-green-700 font-medium">
+                  ✅ PIX Pronto! Aguardando pagamento...
+                </p>
+                <p className="text-xs text-green-600 mt-1">
+                  Após o pagamento, seu plano será ativado automaticamente.
                 </p>
               </div>
             </div>
