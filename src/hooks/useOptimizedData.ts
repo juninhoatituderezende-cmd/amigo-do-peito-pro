@@ -162,7 +162,7 @@ export const useAdminStats = () => {
     'admin-stats',
     async () => {
       // Buscar estatísticas reais
-      const [profilesResult, servicesResult, creditsResult] = await Promise.all([
+      const [profilesResult, productsResult, creditsResult] = await Promise.all([
         supabase.from('profiles').select('count', { count: 'exact', head: true }),
         supabase.from('products').select('count', { count: 'exact', head: true }),
         supabase.from('user_credits').select('count', { count: 'exact', head: true })
@@ -171,7 +171,7 @@ export const useAdminStats = () => {
       return {
         totalParticipants: profilesResult.count || 0,
         totalProfessionals: profilesResult.count || 0,
-        totalServices: servicesResult.count || 0,
+        totalProducts: productsResult.count || 0,
         activeGroups: 12, // Mock data
         monthlyRevenue: 45000,
         contemplatedThisMonth: 8

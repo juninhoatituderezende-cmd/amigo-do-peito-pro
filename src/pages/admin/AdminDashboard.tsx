@@ -55,7 +55,7 @@ import { CustomPlansManager } from "@/components/admin/CustomPlansManager";
 import { AdminManagementPanel } from "@/components/admin/AdminManagementPanel";
 import { ContemplationValidation } from "@/components/admin/ContemplationValidation";
 import { SecurityDashboard } from "@/components/admin/SecurityDashboard";
-import { ServicePlansManager } from "@/components/admin/ServicePlansManager";
+// Removido: ServicePlansManager - sistema antigo
 import { UserMarketplaceManager } from "@/components/admin/UserMarketplaceManager";
 import { ProfessionalMarketplaceManager } from "@/components/admin/ProfessionalMarketplaceManager";
 import { SalesManager } from "@/components/admin/SalesManager";
@@ -1591,10 +1591,7 @@ const AdminDashboard = () => {
               <SecurityDashboard />
             </TabsContent>
 
-            {/* PLANOS DE SERVIÇO */}
-            <TabsContent value="service-plans" className="space-y-6">
-              <ServicePlansManager />
-            </TabsContent>
+            {/* REMOVIDO - Sistema antigo de planos genéricos */}
 
             {/* MARKETPLACE USUÁRIO */}
             <TabsContent value="user-marketplace" className="space-y-6">

@@ -32,7 +32,7 @@ export function ProfessionalDashboard() {
   const { toast } = useToast();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [stats, setStats] = useState({
-    totalServices: 0,
+    totalProducts: 0,
     totalEarnings: 0,
     pendingPayments: 0,
     completedJobs: 0
@@ -62,7 +62,7 @@ export function ProfessionalDashboard() {
       }
 
       // Load products count
-      const { data: services } = await supabase
+      const { data: products } = await supabase
         .from('products')
         .select('*')
         .eq('professional_id', professional.id);
@@ -89,7 +89,7 @@ export function ProfessionalDashboard() {
       setTransactions(formattedTransactions);
 
       // Calculate stats
-      const totalServices = services?.length || 0;
+      const totalProducts = products?.length || 0;
       const totalEarnings = formattedTransactions
         .filter(t => t.status === 'completed')
         .reduce((sum, t) => sum + t.commission, 0);
@@ -98,7 +98,7 @@ export function ProfessionalDashboard() {
         .reduce((sum, t) => sum + t.commission, 0);
 
       setStats({
-        totalServices,
+        totalProducts,
         totalEarnings,
         pendingPayments,
         completedJobs: formattedTransactions.filter(t => t.status === 'completed').length
@@ -165,7 +165,7 @@ export function ProfessionalDashboard() {
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalServices}</div>
+            <div className="text-2xl font-bold">{stats.totalProducts}</div>
           </CardContent>
         </Card>
 

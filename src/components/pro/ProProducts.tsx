@@ -34,7 +34,7 @@ interface Service {
 }
 
 export const ProProducts = () => {
-  const [services, setServices] = useState<Service[]>([]);
+  const [products, setProducts] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [showForm, setShowForm] = useState(false);
@@ -43,11 +43,11 @@ export const ProProducts = () => {
 
   useEffect(() => {
     if (user) {
-      loadServices();
+      loadProducts();
     }
   }, [user]);
 
-  const loadServices = async () => {
+  const loadProducts = async () => {
     try {
       // Get professional ID first
       const { data: professional } = await supabase
@@ -63,7 +63,7 @@ export const ProProducts = () => {
       }
 
       // Load products
-      const { data: servicesData, error } = await supabase
+      const { data: productsData, error } = await supabase
         .from('products')
         .select('*')
         .eq('professional_id', professional.id)
@@ -72,15 +72,15 @@ export const ProProducts = () => {
       if (error) throw error;
 
       // Add mock stats and affiliate links
-      const servicesWithStats = (servicesData || []).map(service => ({
-        ...service,
+      const productsWithStats = (productsData || []).map(product => ({
+        ...product,
         duration: '1 hora', // Default duration since not in DB
         total_sales: Math.floor(Math.random() * 20),
-        total_revenue: service.price * Math.floor(Math.random() * 20),
-        affiliate_link: `${window.location.origin}/service/${service.id}`
+        total_revenue: product.price * Math.floor(Math.random() * 20),
+        affiliate_link: `${window.location.origin}/service/${product.id}`
       }));
 
-      setServices(servicesWithStats);
+      setProducts(productsWithStats);
     } catch (error: any) {
       toast({
         title: "Erro ao carregar serviços",
@@ -92,9 +92,9 @@ export const ProProducts = () => {
     }
   };
 
-  const filteredServices = services.filter(service =>
-    service.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    service.category.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredProducts = products.filter(product =>
+    product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    product.category.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const copyAffiliateLink = async (link: string) => {
@@ -113,21 +113,21 @@ export const ProProducts = () => {
     }
   };
 
-  const shareService = async (service: Service) => {
+  const shareProduct = async (product: Service) => {
     const shareData = {
-      title: service.name,
-      text: service.description,
-      url: service.affiliate_link
+      title: product.name,
+      text: product.description,
+      url: product.affiliate_link
     };
 
     if (navigator.share) {
       try {
         await navigator.share(shareData);
       } catch (error) {
-        copyAffiliateLink(service.affiliate_link || '');
+        copyAffiliateLink(product.affiliate_link || '');
       }
     } else {
-      copyAffiliateLink(service.affiliate_link || '');
+      copyAffiliateLink(product.affiliate_link || '');
     }
   };
 
@@ -197,7 +197,7 @@ export const ProProducts = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Serviços</p>
-                <p className="text-2xl font-bold">{services.length}</p>
+                <p className="text-2xl font-bold">{products.length}</p>
               </div>
             </div>
           </CardContent>
@@ -211,7 +211,7 @@ export const ProProducts = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Serviços Ativos</p>
-                <p className="text-2xl font-bold">{services.length}</p>
+                <p className="text-2xl font-bold">{products.length}</p>
               </div>
             </div>
           </CardContent>
@@ -226,7 +226,7 @@ export const ProProducts = () => {
               <div>
                 <p className="text-sm text-muted-foreground">Total Vendas</p>
                 <p className="text-2xl font-bold">
-                  {services.reduce((sum, p) => sum + (p.total_sales || 0), 0)}
+                  {products.reduce((sum, p) => sum + (p.total_sales || 0), 0)}
                 </p>
               </div>
             </div>
@@ -242,7 +242,7 @@ export const ProProducts = () => {
               <div>
                 <p className="text-sm text-muted-foreground">Receita Total</p>
                 <p className="text-lg font-bold">
-                  {formatCurrency(services.reduce((sum, p) => sum + (p.total_revenue || 0), 0))}
+                  {formatCurrency(products.reduce((sum, p) => sum + (p.total_revenue || 0), 0))}
                 </p>
               </div>
             </div>
@@ -250,8 +250,8 @@ export const ProProducts = () => {
         </Card>
       </div>
 
-      {/* Services List */}
-      {filteredServices.length === 0 ? (
+      {/* Products List */}
+      {filteredProducts.length === 0 ? (
         <Card>
           <CardContent className="p-8 text-center">
             <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
@@ -269,38 +269,38 @@ export const ProProducts = () => {
         </Card>
       ) : (
         <div className="space-y-4">
-          {filteredServices.map((service) => (
-            <Card key={service.id}>
+          {filteredProducts.map((product) => (
+            <Card key={product.id}>
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
-                  {/* Service Icon */}
+                  {/* Product Icon */}
                   <div className="w-20 h-20 bg-muted rounded-lg flex items-center justify-center">
                     <Package className="h-8 w-8 text-muted-foreground" />
                   </div>
 
-                  {/* Service Info */}
+                  {/* Product Info */}
                   <div className="flex-1">
                     <div className="flex items-start justify-between">
                       <div>
-                        <h3 className="text-lg font-semibold">{service.name}</h3>
+                        <h3 className="text-lg font-semibold">{product.name}</h3>
                         <p className="text-sm text-muted-foreground mb-2">
-                          {service.description}
+                          {product.description}
                         </p>
                         <div className="flex items-center gap-4 text-sm">
-                          <span>Preço: {formatCurrency(service.price)}</span>
-                          <span>Duração: {service.duration}</span>
-                          <Badge variant="outline">{service.category}</Badge>
+                          <span>Preço: {formatCurrency(product.price)}</span>
+                          <span>Duração: {product.duration}</span>
+                          <Badge variant="outline">{product.category}</Badge>
                         </div>
                       </div>
 
                       {/* Stats */}
                       <div className="text-right text-sm">
-                        <div className="font-semibold">{service.total_sales || 0} vendas</div>
+                        <div className="font-semibold">{product.total_sales || 0} vendas</div>
                         <div className="text-muted-foreground">
-                          {formatCurrency(service.total_revenue || 0)}
+                          {formatCurrency(product.total_revenue || 0)}
                         </div>
                         <div className="text-xs text-muted-foreground mt-1">
-                          Criado em {formatDate(service.created_at)}
+                          Criado em {formatDate(product.created_at)}
                         </div>
                       </div>
                     </div>
@@ -310,7 +310,7 @@ export const ProProducts = () => {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => shareService(service)}
+                        onClick={() => shareProduct(product)}
                       >
                         <Share2 className="h-4 w-4 mr-1" />
                         Compartilhar
@@ -319,7 +319,7 @@ export const ProProducts = () => {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => copyAffiliateLink(service.affiliate_link || '')}
+                        onClick={() => copyAffiliateLink(product.affiliate_link || '')}
                       >
                         <Copy className="h-4 w-4 mr-1" />
                         Copiar Link
@@ -328,7 +328,7 @@ export const ProProducts = () => {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => window.open(service.affiliate_link, '_blank')}
+                        onClick={() => window.open(product.affiliate_link, '_blank')}
                       >
                         <ExternalLink className="h-4 w-4 mr-1" />
                         Ver Página

@@ -31,7 +31,7 @@ interface ProfessionalService {
 
 export function ProfessionalMarketplaceManager() {
   const [professionals, setProfessionals] = useState<Professional[]>([]);
-  const [services, setServices] = useState<ProfessionalService[]>([]);
+  const [products, setProducts] = useState<ProfessionalService[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
@@ -53,7 +53,7 @@ export function ProfessionalMarketplaceManager() {
       if (profError) throw profError;
 
       // Load products with professional info
-      const { data: servicesData, error: servError } = await supabase
+      const { data: productsData, error: productsError } = await supabase
         .from('products')
         .select(`
           *,
@@ -61,16 +61,16 @@ export function ProfessionalMarketplaceManager() {
         `)
         .order('created_at', { ascending: false });
 
-      if (servError) throw servError;
+      if (productsError) throw productsError;
 
       setProfessionals(professionalsData || []);
       
-      const formattedServices = (servicesData || []).map(service => ({
-        ...service,
-        professional_name: service.professional?.full_name || 'N/A'
+      const formattedProducts = (productsData || []).map(product => ({
+        ...product,
+        professional_name: product.professional?.full_name || 'N/A'
       }));
       
-      setServices(formattedServices);
+      setProducts(formattedProducts);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
       toast({
@@ -112,26 +112,26 @@ export function ProfessionalMarketplaceManager() {
     }
   };
 
-  const handleToggleService = async (serviceId: string, currentStatus: boolean) => {
+  const handleToggleProduct = async (productId: string, currentStatus: boolean) => {
     try {
       const { error } = await supabase
         .from('products')
         .update({ active: !currentStatus })
-        .eq('id', serviceId);
+        .eq('id', productId);
 
       if (error) throw error;
 
-      setServices(prev => 
-        prev.map(service => 
-          service.id === serviceId 
-            ? { ...service, active: !currentStatus }
-            : service
+      setProducts(prev => 
+        prev.map(product => 
+          product.id === productId 
+            ? { ...product, active: !currentStatus }
+            : product
         )
       );
 
       toast({
         title: "Sucesso",
-        description: `Serviço ${!currentStatus ? 'ativado' : 'desativado'} com sucesso.`,
+        description: `Produto ${!currentStatus ? 'ativado' : 'desativado'} com sucesso.`,
       });
     } catch (error) {
       console.error('Erro ao atualizar serviço:', error);
@@ -148,15 +148,15 @@ export function ProfessionalMarketplaceManager() {
     prof.email?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const filteredServices = services.filter(service =>
-    service.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    service.professional_name?.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredProducts = products.filter(product =>
+    product.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    product.professional_name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const pendingProfessionals = professionals.filter(p => !p.approved).length;
-  const totalServices = services.length;
-  const activeServices = services.filter(s => s.active).length;
-  const totalRevenue = services.reduce((sum, s) => sum + (s.price || 0), 0);
+  const totalProducts = products.length;
+  const activeProducts = products.filter(p => p.active).length;
+  const totalRevenue = products.reduce((sum, p) => sum + (p.price || 0), 0);
 
   if (loading) {
     return (
@@ -209,7 +209,7 @@ export function ProfessionalMarketplaceManager() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-2xl font-bold">{activeServices}/{totalServices}</div>
+                <div className="text-2xl font-bold">{activeProducts}/{totalProducts}</div>
                 <p className="text-sm text-muted-foreground">Serviços Ativos</p>
               </div>
               <Package className="h-8 w-8 text-muted-foreground" />
@@ -235,9 +235,9 @@ export function ProfessionalMarketplaceManager() {
             <Users className="h-4 w-4" />
             Profissionais ({professionals.length})
           </TabsTrigger>
-          <TabsTrigger value="services" className="flex items-center gap-2">
+          <TabsTrigger value="products" className="flex items-center gap-2">
             <Package className="h-4 w-4" />
-            Serviços ({services.length})
+            Produtos ({products.length})
           </TabsTrigger>
         </TabsList>
 
@@ -309,7 +309,7 @@ export function ProfessionalMarketplaceManager() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="services" className="space-y-4">
+        <TabsContent value="products" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle>Serviços dos Profissionais</CardTitle>
@@ -330,25 +330,25 @@ export function ProfessionalMarketplaceManager() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredServices.map((service) => (
-                    <TableRow key={service.id}>
+                  {filteredProducts.map((product) => (
+                    <TableRow key={product.id}>
                       <TableCell>
                         <div>
-                          <div className="font-medium">{service.name}</div>
-                          {service.description && (
+                          <div className="font-medium">{product.name}</div>
+                          {product.description && (
                             <div className="text-sm text-muted-foreground">
-                              {service.description.substring(0, 50)}...
+                              {product.description.substring(0, 50)}...
                             </div>
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>{service.professional_name}</TableCell>
+                      <TableCell>{product.professional_name}</TableCell>
                       <TableCell>
-                        <Badge variant="outline">{service.category || 'N/A'}</Badge>
+                        <Badge variant="outline">{product.category || 'N/A'}</Badge>
                       </TableCell>
-                      <TableCell>R$ {service.price?.toFixed(2) || '0.00'}</TableCell>
+                      <TableCell>R$ {product.price?.toFixed(2) || '0.00'}</TableCell>
                       <TableCell>
-                        {service.active ? (
+                        {product.active ? (
                           <Badge className="bg-green-500">Ativo</Badge>
                         ) : (
                           <Badge variant="secondary">Inativo</Badge>
@@ -359,9 +359,9 @@ export function ProfessionalMarketplaceManager() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleToggleService(service.id, service.active)}
+                            onClick={() => handleToggleProduct(product.id, product.active)}
                           >
-                            {service.active ? 'Desativar' : 'Ativar'}
+                            {product.active ? 'Desativar' : 'Ativar'}
                           </Button>
                           <Button variant="outline" size="sm">
                             <Eye className="h-4 w-4" />
