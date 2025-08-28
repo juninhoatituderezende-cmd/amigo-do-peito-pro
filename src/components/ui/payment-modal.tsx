@@ -26,7 +26,25 @@ interface PaymentModalProps {
 export const PaymentModal = ({ isOpen, onClose, paymentData, paymentMethod }: PaymentModalProps) => {
   const { toast } = useToast();
 
-  if (!paymentData || !paymentData.success) return null;
+  // Logs de depuração para verificar dados do usuário
+  console.log('🔍 PaymentModal - Dados recebidos:', {
+    isOpen,
+    paymentMethod,
+    paymentData: paymentData ? {
+      success: paymentData.success,
+      payment_id: paymentData.payment_id,
+      amount: paymentData.amount,
+      plan_name: paymentData.plan_name,
+      has_pix_code: !!paymentData.pix_code,
+      has_qr_code: !!paymentData.qr_code,
+      has_bank_slip: !!paymentData.bank_slip_url
+    } : null
+  });
+
+  if (!paymentData || !paymentData.success) {
+    console.log('❌ PaymentModal - Dados inválidos ou ausentes');
+    return null;
+  }
 
   const copyToClipboard = async (text: string) => {
     try {

@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { formatCpf, validateCpf } from '@/utils/cpfValidator';
 
 interface AuthFormProps {
   mode: 'login' | 'register';
@@ -43,6 +44,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({
     return emailRegex.test(email);
   };
 
+
   const checkExistingAccountTypes = async (email: string) => {
     try {
       const { data, error } = await supabase.rpc('get_existing_account_types', {
@@ -73,6 +75,15 @@ export const AuthForm: React.FC<AuthFormProps> = ({
       }
 
       if (mode === 'register') {
+        // Validação adicional do CPF para usuários e profissionais
+        if ((accountType === 'user' || accountType === 'professional') && !cpf) {
+          throw new Error('CPF é obrigatório para este tipo de conta');
+        }
+
+        if (cpf && !validateCpf(cpf)) {
+          throw new Error('CPF inválido. Verifique os números digitados');
+        }
+
         // Verificar se já existe conta com esse email e tipo
         const { data: existsData, error: existsError } = await supabase.rpc(
           'validate_unique_email_by_role', 
@@ -221,19 +232,25 @@ export const AuthForm: React.FC<AuthFormProps> = ({
                 />
               </div>
 
-              {accountType === 'professional' && (
-                <div className="space-y-2">
-                  <Label htmlFor="cpf">CPF (opcional)</Label>
-                  <Input
-                    id="cpf"
-                    type="text"
-                    value={cpf}
-                    onChange={(e) => setCpf(e.target.value)}
-                    placeholder="000.000.000-00"
-                    disabled={loading}
-                  />
-                </div>
-              )}
+              <div className="space-y-2">
+                <Label htmlFor="cpf">
+                  CPF {accountType === 'user' ? '(obrigatório para pagamentos)' : '(obrigatório)'}
+                  <span className="text-red-500 ml-1">*</span>
+                </Label>
+                <Input
+                  id="cpf"
+                  type="text"
+                  value={cpf}
+                  onChange={(e) => setCpf(formatCpf(e.target.value))}
+                  placeholder="000.000.000-00"
+                  required={accountType === 'user' || accountType === 'professional'}
+                  disabled={loading}
+                  maxLength={14}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {accountType === 'user' && 'Necessário para criar pagamentos e comprar planos'}
+                </p>
+              </div>
             </>
           )}
 

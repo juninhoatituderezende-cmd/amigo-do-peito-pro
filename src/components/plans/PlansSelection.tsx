@@ -111,6 +111,9 @@ export const PlansSelection = ({ onSelectPlan, selectedPlanId }: PlansSelectionP
 
   const handleSelectPlan = (plan: Plan) => {
     console.log('🎯 Plano selecionado:', plan.name);
+    
+    // Limpar dados antigos do modal antes de selecionar novo plano
+    setPaymentData(null);
     setSelectedPlan(plan);
     setPaymentMethodModalOpen(true);
   };
@@ -166,15 +169,60 @@ export const PlansSelection = ({ onSelectPlan, selectedPlanId }: PlansSelectionP
         console.log('✅ Sessão renovada com sucesso');
       }
 
+      // 3. Buscar dados completos do usuário na tabela profiles
+      console.log('👤 Buscando dados do perfil do usuário...');
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .single();
+
+      if (profileError || !profileData) {
+        console.error('❌ Erro ao buscar perfil do usuário:', profileError);
+        toast({
+          title: "Erro no perfil",
+          description: "Não foi possível carregar dados do perfil. Tente novamente.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       console.log('✅ Usuário autenticado:', session.user.id);
       console.log('📧 Email do usuário:', session.user.email);
+      console.log('👤 Nome do usuário:', profileData.full_name);
+      console.log('📱 Telefone do usuário:', profileData.phone);
+      console.log('🆔 CPF do usuário:', profileData.cpf ? 'Cadastrado' : 'NÃO CADASTRADO');
       console.log('🕒 Token expira em:', new Date((tokenExpiry || 0) * 1000).toLocaleString());
+
+      // 4. Validar CPF obrigatório
+      if (!profileData.cpf) {
+        console.error('❌ CPF não cadastrado para o usuário');
+        toast({
+          title: "CPF necessário",
+          description: "É necessário cadastrar seu CPF no perfil para criar pagamentos. Redirecionando para o perfil...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = '/usuario/perfil';
+        }, 3000);
+        return;
+      }
       
       setProcessingPayment(true);
       setPaymentMethod(method);
 
-      // 2. Chamar a função de criar pagamento
-      console.log('📞 Chamando edge function create-asaas-payment...');
+      // 5. Chamar a função de criar pagamento com dados do usuário logado
+      console.log('📞 Chamando edge function create-asaas-payment com dados do usuário logado...');
+      console.log('📤 Dados enviados:', {
+        plan_id: selectedPlan.id,
+        plan_category: selectedPlan.category,
+        user_id: session.user.id,
+        payment_method: method,
+        user_cpf: profileData.cpf,
+        user_email: session.user.email,
+        user_name: profileData.full_name
+      });
+      
       const { data, error } = await supabase.functions.invoke('create-asaas-payment', {
         body: {
           plan_id: selectedPlan.id,
@@ -192,18 +240,24 @@ export const PlansSelection = ({ onSelectPlan, selectedPlanId }: PlansSelectionP
       }
 
       if (data?.success) {
-        console.log('✅ Pagamento criado com sucesso:', data);
-        console.log('📊 Dados recebidos:', {
+        console.log('✅ Pagamento criado com sucesso para o usuário:', session.user.id);
+        console.log('📊 Dados do pagamento retornados para este usuário:', {
           payment_id: data.payment_id,
           amount: data.amount,
+          plan_name: data.plan_name,
+          user_id: session.user.id,
           pix_code: data.pix_code ? 'Presente' : 'Ausente',
           qr_code: data.qr_code ? 'Presente' : 'Ausente',
           bank_slip_url: data.bank_slip_url ? 'Presente' : 'Ausente',
           invoice_url: data.invoice_url ? 'Presente' : 'Ausente'
         });
         
-        setPaymentData(data);
-        setPaymentModalOpen(true);
+        // Garantir que os dados do modal sejam limpos antes de definir novos dados
+        setPaymentData(null);
+        setTimeout(() => {
+          setPaymentData(data);
+          setPaymentModalOpen(true);
+        }, 100);
         
         toast({
           title: "Pagamento criado!",
