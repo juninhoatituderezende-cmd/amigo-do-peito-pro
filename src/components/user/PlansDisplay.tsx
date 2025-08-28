@@ -183,10 +183,10 @@ export const PlansDisplay = ({ category, title, onSelectPlan }: PlansDisplayProp
               
               {onSelectPlan && (
                 <Button 
-                  className="w-full"
+                  className="w-full bg-green-600 hover:bg-green-700 text-white"
                   onClick={() => onSelectPlan(plan)}
                 >
-                  Selecionar Plano
+                  Pagar com PIX - {formatPrice(plan.price)}
                 </Button>
               )}
             </CardContent>

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { PlansDisplay } from "@/components/user/PlansDisplay";
-import { PaymentCheckout } from "@/components/PaymentCheckout";
+import { PaymentModal } from "@/components/PaymentModal";
 import { PaymentDebugTool } from "@/components/PaymentDebugTool";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -20,14 +20,14 @@ interface Plan {
 
 const UserPlans = () => {
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
-  const [showCheckout, setShowCheckout] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
   const handleSelectPlan = (plan: Plan) => {
-    console.log('🎯 Plano selecionado para checkout:', plan);
+    console.log('🎯 Plano selecionado para PIX:', plan);
     setSelectedPlan(plan);
-    setShowCheckout(true);
+    setShowPaymentModal(true);
   };
 
   const handlePaymentSuccess = (paymentData: any) => {
@@ -35,8 +35,11 @@ const UserPlans = () => {
     
     toast({
       title: "Pagamento Iniciado!",
-      description: `Seu pagamento para o plano "${selectedPlan?.name}" foi processado. Acompanhe o status no painel.`,
+      description: `Seu PIX para "${selectedPlan?.name}" foi gerado. Efetue o pagamento para ativar o plano.`,
     });
+
+    setShowPaymentModal(false);
+    setSelectedPlan(null);
 
     // Redirecionar para dashboard após alguns segundos
     setTimeout(() => {
@@ -44,28 +47,10 @@ const UserPlans = () => {
     }, 3000);
   };
 
-  const handleBackToPlans = () => {
-    setShowCheckout(false);
+  const handleCloseModal = () => {
+    setShowPaymentModal(false);
     setSelectedPlan(null);
   };
-
-  if (showCheckout && selectedPlan) {
-    return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-blue-50">
-        <Header />
-        
-        <main className="flex-1 container mx-auto px-4 py-8">
-          <PaymentCheckout
-            plan={selectedPlan}
-            onBack={handleBackToPlans}
-            onSuccess={handlePaymentSuccess}
-          />
-        </main>
-
-        <Footer />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-blue-50">
@@ -94,6 +79,14 @@ const UserPlans = () => {
           category="dentista" 
           title="Planos Odontológicos" 
           onSelectPlan={handleSelectPlan}
+        />
+
+        {/* Modal de Pagamento PIX */}
+        <PaymentModal
+          plan={selectedPlan}
+          isOpen={showPaymentModal}
+          onClose={handleCloseModal}
+          onSuccess={handlePaymentSuccess}
         />
       </main>
 
