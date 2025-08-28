@@ -205,6 +205,7 @@ export type Database = {
           price: number
           professional_id: string | null
           stripe_price_id: string | null
+          tipo_transacao: string | null
           updated_at: string | null
         }
         Insert: {
@@ -222,6 +223,7 @@ export type Database = {
           price: number
           professional_id?: string | null
           stripe_price_id?: string | null
+          tipo_transacao?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -239,6 +241,7 @@ export type Database = {
           price?: number
           professional_id?: string | null
           stripe_price_id?: string | null
+          tipo_transacao?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -605,6 +608,7 @@ export type Database = {
           name: string
           price: number
           professional_id: string | null
+          tipo_transacao: string | null
           updated_at: string
         }
         Insert: {
@@ -617,6 +621,7 @@ export type Database = {
           name: string
           price: number
           professional_id?: string | null
+          tipo_transacao?: string | null
           updated_at?: string
         }
         Update: {
@@ -629,6 +634,7 @@ export type Database = {
           name?: string
           price?: number
           professional_id?: string | null
+          tipo_transacao?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -644,6 +650,7 @@ export type Database = {
           name: string
           price: number
           professional_id: string | null
+          tipo_transacao: string | null
           updated_at: string
         }
         Insert: {
@@ -656,6 +663,7 @@ export type Database = {
           name: string
           price: number
           professional_id?: string | null
+          tipo_transacao?: string | null
           updated_at?: string
         }
         Update: {
@@ -668,6 +676,7 @@ export type Database = {
           name?: string
           price?: number
           professional_id?: string | null
+          tipo_transacao?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -712,6 +721,7 @@ export type Database = {
           professional_id: string | null
           stock_quantity: number | null
           target_audience: string | null
+          tipo_transacao: string | null
           updated_at: string | null
           visibility: string | null
         }
@@ -730,6 +740,7 @@ export type Database = {
           professional_id?: string | null
           stock_quantity?: number | null
           target_audience?: string | null
+          tipo_transacao?: string | null
           updated_at?: string | null
           visibility?: string | null
         }
@@ -748,6 +759,7 @@ export type Database = {
           professional_id?: string | null
           stock_quantity?: number | null
           target_audience?: string | null
+          tipo_transacao?: string | null
           updated_at?: string | null
           visibility?: string | null
         }
@@ -816,6 +828,72 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      transacoes: {
+        Row: {
+          asaas_payment_id: string | null
+          created_at: string
+          icms_percentual: number | null
+          id: string
+          iss_percentual: number | null
+          municipio_iss: string | null
+          observacoes: string | null
+          payment_method: string | null
+          pis_cofins_percentual: number | null
+          plano_id: string | null
+          produto_id: string | null
+          regime_tributario: string | null
+          status: string | null
+          tipo_transacao: string
+          updated_at: string
+          usuario_id: string
+          valor: number
+          valor_impostos: number | null
+          valor_liquido: number | null
+        }
+        Insert: {
+          asaas_payment_id?: string | null
+          created_at?: string
+          icms_percentual?: number | null
+          id?: string
+          iss_percentual?: number | null
+          municipio_iss?: string | null
+          observacoes?: string | null
+          payment_method?: string | null
+          pis_cofins_percentual?: number | null
+          plano_id?: string | null
+          produto_id?: string | null
+          regime_tributario?: string | null
+          status?: string | null
+          tipo_transacao: string
+          updated_at?: string
+          usuario_id: string
+          valor: number
+          valor_impostos?: number | null
+          valor_liquido?: number | null
+        }
+        Update: {
+          asaas_payment_id?: string | null
+          created_at?: string
+          icms_percentual?: number | null
+          id?: string
+          iss_percentual?: number | null
+          municipio_iss?: string | null
+          observacoes?: string | null
+          payment_method?: string | null
+          pis_cofins_percentual?: number | null
+          plano_id?: string | null
+          produto_id?: string | null
+          regime_tributario?: string | null
+          status?: string | null
+          tipo_transacao?: string
+          updated_at?: string
+          usuario_id?: string
+          valor?: number
+          valor_impostos?: number | null
+          valor_liquido?: number | null
+        }
+        Relationships: []
       }
       user_credits: {
         Row: {
@@ -905,6 +983,15 @@ export type Database = {
           profile_name: string
           profile_role: string
         }[]
+      }
+      calcular_impostos: {
+        Args: {
+          municipio?: string
+          regime?: string
+          tipo: string
+          valor_base: number
+        }
+        Returns: Json
       }
       create_sale_direct: {
         Args: {

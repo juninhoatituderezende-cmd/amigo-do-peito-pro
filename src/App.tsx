@@ -27,6 +27,7 @@ import AdminIntegracaoAsaas from "./pages/admin/AdminIntegracaoAsaas";
 import AdminMLM from "./pages/admin/AdminMLM";
 import AdminNotificacoes from "./pages/admin/AdminNotificacoes";
 import AdminRelatorios from "./pages/admin/AdminRelatorios";
+import { RelatoriosContabeis } from "./components/admin/RelatoriosContabeis";
 import Register from "./pages/Register";
 import ProfessionalLogin from "./pages/ProfessionalLogin";
 import Confirmation from "./pages/Confirmation";
@@ -315,11 +316,16 @@ const App = () => (
                   <AdminNotificacoes />
                 </AdminProtectedRoute>
               } />
-              <Route path="/admin/relatorios" element={
-                <AdminProtectedRoute>
-                  <AdminRelatorios />
-                </AdminProtectedRoute>
-              } />
+               <Route path="/admin/relatorios" element={
+                 <AdminProtectedRoute>
+                   <AdminRelatorios />
+                 </AdminProtectedRoute>
+               } />
+               <Route path="/admin/relatorios-contabeis" element={
+                 <AdminProtectedRoute>
+                   <RelatoriosContabeis />
+                 </AdminProtectedRoute>
+               } />
               
               {/* Catch-all route */}
               <Route path="*" element={<NotFound />} />

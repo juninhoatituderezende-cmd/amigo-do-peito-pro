@@ -42,22 +42,30 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
-    // Buscar pagamento no banco
+    // Buscar pagamento no banco (verificar nas duas tabelas)
     const { data: paymentRecord, error: paymentError } = await supabaseClient
       .from('payments')
       .select('*')
       .eq('asaas_payment_id', payment.id)
       .single();
 
-    if (paymentError || !paymentRecord) {
+    const { data: transacaoRecord, error: transacaoError } = await supabaseClient
+      .from('transacoes')
+      .select('*')
+      .eq('asaas_payment_id', payment.id)
+      .single();
+
+    const recordToUpdate = paymentRecord || transacaoRecord;
+
+    if ((paymentError && transacaoError) || !recordToUpdate) {
       console.log('❌ Pagamento não encontrado no banco:', payment.id);
       return new Response('Payment not found', { status: 404 });
     }
 
-    console.log('💾 Registro encontrado:', paymentRecord.id);
+    console.log('💾 Registro encontrado:', recordToUpdate.id);
 
     // Processar evento baseado no status
-    let newStatus = paymentRecord.status;
+    let newStatus = recordToUpdate.status;
     let shouldCreateGroup = false;
 
     switch (event) {
@@ -83,8 +91,8 @@ serve(async (req) => {
         break;
     }
 
-    // Atualizar status do pagamento
-    if (newStatus !== paymentRecord.status) {
+    // Atualizar status do pagamento/transação
+    if (newStatus !== recordToUpdate.status) {
       const updateData: any = {
         status: newStatus,
         updated_at: new Date().toISOString()
@@ -94,21 +102,35 @@ serve(async (req) => {
         updateData.paid_at = new Date().toISOString();
       }
 
-      const { error: updateError } = await supabaseClient
-        .from('payments')
-        .update(updateData)
-        .eq('id', paymentRecord.id);
+      // Atualizar na tabela payments se existir
+      if (paymentRecord) {
+        const { error: updatePaymentError } = await supabaseClient
+          .from('payments')
+          .update(updateData)
+          .eq('id', paymentRecord.id);
 
-      if (updateError) {
-        console.error('❌ Erro ao atualizar pagamento:', updateError);
-        throw updateError;
+        if (updatePaymentError) {
+          console.error('❌ Erro ao atualizar payments:', updatePaymentError);
+        }
+      }
+
+      // Atualizar na tabela transacoes se existir
+      if (transacaoRecord) {
+        const { error: updateTransacaoError } = await supabaseClient
+          .from('transacoes')
+          .update(updateData)
+          .eq('id', transacaoRecord.id);
+
+        if (updateTransacaoError) {
+          console.error('❌ Erro ao atualizar transacoes:', updateTransacaoError);
+        }
       }
 
       console.log('✅ Status atualizado para:', newStatus);
     }
 
     // Se pagamento confirmado, processar grupo e comissões
-    if (shouldCreateGroup && paymentRecord.plan_id) {
+    if (shouldCreateGroup && recordToUpdate.plan_id) {
       console.log('🏗️ Processando grupo e comissões...');
 
       try {
@@ -116,7 +138,7 @@ serve(async (req) => {
         const { data: existingParticipation } = await supabaseClient
           .from('group_participants')
           .select('id, group_id')
-          .eq('user_id', paymentRecord.user_id)
+          .eq('user_id', recordToUpdate.user_id || recordToUpdate.usuario_id)
           .single();
 
         if (!existingParticipation) {
@@ -124,7 +146,7 @@ serve(async (req) => {
           const { data: availableGroup } = await supabaseClient
             .from('plan_groups')
             .select('*')
-            .eq('service_id', paymentRecord.plan_id)
+            .eq('service_id', recordToUpdate.plan_id)
             .eq('status', 'forming')
             .order('created_at', { ascending: true })
             .limit(1)
@@ -137,31 +159,31 @@ serve(async (req) => {
             // Buscar dados do plano - verificar em ambas as tabelas
             let planData = null;
             
-            // Tentar buscar em custom_plans primeiro
-            const { data: customPlan } = await supabaseClient
-              .from('custom_plans')
-              .select('max_participants, price, name')
-              .eq('id', paymentRecord.plan_id)
+              // Tentar buscar em custom_plans primeiro
+              const { data: customPlan } = await supabaseClient
+                .from('custom_plans')
+                .select('max_participants, price, name')
+                .eq('id', recordToUpdate.plan_id)
               .single();
 
             if (customPlan) {
               planData = customPlan;
             } else {
-              // Buscar em planos_tatuador
-              const { data: tattooPlan } = await supabaseClient
-                .from('planos_tatuador')
-                .select('max_participants, price, name')
-                .eq('id', paymentRecord.plan_id)
+                // Buscar em planos_tatuador
+                const { data: tattooPlan } = await supabaseClient
+                  .from('planos_tatuador')
+                  .select('max_participants, price, name')
+                  .eq('id', recordToUpdate.plan_id)
                 .single();
 
               if (tattooPlan) {
                 planData = tattooPlan;
               } else {
-                // Buscar em planos_dentista
-                const { data: dentalPlan } = await supabaseClient
-                  .from('planos_dentista')
-                  .select('max_participants, price, name')
-                  .eq('id', paymentRecord.plan_id)
+                  // Buscar em planos_dentista
+                  const { data: dentalPlan } = await supabaseClient
+                    .from('planos_dentista')
+                    .select('max_participants, price, name')
+                    .eq('id', recordToUpdate.plan_id)
                   .single();
 
                 if (dentalPlan) {
@@ -171,21 +193,21 @@ serve(async (req) => {
             }
 
             if (planData) {
-              // Obter próximo número de grupo
-              const { data: lastGroup } = await supabaseClient
-                .from('plan_groups')
-                .select('group_number')
-                .eq('service_id', paymentRecord.plan_id)
+                // Obter próximo número de grupo
+                const { data: lastGroup } = await supabaseClient
+                  .from('plan_groups')
+                  .select('group_number')
+                  .eq('service_id', recordToUpdate.plan_id)
                 .order('group_number', { ascending: false })
                 .limit(1)
                 .single();
 
               const nextGroupNumber = (lastGroup?.group_number || 0) + 1;
 
-              const { data: newGroup, error: groupError } = await supabaseClient
-                .from('plan_groups')
-                .insert({
-                  service_id: paymentRecord.plan_id,
+                const { data: newGroup, error: groupError } = await supabaseClient
+                  .from('plan_groups')
+                  .insert({
+                    service_id: recordToUpdate.plan_id,
                   max_participants: planData.max_participants,
                   target_amount: planData.price,
                   current_participants: 0,
@@ -213,7 +235,7 @@ serve(async (req) => {
             const { data: userProfile } = await supabaseClient
               .from('profiles')
               .select('referred_by')
-              .eq('user_id', paymentRecord.user_id)
+              .eq('user_id', recordToUpdate.user_id || recordToUpdate.usuario_id)
               .single();
 
             if (userProfile?.referred_by) {
@@ -223,9 +245,9 @@ serve(async (req) => {
             const { error: participantError } = await supabaseClient
               .from('group_participants')
               .insert({
-                user_id: paymentRecord.user_id,
+                user_id: recordToUpdate.user_id || recordToUpdate.usuario_id,
                 group_id: groupId,
-                amount_paid: paymentRecord.amount,
+                amount_paid: recordToUpdate.amount || recordToUpdate.valor,
                 status: 'active',
                 joined_at: new Date().toISOString(),
                 referrer_id: referrerId
@@ -245,7 +267,7 @@ serve(async (req) => {
 
             if (currentGroup) {
               const newParticipants = currentGroup.current_participants + 1;
-              const newAmount = currentGroup.current_amount + paymentRecord.amount;
+              const newAmount = currentGroup.current_amount + (recordToUpdate.amount || recordToUpdate.valor);
 
               const { data: updatedGroup, error: updateGroupError } = await supabaseClient
                 .from('plan_groups')
@@ -281,7 +303,7 @@ serve(async (req) => {
               
               try {
                 // Calcular comissões (percentuais estilo iFood)
-                const totalAmount = paymentRecord.amount;
+                const totalAmount = recordToUpdate.amount || recordToUpdate.valor;
                 const platformAmount = Math.round(totalAmount * 0.50); // 50% plataforma
                 const professionalAmount = Math.round(totalAmount * 0.30); // 30% profissional
                 const referrerAmount = Math.round(totalAmount * 0.20); // 20% referrer
@@ -295,17 +317,17 @@ serve(async (req) => {
 
                 if (referrerProfile) {
                   // Creditar referrer
-                  const { error: creditError } = await supabaseClient
-                    .from('credit_transactions')
-                    .insert({
-                      user_id: referrerProfile.user_id,
-                      type: 'referral_commission',
-                      amount: referrerAmount,
-                      description: `Comissão de referência: ${paymentRecord.plan_name} (20%)`,
-                      source_type: 'payment',
-                      commission_rate: 20,
-                      reference_id: paymentRecord.id
-                    });
+                    const { error: creditError } = await supabaseClient
+                      .from('credit_transactions')
+                      .insert({
+                        user_id: referrerProfile.user_id,
+                        type: 'referral_commission',
+                        amount: referrerAmount,
+                        description: `Comissão de referência: ${recordToUpdate.plan_name || 'Plano'} (20%)`,
+                        source_type: 'payment',
+                        commission_rate: 20,
+                        reference_id: recordToUpdate.id
+                      });
 
                   if (!creditError) {
                     // Atualizar saldo do referrer
@@ -319,20 +341,20 @@ serve(async (req) => {
                       .eq('user_id', referrerProfile.user_id);
 
                     // Notificar referrer
-                    await supabaseClient
-                      .from('notification_triggers')
-                      .insert({
-                        user_id: referrerProfile.user_id,
-                        event_type: 'commission_earned',
-                        title: 'Comissão Recebida!',
-                        message: `Você recebeu R$ ${referrerAmount} de comissão pela indicação de ${paymentRecord.plan_name}`,
-                        data: {
-                          payment_id: paymentRecord.id,
-                          amount: referrerAmount,
-                          plan_name: paymentRecord.plan_name,
-                          commission_rate: 20
-                        }
-                      });
+                      await supabaseClient
+                        .from('notification_triggers')
+                        .insert({
+                          user_id: referrerProfile.user_id,
+                          event_type: 'commission_earned',
+                          title: 'Comissão Recebida!',
+                          message: `Você recebeu R$ ${referrerAmount} de comissão pela indicação de ${recordToUpdate.plan_name || 'um plano'}`,
+                          data: {
+                            payment_id: recordToUpdate.id,
+                            amount: referrerAmount,
+                            plan_name: recordToUpdate.plan_name,
+                            commission_rate: 20
+                          }
+                        });
 
                     console.log('✅ Comissão do referrer processada:', referrerAmount);
                   }
@@ -342,8 +364,8 @@ serve(async (req) => {
                 await supabaseClient
                   .from('payment_splits')
                   .insert({
-                    payment_id: paymentRecord.id,
-                    service_id: paymentRecord.plan_id,
+                    payment_id: recordToUpdate.id,
+                    service_id: recordToUpdate.plan_id,
                     professional_id: null, // Será definido quando necessário
                     referrer_id: referrerId,
                     total_amount: totalAmount,
@@ -365,15 +387,15 @@ serve(async (req) => {
             await supabaseClient
               .from('notification_triggers')
               .insert({
-                user_id: paymentRecord.user_id,
+                user_id: recordToUpdate.user_id || recordToUpdate.usuario_id,
                 event_type: 'payment_confirmed',
                 title: 'Pagamento Confirmado!',
-                message: `Seu pagamento de R$ ${paymentRecord.amount} foi confirmado e você foi adicionado ao grupo.`,
+                message: `Seu pagamento de R$ ${recordToUpdate.amount || recordToUpdate.valor} foi confirmado e você foi adicionado ao grupo.`,
                 data: {
-                  payment_id: paymentRecord.id,
+                  payment_id: recordToUpdate.id,
                   group_id: groupId,
-                  amount: paymentRecord.amount,
-                  plan_name: paymentRecord.plan_name
+                  amount: recordToUpdate.amount || recordToUpdate.valor,
+                  plan_name: recordToUpdate.plan_name || 'Plano'
                 }
               });
           }

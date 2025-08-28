@@ -18,9 +18,9 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const { plan_id, plan_category, user_id, payment_method = 'pix' } = await req.json()
+    const { plan_id, plan_category, user_id, payment_method = 'pix', municipio = 'sao_paulo' } = await req.json()
 
-    console.log('Iniciando criação de pagamento:', { plan_id, plan_category, user_id, payment_method })
+    console.log('Iniciando criação de pagamento:', { plan_id, plan_category, user_id, payment_method, municipio })
 
     // Obter configuração ativa da integração Asaas
     const { data: asaasConfig, error: configError } = await supabaseClient
@@ -60,6 +60,12 @@ serve(async (req) => {
     }
 
     planData = plan
+    
+    // Determinar tipo de transação baseado na categoria/tabela
+    let tipoTransacao = 'servico'; // Default para serviços
+    if (plan_category === 'product' || tableName === 'products') {
+      tipoTransacao = 'produto';
+    }
 
     // Buscar dados do usuário
     const { data: user, error: userError } = await supabaseClient
@@ -72,8 +78,24 @@ serve(async (req) => {
       throw new Error('Usuário não encontrado')
     }
 
-    // Calcular valor da entrada (10% do preço total)
+    // Calcular valor da entrada (10% do preço total) e impostos
     const entryAmount = Math.round(planData.price * 0.1)
+    
+    // Calcular impostos usando a função do banco
+    const { data: impostos, error: impostosError } = await supabaseClient
+      .rpc('calcular_impostos', {
+        valor_base: entryAmount,
+        tipo: tipoTransacao,
+        municipio: municipio,
+        regime: 'simples_nacional'
+      });
+
+    if (impostosError) {
+      console.error('Erro ao calcular impostos:', impostosError);
+      // Continuar sem impostos se houver erro
+    }
+
+    console.log('Cálculo de impostos:', impostos);
 
     // Preparar dados para o Asaas
     const asaasBaseUrl = asaasConfig.environment === 'production' 
@@ -169,7 +191,37 @@ serve(async (req) => {
     // Preparar resposta padrão
     console.log('Resposta da API Asaas:', JSON.stringify(asaasResult, null, 2));
 
-    // Salvar pagamento no banco de dados
+    // Salvar transação no banco de dados
+    const { data: transacaoRecord, error: transacaoError } = await supabaseClient
+      .from('transacoes')
+      .insert({
+        usuario_id: user_id,
+        plano_id: plan_id,
+        valor: entryAmount,
+        tipo_transacao: tipoTransacao,
+        status: 'pendente',
+        asaas_payment_id: asaasResult.id,
+        payment_method: payment_method,
+        iss_percentual: impostos?.iss_percentual || 0,
+        icms_percentual: impostos?.icms_percentual || 0,
+        pis_cofins_percentual: impostos?.pis_cofins_percentual || 0,
+        valor_impostos: impostos?.total_impostos || 0,
+        valor_liquido: impostos?.valor_liquido || entryAmount,
+        municipio_iss: municipio,
+        regime_tributario: 'simples_nacional',
+        observacoes: `Entrada do plano: ${planData.name} (10% do valor total) - Tipo: ${tipoTransacao}`
+      })
+      .select()
+      .single();
+
+    if (transacaoError) {
+      console.error('❌ Erro ao salvar transação:', transacaoError);
+      throw new Error('Erro ao salvar dados da transação');
+    }
+
+    console.log('✅ Transação salva no banco:', transacaoRecord.id);
+
+    // Também salvar na tabela payments para compatibilidade
     const { data: paymentRecord, error: saveError } = await supabaseClient
       .from('payments')
       .insert({
@@ -190,10 +242,10 @@ serve(async (req) => {
 
     if (saveError) {
       console.error('❌ Erro ao salvar pagamento:', saveError);
-      throw new Error('Erro ao salvar dados do pagamento');
+      // Não falhar se der erro no payments, pois já temos na transacoes
+    } else {
+      console.log('✅ Pagamento salvo no banco:', paymentRecord.id);
     }
-
-    console.log('✅ Pagamento salvo no banco:', paymentRecord.id);
 
     // **FLUXO iFood: Redirecionar automaticamente para payment_url**
     let redirectUrl = null;
@@ -221,10 +273,14 @@ serve(async (req) => {
     // Retornar dados para redirecionamento imediato
     const responseData = {
       success: true,
-      payment_id: paymentRecord.id,
+      transacao_id: transacaoRecord.id,
+      payment_id: paymentRecord?.id || null,
       asaas_payment_id: asaasResult.id,
       redirect_url: redirectUrl,
       amount: entryAmount,
+      valor_liquido: impostos?.valor_liquido || entryAmount,
+      valor_impostos: impostos?.total_impostos || 0,
+      tipo_transacao: tipoTransacao,
       plan_name: planData.name,
       status: 'pending',
       message: 'Redirecionando para pagamento...'
