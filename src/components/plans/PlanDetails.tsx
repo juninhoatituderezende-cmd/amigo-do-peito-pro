@@ -87,20 +87,59 @@ const PlanDetails: React.FC<PlanDetailsProps> = ({ planId: propPlanId }) => {
       setLoading(true);
       console.log('🔍 Carregando detalhes do plano:', planId, 'para usuário:', user?.id);
 
-      // 1. Buscar dados do plano
-      const { data: plan, error: planError } = await supabase
-        .from('custom_plans')
+      // 1. Buscar dados do plano nas mesmas tabelas que PlansSelection
+      let plan = null;
+      let planCategory = '';
+
+      // Tentar buscar em planos_tatuador primeiro
+      const { data: tattooPlan, error: tattooError } = await supabase
+        .from('planos_tatuador')
         .select('*')
         .eq('id', planId)
+        .eq('active', true)
         .single();
 
-      if (planError) {
-        console.error('❌ Erro ao buscar plano:', planError);
+      if (tattooPlan) {
+        plan = { ...tattooPlan, category: 'tattoo' };
+        planCategory = 'tattoo';
+      } else {
+        // Se não encontrou, buscar em planos_dentista
+        const { data: dentalPlan, error: dentalError } = await supabase
+          .from('planos_dentista')
+          .select('*')
+          .eq('id', planId)
+          .eq('active', true)
+          .single();
+
+        if (dentalPlan) {
+          plan = { ...dentalPlan, category: 'dental' };
+          planCategory = 'dental';
+        } else {
+          // Por último, tentar custom_plans
+          const { data: customPlan, error: customError } = await supabase
+            .from('custom_plans')
+            .select('*')
+            .eq('id', planId)
+            .eq('active', true)
+            .single();
+
+          if (customPlan) {
+            plan = { ...customPlan, category: 'service' };
+            planCategory = 'service';
+          }
+        }
+      }
+
+      if (!plan) {
+        console.error('❌ Plano não encontrado em nenhuma tabela:', planId);
         throw new Error('Plano não encontrado');
       }
 
-      setPlanData(plan);
-      console.log('✅ Plano carregado:', plan.name);
+      console.log('✅ Plano encontrado:', plan.name, 'Categoria:', planCategory);
+      setPlanData({
+        ...plan,
+        category: planCategory
+      });
 
       // 2. Buscar participação do usuário
       const { data: participation, error: participationError } = await supabase
