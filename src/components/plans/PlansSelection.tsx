@@ -1,10 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, Users, Clock, Star, Package } from "lucide-react";
+import { Check, Users, Clock, Star, Package, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { PaymentModal } from "@/components/ui/payment-modal";
+import { PaymentMethodSelector } from "@/components/ui/payment-method-selector";
 
 interface Plan {
   id: string;
@@ -31,6 +33,12 @@ interface PlansSelectionProps {
 export const PlansSelection = ({ onSelectPlan, selectedPlanId }: PlansSelectionProps) => {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
+  const [processingPayment, setProcessingPayment] = useState(false);
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [paymentMethodModalOpen, setPaymentMethodModalOpen] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
+  const [paymentData, setPaymentData] = useState<any>(null);
+  const [paymentMethod, setPaymentMethod] = useState('pix');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -101,10 +109,22 @@ export const PlansSelection = ({ onSelectPlan, selectedPlanId }: PlansSelectionP
     }
   };
 
-  const handleSelectPlan = async (plan: Plan) => {
+  const handleSelectPlan = (plan: Plan) => {
+    console.log('🎯 Plano selecionado:', plan.name);
+    setSelectedPlan(plan);
+    setPaymentMethodModalOpen(true);
+  };
+
+  const handlePaymentMethodSelect = async (method: 'pix' | 'boleto') => {
+    if (!selectedPlan) return;
+    
     try {
+      console.log('🚀 Iniciando processo de compra do plano:', selectedPlan.name, 'Método:', method);
+      
+      // 1. Verificar autenticação
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
+        console.log('❌ Usuário não autenticado');
         toast({
           title: "Login necessário",
           description: "Faça login para comprar um plano.",
@@ -113,39 +133,55 @@ export const PlansSelection = ({ onSelectPlan, selectedPlanId }: PlansSelectionP
         return;
       }
 
-      // Chamar a função de criar pagamento
+      console.log('✅ Usuário autenticado:', session.user.id);
+      setProcessingPayment(true);
+      setPaymentMethod(method);
+
+      // 2. Chamar a função de criar pagamento
+      console.log('📞 Chamando edge function create-asaas-payment...');
       const { data, error } = await supabase.functions.invoke('create-asaas-payment', {
         body: {
-          plan_id: plan.id,
-          plan_category: plan.category,
+          plan_id: selectedPlan.id,
+          plan_category: selectedPlan.category,
           user_id: session.user.id,
-          payment_method: 'pix' // Pode ser alterado para permitir escolha
+          payment_method: method
         }
       });
 
-      if (error) throw error;
+      console.log('📡 Resposta da edge function:', { data, error });
+
+      if (error) {
+        console.error('❌ Erro na edge function:', error);
+        throw error;
+      }
 
       if (data.success) {
+        console.log('✅ Pagamento criado com sucesso:', data);
+        setPaymentData(data);
+        setPaymentModalOpen(true);
+        
         toast({
           title: "Pagamento criado!",
-          description: `PIX de R$ ${data.amount} gerado para o plano ${data.plan_name}`,
+          description: `${method === 'pix' ? 'PIX' : 'Boleto'} de R$ ${data.amount} gerado para o plano ${data.plan_name}`,
         });
-        
-        // Aqui você pode redirecionar para uma página de checkout
-        // ou abrir um modal com os dados do pagamento
-        console.log('Dados do pagamento:', data);
+      } else {
+        console.error('❌ Erro no processamento:', data.error);
+        throw new Error(data.error || 'Erro desconhecido');
       }
     } catch (error) {
-      console.error('Erro ao processar pagamento:', error);
+      console.error('💥 Erro ao processar pagamento:', error);
       toast({
-        title: "Erro",
-        description: "Erro ao processar pagamento. Tente novamente.",
+        title: "Erro no pagamento",
+        description: error.message || "Erro ao processar pagamento. Tente novamente.",
         variant: "destructive",
       });
+    } finally {
+      setProcessingPayment(false);
     }
 
-    if (onSelectPlan) {
-      onSelectPlan(plan);
+    // Callback opcional para componente pai
+    if (onSelectPlan && selectedPlan) {
+      onSelectPlan(selectedPlan);
     }
   };
 
@@ -281,13 +317,21 @@ export const PlansSelection = ({ onSelectPlan, selectedPlanId }: PlansSelectionP
 
               {/* CTA Button */}
               <Button 
-                className="w-full mt-4 font-semibold text-white bg-ap-orange hover:bg-ap-orange-dark transition-all duration-200"
+                className="w-full mt-4 font-semibold text-white bg-ap-orange hover:bg-ap-orange-dark transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleSelectPlan(plan);
                 }}
+                disabled={processingPayment}
               >
-                Comprar Plano
+                {processingPayment ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Processando...
+                  </>
+                ) : (
+                  'Comprar Plano'
+                )}
               </Button>
 
               {/* Group Info */}
@@ -349,6 +393,23 @@ export const PlansSelection = ({ onSelectPlan, selectedPlanId }: PlansSelectionP
           </div>
         </Card>
       </div>
+
+      {/* Payment Method Selector Modal */}
+      <PaymentMethodSelector
+        isOpen={paymentMethodModalOpen}
+        onClose={() => setPaymentMethodModalOpen(false)}
+        onSelectMethod={handlePaymentMethodSelect}
+        planName={selectedPlan?.name || ''}
+        amount={Math.round((selectedPlan?.price || 0) * 0.1)}
+      />
+
+      {/* Payment Modal */}
+      <PaymentModal
+        isOpen={paymentModalOpen}
+        onClose={() => setPaymentModalOpen(false)}
+        paymentData={paymentData}
+        paymentMethod={paymentMethod}
+      />
     </div>
   );
 };

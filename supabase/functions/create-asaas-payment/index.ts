@@ -18,7 +18,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const { plan_id, plan_category, user_id, payment_method = 'credit_card' } = await req.json()
+    const { plan_id, plan_category, user_id, payment_method = 'pix' } = await req.json()
 
     console.log('Iniciando criação de pagamento:', { plan_id, plan_category, user_id, payment_method })
 
@@ -83,13 +83,20 @@ serve(async (req) => {
     const apiKey = atob(asaasConfig.api_key_encrypted) // Descriptografar a chave
 
     const paymentData = {
-      customer: user.id,
-      billingType: payment_method.toUpperCase(),
+      customer: user.email, // Asaas precisa do email do cliente, não do ID
+      billingType: payment_method === 'pix' ? 'PIX' : 'BOLETO',
       value: entryAmount,
       dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 dias
       description: `Entrada do plano: ${planData.name} (10% do valor total)`,
       externalReference: `plan_${plan_id}_user_${user_id}`,
-      postalService: false
+      postalService: false,
+      // Dados do cliente
+      customerData: {
+        name: user.full_name || user.email,
+        email: user.email,
+        cpfCnpj: user.cpf || null,
+        phone: user.phone || null
+      }
     }
 
     // Criar cobrança no Asaas
@@ -121,12 +128,16 @@ serve(async (req) => {
       status: asaasResult.status
     }
 
-    if (payment_method === 'pix') {
-      responseData.pix_code = asaasResult.pixTransaction?.qrCode?.payload
-      responseData.qr_code = asaasResult.pixTransaction?.qrCode?.encodedImage
-    } else {
-      responseData.invoice_url = asaasResult.invoiceUrl
-      responseData.bank_slip_url = asaasResult.bankSlipUrl
+    // Para PIX, adicionar dados específicos
+    if (payment_method === 'pix' && asaasResult.pixTransaction) {
+      responseData.pix_code = asaasResult.pixTransaction.qrCode?.payload || null
+      responseData.qr_code = asaasResult.pixTransaction.qrCode?.encodedImage || null
+    }
+    
+    // Para boleto, adicionar URL
+    if (payment_method !== 'pix') {
+      responseData.invoice_url = asaasResult.invoiceUrl || null
+      responseData.bank_slip_url = asaasResult.bankSlipUrl || null
     }
 
     return new Response(JSON.stringify(responseData), {
