@@ -64,31 +64,34 @@ export function SpecificServicePlansManager({ serviceType, onBack }: SpecificSer
   const loadPlans = async () => {
     try {
       setLoading(true);
-      console.log("Carregando planos da tabela:", serviceType.table);
+      console.log("🔄 Carregando planos da tabela:", serviceType.table);
       
-      // BUSCA DIRETA NA TABELA - SEM RPC (com casting seguro)
-      const { data, error } = await supabase
-        .from(serviceType.table as any)
-        .select('*')
-        .order('created_at', { ascending: false });
+      let query;
+      if (serviceType.table === 'planos_tatuador') {
+        query = supabase.from('planos_tatuador').select('*');
+      } else if (serviceType.table === 'planos_dentista') {
+        query = supabase.from('planos_dentista').select('*');
+      } else {
+        throw new Error(`Tabela não suportada: ${serviceType.table}`);
+      }
+      
+      const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) {
-        console.error("Erro detalhado:", error);
+        console.error("❌ Erro ao carregar planos:", error);
         throw error;
       }
 
-      console.log("Planos carregados:", data);
-      // Cast seguro para ServicePlan[] com verificação
-      const typedPlans = data ? (data as unknown as ServicePlan[]) : [];
-      setPlans(typedPlans);
+      console.log("✅ Planos carregados:", data?.length || 0);
+      setPlans(data || []);
     } catch (error) {
-      console.error("Erro ao carregar planos:", error);
+      console.error("❌ Erro ao carregar planos:", error);
       toast({
         title: "Erro",
         description: "Erro ao carregar planos. Tente novamente.",
         variant: "destructive",
       });
-      setPlans([]); // Garantir que plans não seja undefined
+      setPlans([]);
     } finally {
       setLoading(false);
     }
@@ -107,26 +110,32 @@ export function SpecificServicePlansManager({ serviceType, onBack }: SpecificSer
 
     try {
       setSubmitting(true);
+      console.log("💾 Salvando plano...", { editingPlan, formData });
+
       const planData = {
         name: formData.name,
-        description: formData.description,
+        description: formData.description || null,
         price: parseFloat(formData.price),
         max_participants: parseInt(formData.max_participants),
-        image_url: formData.image_url,
+        image_url: formData.image_url || null,
         active: formData.active,
       };
 
       if (editingPlan) {
-        // ATUALIZAÇÃO DIRETA NA TABELA - SEM RPC
-        const { data, error } = await supabase
-          .from(serviceType.table as any)
+        console.log("✏️ Editando plano ID:", editingPlan.id);
+        
+        let updateQuery;
+        if (serviceType.table === 'planos_tatuador') {
+          updateQuery = supabase.from('planos_tatuador');
+        } else if (serviceType.table === 'planos_dentista') {
+          updateQuery = supabase.from('planos_dentista');
+        } else {
+          throw new Error(`Tabela não suportada: ${serviceType.table}`);
+        }
+
+        const { data, error } = await updateQuery
           .update({
-            name: formData.name,
-            description: formData.description,
-            price: parseFloat(formData.price),
-            max_participants: parseInt(formData.max_participants),
-            image_url: formData.image_url,
-            active: formData.active,
+            ...planData,
             updated_at: new Date().toISOString()
           })
           .eq('id', editingPlan.id)
@@ -134,38 +143,38 @@ export function SpecificServicePlansManager({ serviceType, onBack }: SpecificSer
           .single();
 
         if (error) {
-          console.error("Erro detalhado:", error);
+          console.error("❌ Erro ao atualizar:", error);
           throw error;
         }
 
-        console.log("Plano atualizado:", data);
-        
+        console.log("✅ Plano atualizado:", data);
         toast({
           title: "Sucesso",
           description: "Plano atualizado com sucesso!",
         });
       } else {
-        // CRIAÇÃO DIRETA NA TABELA - SEM RPC
-        const { data, error } = await supabase
-          .from(serviceType.table as any)
-          .insert({
-            name: formData.name,
-            description: formData.description,
-            price: parseFloat(formData.price),
-            max_participants: parseInt(formData.max_participants),
-            image_url: formData.image_url,
-            active: formData.active
-          })
+        console.log("➕ Criando novo plano");
+        
+        let insertQuery;
+        if (serviceType.table === 'planos_tatuador') {
+          insertQuery = supabase.from('planos_tatuador');
+        } else if (serviceType.table === 'planos_dentista') {
+          insertQuery = supabase.from('planos_dentista');
+        } else {
+          throw new Error(`Tabela não suportada: ${serviceType.table}`);
+        }
+
+        const { data, error } = await insertQuery
+          .insert(planData)
           .select()
           .single();
 
         if (error) {
-          console.error("Erro detalhado:", error);
+          console.error("❌ Erro ao criar:", error);
           throw error;
         }
 
-        console.log("Plano criado:", data);
-
+        console.log("✅ Plano criado:", data);
         toast({
           title: "Sucesso",
           description: "Plano criado com sucesso!",
@@ -174,11 +183,9 @@ export function SpecificServicePlansManager({ serviceType, onBack }: SpecificSer
 
       resetForm();
       setDialogOpen(false);
-      
-      // RECARREGAR LISTA IMEDIATAMENTE APÓS SALVAR
       await loadPlans();
-    } catch (error) {
-      console.error("Erro ao salvar plano:", error);
+    } catch (error: any) {
+      console.error("❌ Erro ao salvar plano:", error);
       const errorMessage = error?.message || "Erro desconhecido";
       toast({
         title: "Erro",
@@ -191,17 +198,9 @@ export function SpecificServicePlansManager({ serviceType, onBack }: SpecificSer
   };
 
   const handleEdit = (plan: ServicePlan) => {
-    console.log("Editando plano:", plan);
+    console.log("✏️ Editando plano:", plan);
     setEditingPlan(plan);
     setFormData({
-      name: plan.name,
-      description: plan.description || "",
-      price: plan.price.toString(),
-      max_participants: plan.max_participants.toString(),
-      image_url: plan.image_url || "",
-      active: plan.active,
-    });
-    console.log("FormData carregado para edição:", {
       name: plan.name,
       description: plan.description || "",
       price: plan.price.toString(),
@@ -215,29 +214,35 @@ export function SpecificServicePlansManager({ serviceType, onBack }: SpecificSer
   const handleDelete = async (planId: string) => {
     try {
       setDeleting(planId);
+      console.log("🗑️ Excluindo plano:", planId);
       
-      // EXCLUSÃO DIRETA NA TABELA - SEM RPC
-      const { error } = await supabase
-        .from(serviceType.table as any)
+      let deleteQuery;
+      if (serviceType.table === 'planos_tatuador') {
+        deleteQuery = supabase.from('planos_tatuador');
+      } else if (serviceType.table === 'planos_dentista') {
+        deleteQuery = supabase.from('planos_dentista');
+      } else {
+        throw new Error(`Tabela não suportada: ${serviceType.table}`);
+      }
+
+      const { error } = await deleteQuery
         .delete()
         .eq('id', planId);
 
       if (error) {
-        console.error("Erro detalhado na exclusão:", error);
+        console.error("❌ Erro ao excluir:", error);
         throw error;
       }
 
-      console.log("Plano excluído com sucesso:", planId);
-
+      console.log("✅ Plano excluído com sucesso");
       toast({
         title: "Sucesso",
         description: "Plano excluído com sucesso!",
       });
       
-      // ATUALIZAR LISTA IMEDIATAMENTE
-      loadPlans();
-    } catch (error) {
-      console.error("Erro ao excluir plano:", error);
+      await loadPlans();
+    } catch (error: any) {
+      console.error("❌ Erro ao excluir plano:", error);
       toast({
         title: "Erro",
         description: "Erro ao excluir plano. Tente novamente.",
@@ -250,9 +255,18 @@ export function SpecificServicePlansManager({ serviceType, onBack }: SpecificSer
 
   const togglePlanStatus = async (planId: string, currentStatus: boolean) => {
     try {
-      // ATUALIZAÇÃO DIRETA DO STATUS - SEM RPC
-      const { error } = await supabase
-        .from(serviceType.table as any)
+      console.log("🔄 Alterando status do plano:", planId, "para:", !currentStatus);
+      
+      let updateQuery;
+      if (serviceType.table === 'planos_tatuador') {
+        updateQuery = supabase.from('planos_tatuador');
+      } else if (serviceType.table === 'planos_dentista') {
+        updateQuery = supabase.from('planos_dentista');
+      } else {
+        throw new Error(`Tabela não suportada: ${serviceType.table}`);
+      }
+
+      const { error } = await updateQuery
         .update({
           active: !currentStatus,
           updated_at: new Date().toISOString()
@@ -260,19 +274,19 @@ export function SpecificServicePlansManager({ serviceType, onBack }: SpecificSer
         .eq('id', planId);
 
       if (error) {
-        console.error("Erro detalhado:", error);
+        console.error("❌ Erro ao alterar status:", error);
         throw error;
       }
 
+      console.log("✅ Status alterado com sucesso");
       toast({
         title: "Sucesso",
         description: `Plano ${!currentStatus ? "ativado" : "desativado"} com sucesso!`,
       });
       
-      // Recarregar lista
       await loadPlans();
-    } catch (error) {
-      console.error("Erro ao alterar status:", error);
+    } catch (error: any) {
+      console.error("❌ Erro ao alterar status:", error);
       toast({
         title: "Erro",
         description: "Erro ao alterar status do plano",
