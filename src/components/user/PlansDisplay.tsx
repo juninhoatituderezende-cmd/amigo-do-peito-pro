@@ -37,19 +37,32 @@ export const PlansDisplay = ({ category, title, onSelectPlan }: PlansDisplayProp
     try {
       setLoading(true);
       
-      // Usar a função RPC para buscar planos
-      const { data, error } = await supabase.rpc('get_service_plans', {
-        table_name: tableMap[category]
-      });
+      // Buscar planos diretamente da tabela baseado na categoria
+      let data, error;
+      
+      if (category === 'tatuador') {
+        const response = await supabase
+          .from('planos_tatuador')
+          .select('*')
+          .eq('active', true)
+          .order('created_at', { ascending: false });
+        data = response.data;
+        error = response.error;
+      } else {
+        const response = await supabase
+          .from('planos_dentista')
+          .select('*')
+          .eq('active', true)
+          .order('created_at', { ascending: false });
+        data = response.data;
+        error = response.error;
+      }
 
       if (error) {
         throw error;
       }
 
-      // Parse JSON response e filtrar apenas planos ativos
-      const plansData = data ? JSON.parse(data as string) : [];
-      const activePlans = Array.isArray(plansData) ? plansData.filter((plan: Plan) => plan.active) : [];
-      setPlans(activePlans);
+      setPlans(data || []);
 
     } catch (error) {
       console.error('Erro ao carregar planos:', error);
