@@ -48,12 +48,12 @@ import UserHistory from "./pages/user/UserHistory";
 import UserGroups from "./pages/user/UserGroups";
 import UserReferrals from "./pages/user/UserReferrals";
 import UserPlans from "./pages/user/UserPlans";
+import PlanDetailsComponent from "./components/plans/PlanDetails";
 import UserCredits from "./pages/user/UserCredits";
 import UserProfile from "./pages/user/UserProfile";
 import Marketplace from "./pages/Marketplace";
 import Plans from "./pages/Plans";
 import PlanSubscription from "./pages/PlanSubscription";
-import { PlanDetails } from "./pages/PlanDetails";
 import InfluencerRegister from "./pages/InfluencerRegister";
 import InfluencerLogin from "./pages/InfluencerLogin";
 import InfluencerDashboard from "./pages/influencer/InfluencerDashboard";
@@ -168,8 +168,8 @@ const App = () => (
                 </ProtectedRoute>
               } />
               <Route path="/plans" element={<Plans />} />
-              <Route path="/plano/:planId" element={<PlanDetails />} />
-              <Route path="/plano-detalhes/:planId" element={<PlanDetails />} />
+              <Route path="/plano/:planId" element={<PlanDetailsComponent />} />
+              <Route path="/plano-detalhes/:planId" element={<PlanDetailsComponent />} />
               
               {/* Professional Routes */}
               <Route path="/profissional/dashboard" element={

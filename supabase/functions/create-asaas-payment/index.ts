@@ -138,8 +138,15 @@ serve(async (req) => {
       postalService: false
     }
 
+    // Validar se CPF foi fornecido antes de criar cobrança
+    if (!user.cpf) {
+      console.error('❌ CPF/CNPJ não fornecido para criação da cobrança - usuário:', user_id);
+      throw new Error('Para criar esta cobrança é necessário preencher o CPF ou CNPJ do cliente.');
+    }
+    
     // Criar cobrança no Asaas
     console.log('Criando cobrança com dados:', paymentData);
+    console.log('✅ CPF do cliente fornecido:', user.cpf);
     const asaasResponse = await fetch(`${asaasBaseUrl}/payments`, {
       method: 'POST',
       headers: {

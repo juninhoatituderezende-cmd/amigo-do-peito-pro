@@ -254,6 +254,8 @@ export const PlansSelection = ({ onSelectPlan, selectedPlanId }: PlansSelectionP
         
         // Garantir que os dados do modal sejam limpos antes de definir novos dados
         setPaymentData(null);
+        setPaymentMethodModalOpen(false); // Fechar modal de seleção
+        
         setTimeout(() => {
           setPaymentData(data);
           setPaymentModalOpen(true);
