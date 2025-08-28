@@ -47,6 +47,7 @@ import UserNotifications from "./pages/user/UserNotifications";
 import UserHistory from "./pages/user/UserHistory";
 import UserGroups from "./pages/user/UserGroups";
 import UserReferrals from "./pages/user/UserReferrals";
+import UserPlans from "./pages/user/UserPlans";
 import UserCredits from "./pages/user/UserCredits";
 import UserProfile from "./pages/user/UserProfile";
 import Marketplace from "./pages/Marketplace";
@@ -161,7 +162,11 @@ const App = () => (
                   <UserHistory />
                 </ProtectedRoute>
               } />
-              <Route path="/marketplace" element={<Marketplace />} />
+              <Route path="/usuario/planos" element={
+                <ProtectedRoute role="user">
+                  <UserPlans />
+                </ProtectedRoute>
+              } />
               <Route path="/plans" element={<Plans />} />
               <Route path="/plano/:planCode" element={<PlanSubscription />} />
               <Route path="/plano-detalhes/:planId" element={<PlanDetails />} />

@@ -45,10 +45,10 @@ const SimpleImageUpload: React.FC<SimpleImageUploadProps> = ({
         // Create a unique filename
         const fileExt = file.name.split('.').pop();
         const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-        const filePath = `professional-photos/${user.id}/${fileName}`;
+        const filePath = `${fileName}`;
 
         const { data, error } = await supabase.storage
-          .from('materials')
+          .from('plan-images')
           .upload(filePath, file);
 
         if (error) {
@@ -56,7 +56,7 @@ const SimpleImageUpload: React.FC<SimpleImageUploadProps> = ({
         }
 
         const { data: { publicUrl } } = supabase.storage
-          .from('materials')
+          .from('plan-images')
           .getPublicUrl(filePath);
 
         onUpload(publicUrl);

@@ -76,6 +76,7 @@ const menuItems: MenuItem[] = [
   
   // User Items
   { title: "Dashboard", url: "/usuario/dashboard", icon: LayoutDashboard, roles: ["user"] },
+  { title: "Planos", url: "/usuario/planos", icon: Package, roles: ["user"] },
   { title: "Marketplace", url: "/usuario/marketplace", icon: Package, roles: ["user"] },
   { title: "Saques", url: "/usuario/saques", icon: DollarSign, roles: ["user"] },
   { title: "Notificações", url: "/usuario/notificacoes", icon: Bell, roles: ["user"] },
