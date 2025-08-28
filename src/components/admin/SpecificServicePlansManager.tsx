@@ -283,91 +283,93 @@ export function SpecificServicePlansManager({ serviceType, onBack }: SpecificSer
               Novo Plano
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+            <DialogHeader className="flex-shrink-0">
               <DialogTitle>
                 {editingPlan ? "Editar Plano" : "Novo Plano"}
               </DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex-1 overflow-y-auto px-1">
+              <form onSubmit={handleSubmit} className="space-y-4 pb-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Nome do Plano *</Label>
+                    <Input
+                      id="name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      placeholder="Ex: Tatuagem Pequena"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="price">Preço (R$) *</Label>
+                    <Input
+                      id="price"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.price}
+                      onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                      placeholder="0.00"
+                      required
+                    />
+                  </div>
+                </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="name">Nome do Plano *</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="Ex: Tatuagem Pequena"
-                    required
+                  <Label htmlFor="description">Descrição</Label>
+                  <Textarea
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    placeholder="Descreva os detalhes do plano..."
+                    rows={3}
                   />
                 </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="price">Preço (R$) *</Label>
+                  <Label htmlFor="max_participants">Máximo de Participantes</Label>
                   <Input
-                    id="price"
+                    id="max_participants"
                     type="number"
-                    step="0.01"
-                    min="0"
-                    value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                    placeholder="0.00"
-                    required
+                    min="1"
+                    value={formData.max_participants}
+                    onChange={(e) => setFormData({ ...formData, max_participants: e.target.value })}
                   />
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="description">Descrição</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Descreva os detalhes do plano..."
-                  rows={3}
-                />
-              </div>
+                <div className="space-y-2">
+                  <Label>Imagem do Plano</Label>
+                  <SimpleImageUpload
+                    onUpload={(url) => setFormData({ ...formData, image_url: url })}
+                    label="Escolher imagem do plano"
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="max_participants">Máximo de Participantes</Label>
-                <Input
-                  id="max_participants"
-                  type="number"
-                  min="1"
-                  value={formData.max_participants}
-                  onChange={(e) => setFormData({ ...formData, max_participants: e.target.value })}
-                />
-              </div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="active"
+                    checked={formData.active}
+                    onCheckedChange={(checked) => setFormData({ ...formData, active: checked })}
+                  />
+                  <Label htmlFor="active">Plano ativo</Label>
+                </div>
 
-              <div className="space-y-2">
-                <Label>Imagem do Plano</Label>
-                <SimpleImageUpload
-                  onUpload={(url) => setFormData({ ...formData, image_url: url })}
-                  label="Escolher imagem do plano"
-                />
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="active"
-                  checked={formData.active}
-                  onCheckedChange={(checked) => setFormData({ ...formData, active: checked })}
-                />
-                <Label htmlFor="active">Plano ativo</Label>
-              </div>
-
-              <div className="flex justify-end space-x-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setDialogOpen(false)}
-                >
-                  Cancelar
-                </Button>
-                <Button type="submit" disabled={submitting}>
-                  {submitting ? "Salvando..." : editingPlan ? "Atualizar" : "Criar"}
-                </Button>
-              </div>
-            </form>
+                <div className="flex justify-end space-x-2 pt-4 border-t">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setDialogOpen(false)}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button type="submit" disabled={submitting}>
+                    {submitting ? "Salvando..." : editingPlan ? "Atualizar" : "Criar"}
+                  </Button>
+                </div>
+              </form>
+            </div>
           </DialogContent>
         </Dialog>
       </div>
