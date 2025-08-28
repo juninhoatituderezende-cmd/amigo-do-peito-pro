@@ -205,14 +205,14 @@ export const UserProfile = () => {
                   Editar Perfil
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-md">
+              <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Editar Perfil</DialogTitle>
                   <DialogDescription>
                     Atualize suas informações pessoais.
                   </DialogDescription>
                 </DialogHeader>
-                <div className="space-y-4">
+                <div className="space-y-4 py-4">
                   <div>
                     <Label htmlFor="name">Nome Completo</Label>
                     <Input
@@ -227,6 +227,7 @@ export const UserProfile = () => {
                       id="phone"
                       value={editedProfile.phone}
                       onChange={(e) => setEditedProfile(prev => ({ ...prev, phone: e.target.value }))}
+                      placeholder="(11) 99999-9999"
                     />
                   </div>
                   <div>
@@ -241,6 +242,9 @@ export const UserProfile = () => {
                       placeholder="000.000.000-00"
                       maxLength={14}
                     />
+                    {editedProfile.cpf && !validateCpf(editedProfile.cpf) && editedProfile.cpf.length === 14 && (
+                      <p className="text-sm text-destructive mt-1">CPF inválido</p>
+                    )}
                   </div>
                   <div>
                     <Label htmlFor="address">Endereço</Label>
@@ -248,6 +252,7 @@ export const UserProfile = () => {
                       id="address"
                       value={editedProfile.address}
                       onChange={(e) => setEditedProfile(prev => ({ ...prev, address: e.target.value }))}
+                      placeholder="Rua, número, bairro"
                     />
                   </div>
                   <div>
@@ -256,6 +261,7 @@ export const UserProfile = () => {
                       id="city"
                       value={editedProfile.city}
                       onChange={(e) => setEditedProfile(prev => ({ ...prev, city: e.target.value }))}
+                      placeholder="São Paulo, SP"
                     />
                   </div>
                   <div>
@@ -268,6 +274,7 @@ export const UserProfile = () => {
                         preferences: e.target.value.split(',').map(p => p.trim()).filter(p => p)
                       }))}
                       placeholder="Procedimentos estéticos, Promoções especiais..."
+                      rows={3}
                     />
                   </div>
                   <Button onClick={handleSaveProfile} className="w-full">
