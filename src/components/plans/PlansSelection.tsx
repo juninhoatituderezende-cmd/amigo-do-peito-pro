@@ -39,32 +39,45 @@ export const PlansSelection = ({ onSelectPlan, selectedPlanId }: PlansSelectionP
 
   const loadPlans = async () => {
     try {
-      const { data, error } = await supabase
-        .from('custom_plans')
+      // Buscar planos de todas as tabelas específicas
+      const tattooPlansPromise = supabase
+        .from('planos_tatuador')
         .select('*')
-        .eq('active', true)
-        .order('created_at', { ascending: false });
+        .eq('active', true);
+        
+      const dentalPlansPromise = supabase
+        .from('planos_dentista')
+        .select('*')
+        .eq('active', true);
 
-      if (error) throw error;
+      const [tattooResponse, dentalResponse] = await Promise.all([
+        tattooPlansPromise,
+        dentalPlansPromise
+      ]);
 
-      const formattedPlans: Plan[] = (data || []).map((plan, index) => ({
+      // Combinar todos os planos
+      const allPlans = [
+        ...(tattooResponse.data || []).map(plan => ({ ...plan, category: 'tattoo' })),
+        ...(dentalResponse.data || []).map(plan => ({ ...plan, category: 'dental' }))
+      ];
+
+      const formattedPlans: Plan[] = allPlans.map((plan, index) => ({
         id: plan.id,
         name: plan.name,
         description: plan.description || `Plano ${plan.name}`,
         price: plan.price,
         entryPrice: Math.round(plan.price * 0.1), // 10% do preço como entrada
-        category: plan.category || 'service',
-        features: Array.isArray(plan.features) 
-          ? plan.features.map(f => String(f)).filter(Boolean)
-          : [],
+        category: plan.category,
+        features: plan.description ? [plan.description] : [`Plano completo de ${plan.category === 'tattoo' ? 'tatuagem' : 'odontologia'}`],
         popular: index === 0, // Primeiro plano é marcado como popular
-        icon: getCategoryIcon(plan.category || 'service'),
+        icon: getCategoryIcon(plan.category),
         max_participants: plan.max_participants || 10,
-        duration_months: plan.duration_months || 1,
+        duration_months: 1, // padrão
         image_url: plan.image_url
       }));
 
       setPlans(formattedPlans);
+      console.log('Planos carregados:', formattedPlans);
     } catch (error) {
       console.error('Erro ao carregar planos:', error);
       toast({

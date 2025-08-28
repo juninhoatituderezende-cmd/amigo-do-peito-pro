@@ -302,9 +302,9 @@ export function SpecificServicePlansManager({ serviceType, onBack }: SpecificSer
                 {editingPlan ? "Edite as informações do plano" : "Preencha os dados para criar um novo plano"}
               </DialogDescription>
             </DialogHeader>
-            <div className="flex-1 overflow-y-auto px-2">
-              <form onSubmit={handleSubmit} className="space-y-4 pb-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex-1 overflow-y-auto px-2 max-h-[calc(90vh-120px)]">
+              <form onSubmit={handleSubmit} className="space-y-6 pb-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="name">Nome do Plano *</Label>
                     <Input
@@ -337,7 +337,7 @@ export function SpecificServicePlansManager({ serviceType, onBack }: SpecificSer
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     placeholder="Descreva os detalhes do plano..."
-                    rows={3}
+                    rows={4}
                   />
                 </div>
 
@@ -371,16 +371,17 @@ export function SpecificServicePlansManager({ serviceType, onBack }: SpecificSer
                   <Label htmlFor="active">Plano ativo</Label>
                 </div>
 
-                <div className="flex justify-end space-x-2 pt-4 border-t">
+                <div className="flex justify-end space-x-2 pt-6 border-t sticky bottom-0 bg-background">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => setDialogOpen(false)}
+                    disabled={submitting}
                   >
                     Cancelar
                   </Button>
                   <Button type="submit" disabled={submitting}>
-                    {submitting ? "Salvando..." : editingPlan ? "Atualizar" : "Criar"}
+                    {submitting ? "Salvando..." : editingPlan ? "Atualizar Plano" : "Criar Plano"}
                   </Button>
                 </div>
               </form>
