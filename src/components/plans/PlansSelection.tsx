@@ -239,11 +239,11 @@ export const PlansSelection = ({ onSelectPlan, selectedPlanId }: PlansSelectionP
 
               {/* CTA Button */}
               <Button 
-                className={`w-full mt-4 ${
+                className={`w-full mt-4 font-semibold text-white ${
                   selectedPlanId === plan.id 
-                    ? "bg-ap-orange hover:bg-ap-orange/90" 
-                    : "bg-gray-900 hover:bg-gray-800"
-                }`}
+                    ? "bg-primary hover:bg-primary/90 text-black" 
+                    : "bg-ap-orange hover:bg-ap-orange-dark text-white"
+                } transition-all duration-200`}
                 onClick={(e) => {
                   e.stopPropagation();
                   handleSelectPlan(plan);

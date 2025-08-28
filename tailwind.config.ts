@@ -72,6 +72,12 @@ export default {
 				'gold-dark': 'hsl(var(--gold-dark))',        // Dourado escuro
 				'white-pure': 'hsl(var(--white-pure))',      // #FFFFFF
 				'white-soft': 'hsl(var(--white-soft))',      // Branco suave
+				
+				// CORES DA MARCA "AMIGO DO PEITO"
+				'ap-orange': 'hsl(var(--ap-orange))',           // Laranja principal
+				'ap-orange-light': 'hsl(var(--ap-orange-light))', // Laranja claro
+				'ap-orange-dark': 'hsl(var(--ap-orange-dark))',   // Laranja escuro
+				'ap-light-orange': 'hsl(var(--ap-light-orange))', // Laranja muito claro
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
