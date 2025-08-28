@@ -866,9 +866,13 @@ const AdminDashboard = () => {
                   <AlertTriangle className="h-4 w-4 mr-2" />
                   Segurança
                 </TabsTrigger>
-                <TabsTrigger value="service-plans" className="text-sm py-3">
+                <TabsTrigger value="tattoo-plans" className="text-sm py-3" onClick={() => navigate("/admin/planos-tatuagem")}>
                   <Package className="h-4 w-4 mr-2" />
-                  Planos de Serviço
+                  Planos Tatuagem
+                </TabsTrigger>
+                <TabsTrigger value="dental-plans" className="text-sm py-3" onClick={() => navigate("/admin/planos-odontologia")}>
+                  <Package className="h-4 w-4 mr-2" />
+                  Planos Odontologia
                 </TabsTrigger>
                 <TabsTrigger value="user-marketplace" className="text-sm py-3">
                   <Store className="h-4 w-4 mr-2" />
@@ -910,6 +914,37 @@ const AdminDashboard = () => {
                     >
                       <Settings className="h-4 w-4 mr-2" />
                       Configurar Integração Asaas
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {/* Ações Rápidas - Gestão de Planos */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Package className="h-5 w-5 text-primary" />
+                    Gestão de Planos por Categoria
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Button 
+                      onClick={() => navigate("/admin/planos-tatuagem")}
+                      className="h-24 flex flex-col items-center justify-center space-y-2 bg-gradient-to-br from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700"
+                    >
+                      <Package className="h-6 w-6" />
+                      <span className="text-sm font-medium">Planos Tatuagem</span>
+                      <span className="text-xs opacity-80">Gerenciar planos de tatuagem</span>
+                    </Button>
+                    
+                    <Button 
+                      onClick={() => navigate("/admin/planos-odontologia")}
+                      className="h-24 flex flex-col items-center justify-center space-y-2 bg-gradient-to-br from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700"
+                    >
+                      <Package className="h-6 w-6" />
+                      <span className="text-sm font-medium">Planos Odontologia</span>
+                      <span className="text-xs opacity-80">Gerenciar planos odontológicos</span>
                     </Button>
                   </div>
                 </CardContent>
