@@ -167,41 +167,75 @@ serve(async (req) => {
     console.log('Cobrança criada com sucesso:', asaasResult.id)
 
     // Preparar resposta padrão
-    const responseData: any = {
+    console.log('Resposta da API Asaas:', JSON.stringify(asaasResult, null, 2));
+
+    // Salvar pagamento no banco de dados
+    const { data: paymentRecord, error: saveError } = await supabaseClient
+      .from('payments')
+      .insert({
+        user_id: user_id,
+        plan_id: plan_id,
+        asaas_payment_id: asaasResult.id,
+        amount: entryAmount,
+        status: 'pending',
+        payment_method: payment_method,
+        payment_url: asaasResult.invoiceUrl || asaasResult.bankSlipUrl || null,
+        plan_name: planData.name,
+        customer_id: customerId,
+        due_date: asaasResult.dueDate,
+        external_reference: `plan_${plan_id}_user_${user_id}`
+      })
+      .select()
+      .single();
+
+    if (saveError) {
+      console.error('❌ Erro ao salvar pagamento:', saveError);
+      throw new Error('Erro ao salvar dados do pagamento');
+    }
+
+    console.log('✅ Pagamento salvo no banco:', paymentRecord.id);
+
+    // **FLUXO iFood: Redirecionar automaticamente para payment_url**
+    let redirectUrl = null;
+    
+    // Para PIX, usar invoiceUrl se disponível
+    if (payment_method === 'pix' && asaasResult.invoiceUrl) {
+      redirectUrl = asaasResult.invoiceUrl;
+    }
+    // Para boleto, usar bankSlipUrl
+    else if (payment_method === 'boleto' && asaasResult.bankSlipUrl) {
+      redirectUrl = asaasResult.bankSlipUrl;
+    }
+    // Fallback para invoiceUrl genérica
+    else if (asaasResult.invoiceUrl) {
+      redirectUrl = asaasResult.invoiceUrl;
+    }
+
+    if (!redirectUrl) {
+      console.error('❌ URL de pagamento não encontrada na resposta do Asaas');
+      throw new Error('URL de pagamento não disponível');
+    }
+
+    console.log('🔗 URL de redirecionamento:', redirectUrl);
+
+    // Retornar dados para redirecionamento imediato
+    const responseData = {
       success: true,
-      payment_id: asaasResult.id,
+      payment_id: paymentRecord.id,
+      asaas_payment_id: asaasResult.id,
+      redirect_url: redirectUrl,
       amount: entryAmount,
       plan_name: planData.name,
-      due_date: asaasResult.dueDate,
-      status: asaasResult.status
-    }
+      status: 'pending',
+      message: 'Redirecionando para pagamento...'
+    };
 
-    // Adicionar dados específicos baseados no método de pagamento
-    if (payment_method === 'pix') {
-      console.log('Processando dados PIX...');
-      
-      if (asaasResult.pixTransaction) {
-        responseData.pix_code = asaasResult.pixTransaction.qrCode?.payload || null;
-        responseData.qr_code = asaasResult.pixTransaction.qrCode?.encodedImage || null;
-        console.log('PIX Code:', responseData.pix_code ? 'Encontrado' : 'Não encontrado');
-        console.log('QR Code:', responseData.qr_code ? 'Encontrado' : 'Não encontrado');
-      } else {
-        console.warn('pixTransaction não encontrado na resposta');
-      }
-    } else {
-      console.log('Processando dados do boleto...');
-      responseData.invoice_url = asaasResult.invoiceUrl || null;
-      responseData.bank_slip_url = asaasResult.bankSlipUrl || null;
-      console.log('Invoice URL:', responseData.invoice_url ? 'Encontrada' : 'Não encontrada');
-      console.log('Bank Slip URL:', responseData.bank_slip_url ? 'Encontrada' : 'Não encontrada');
-    }
-
-    console.log('Dados de resposta finais:', JSON.stringify(responseData, null, 2));
+    console.log('📤 Retornando dados de redirecionamento:', responseData);
 
     return new Response(JSON.stringify(responseData), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
-    })
+    });
 
   } catch (error) {
     console.error('Erro ao criar pagamento:', error)

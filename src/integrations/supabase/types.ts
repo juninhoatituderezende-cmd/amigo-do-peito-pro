@@ -492,6 +492,60 @@ export type Database = {
           },
         ]
       }
+      payments: {
+        Row: {
+          amount: number
+          asaas_payment_id: string | null
+          created_at: string
+          customer_id: string | null
+          due_date: string | null
+          external_reference: string | null
+          id: string
+          paid_at: string | null
+          payment_method: string
+          payment_url: string | null
+          plan_id: string | null
+          plan_name: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          asaas_payment_id?: string | null
+          created_at?: string
+          customer_id?: string | null
+          due_date?: string | null
+          external_reference?: string | null
+          id?: string
+          paid_at?: string | null
+          payment_method: string
+          payment_url?: string | null
+          plan_id?: string | null
+          plan_name?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          asaas_payment_id?: string | null
+          created_at?: string
+          customer_id?: string | null
+          due_date?: string | null
+          external_reference?: string | null
+          id?: string
+          paid_at?: string | null
+          payment_method?: string
+          payment_url?: string | null
+          plan_id?: string | null
+          plan_name?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       plan_groups: {
         Row: {
           contemplated_at: string | null

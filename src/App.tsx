@@ -54,6 +54,7 @@ import UserProfile from "./pages/user/UserProfile";
 import Marketplace from "./pages/Marketplace";
 import Plans from "./pages/Plans";
 import PlanSubscription from "./pages/PlanSubscription";
+import PaymentReturn from "./pages/PaymentReturn";
 import InfluencerRegister from "./pages/InfluencerRegister";
 import InfluencerLogin from "./pages/InfluencerLogin";
 import InfluencerDashboard from "./pages/influencer/InfluencerDashboard";
@@ -170,6 +171,7 @@ const App = () => (
               <Route path="/plans" element={<Plans />} />
               <Route path="/plano/:planId" element={<PlanDetailsComponent />} />
               <Route path="/plano-detalhes/:planId" element={<PlanDetailsComponent />} />
+              <Route path="/pagamento/retorno" element={<PaymentReturn />} />
               
               {/* Professional Routes */}
               <Route path="/profissional/dashboard" element={

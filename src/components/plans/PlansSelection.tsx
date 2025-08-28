@@ -239,32 +239,24 @@ export const PlansSelection = ({ onSelectPlan, selectedPlanId }: PlansSelectionP
         throw error;
       }
 
-      if (data?.success) {
-        console.log('✅ Pagamento criado com sucesso para o usuário:', session.user.id);
-        console.log('📊 Dados do pagamento retornados para este usuário:', {
-          payment_id: data.payment_id,
-          amount: data.amount,
-          plan_name: data.plan_name,
-          user_id: session.user.id,
-          pix_code: data.pix_code ? 'Presente' : 'Ausente',
-          qr_code: data.qr_code ? 'Presente' : 'Ausente',
-          bank_slip_url: data.bank_slip_url ? 'Presente' : 'Ausente',
-          invoice_url: data.invoice_url ? 'Presente' : 'Ausente'
-        });
+      if (data?.success && data?.redirect_url) {
+        console.log('✅ Pagamento criado - redirecionando para:', data.redirect_url);
         
-        // Garantir que os dados do modal sejam limpos antes de definir novos dados
-        setPaymentData(null);
-        setPaymentMethodModalOpen(false); // Fechar modal de seleção
+        // Fechar modal de seleção de método
+        setPaymentMethodModalOpen(false);
         
-        setTimeout(() => {
-          setPaymentData(data);
-          setPaymentModalOpen(true);
-        }, 100);
-        
+        // **FLUXO iFood: Redirecionamento automático para a tela do Asaas**
         toast({
-          title: "Pagamento criado!",
-          description: `${method === 'pix' ? 'PIX' : 'Boleto'} de R$ ${data.amount} gerado para o plano ${data.plan_name}`,
+          title: "Redirecionando para pagamento...",
+          description: `Você será redirecionado para completar o pagamento de R$ ${data.amount}`,
         });
+
+        // Aguardar um pouco para o usuário ver a mensagem e depois redirecionar
+        setTimeout(() => {
+          console.log('🔗 Redirecionando para URL de pagamento:', data.redirect_url);
+          window.location.href = data.redirect_url;
+        }, 2000);
+
       } else {
         // Tratar erro específico de CPF
         if (data?.error?.includes('CPF') || data?.error?.includes('CNPJ')) {
