@@ -36,29 +36,6 @@ serve(async (req) => {
       throw new Error('Integração Asaas não configurada ou inativa')
     }
 
-    // Buscar dados do plano
-    let planData = null
-    const tableMap: Record<string, string> = {
-      'tattoo': 'planos_tatuador',
-      'dental': 'planos_dentista'
-    }
-
-    const tableName = tableMap[plan_category]
-    if (!tableName) {
-      throw new Error('Categoria de plano inválida')
-    }
-
-    const { data: plan, error: planError } = await supabaseClient
-      .from(tableName)
-      .select('*')
-      .eq('id', plan_id)
-      .eq('active', true)
-      .single()
-
-    if (planError || !plan) {
-      throw new Error('Plano não encontrado ou inativo')
-    }
-
     // **4. BUSCAR PLANO USANDO EDGE FUNCTION UNIFICADA**
     console.log('🔍 [PLAN-SEARCH] Buscando plano via unified-plans-loader...')
     
@@ -95,6 +72,16 @@ serve(async (req) => {
       tipo_transacao: planData.tipo_transacao
     })
 
+    // **DEFINIR VALORES E TIPO DE TRANSAÇÃO**
+    const entryAmount = planData.price
+    const tipoTransacao = planData.tipo_transacao || 'servico'
+    
+    console.log('💰 [PLAN-VALUES] Valores definidos:', {
+      entryAmount,
+      tipoTransacao,
+      planPrice: planData.price
+    })
+
     // **5. BUSCAR E VALIDAR DADOS DO USUÁRIO**
     console.log('👤 [USER-DATA] Buscando dados do usuário...')
     const { data: user, error: userError } = await supabaseClient
@@ -116,12 +103,12 @@ serve(async (req) => {
     console.log('✅ [USER-DATA] Usuário validado:', { id: user.id, email: user.email, cpf_provided: !!user.cpf })
 
     // **6. CALCULAR IMPOSTOS BASEADO NO TIPO DE TRANSAÇÃO**
-    console.log('💰 [TAX-CALC] Calculando impostos para:', planData.tipo_transacao)
+    console.log('💰 [TAX-CALC] Calculando impostos para:', tipoTransacao)
     
     const { data: impostos, error: impostosError } = await supabaseClient
       .rpc('calcular_impostos', {
         valor_base: planData.price,
-        tipo: planData.tipo_transacao,
+        tipo: tipoTransacao,
         municipio: 'sao_paulo',
         regime: 'simples_nacional'
       });
@@ -231,8 +218,32 @@ serve(async (req) => {
 
     console.log('Cobrança criada com sucesso:', asaasResult.id)
 
-    // Preparar resposta padrão
-    console.log('Resposta da API Asaas:', JSON.stringify(asaasResult, null, 2));
+    // **BUSCAR QR CODE PIX SE FOR PIX**
+    let pixQrCode = null;
+    let pixCode = null;
+    
+    if (payment_method === 'pix') {
+      try {
+        const qrCodeResponse = await fetch(`${asaasBaseUrl}/payments/${asaasResult.id}/pixQrCode`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'access_token': apiKey
+          }
+        });
+
+        if (qrCodeResponse.ok) {
+          const qrCodeData = await qrCodeResponse.json();
+          pixQrCode = qrCodeData.encodedImage;
+          pixCode = qrCodeData.payload;
+          console.log('✅ QR Code PIX obtido com sucesso');
+        } else {
+          console.log('⚠️ QR Code PIX não disponível ainda');
+        }
+      } catch (error) {
+        console.log('⚠️ Erro ao buscar QR Code PIX:', error);
+      }
+    }
 
     // Salvar transação no banco de dados
     const { data: transacaoRecord, error: transacaoError } = await supabaseClient
@@ -290,7 +301,7 @@ serve(async (req) => {
       console.log('✅ Pagamento salvo no banco:', paymentRecord.id);
     }
 
-    // **FLUXO iFood: Redirecionar automaticamente para payment_url**
+    // **RETORNO OTIMIZADO PARA CHECKOUT**
     let redirectUrl = null;
     
     // Para PIX, usar invoiceUrl se disponível
@@ -306,14 +317,7 @@ serve(async (req) => {
       redirectUrl = asaasResult.invoiceUrl;
     }
 
-    if (!redirectUrl) {
-      console.error('❌ URL de pagamento não encontrada na resposta do Asaas');
-      throw new Error('URL de pagamento não disponível');
-    }
-
-    console.log('🔗 URL de redirecionamento:', redirectUrl);
-
-    // Retornar dados para redirecionamento imediato
+    // Retornar dados otimizados para checkout
     const responseData = {
       success: true,
       transacao_id: transacaoRecord.id,
@@ -326,10 +330,17 @@ serve(async (req) => {
       tipo_transacao: tipoTransacao,
       plan_name: planData.name,
       status: 'pending',
-      message: 'Redirecionando para pagamento...'
+      // Dados específicos do PIX
+      qr_code: pixQrCode,
+      pix_code: pixCode,
+      message: payment_method === 'pix' ? 'PIX gerado com sucesso' : 'Redirecionando para pagamento...'
     };
 
-    console.log('📤 Retornando dados de redirecionamento:', responseData);
+    console.log('📤 Retornando dados de checkout:', {
+      ...responseData,
+      qr_code: pixQrCode ? '[QR_CODE_DATA]' : null,
+      pix_code: pixCode ? '[PIX_CODE_DATA]' : null
+    });
 
     return new Response(JSON.stringify(responseData), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
