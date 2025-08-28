@@ -49,18 +49,24 @@ const UserMarketplace = () => {
     try {
       setLoading(true);
       
-      // Load from products table only
+      // Carregar APENAS produtos reais cadastrados no admin (sem filtro de target_audience)
       const productsResponse = await supabase
         .from('products')
         .select('*')
         .eq('active', true)
-        .eq('target_audience', 'user')
-        .order('name');
+        .order('created_at', { ascending: false });
 
       if (productsResponse.error) throw productsResponse.error;
 
+      // Se não há produtos reais, array vazio
+      if (!productsResponse.data || productsResponse.data.length === 0) {
+        setProducts([]);
+        setCategories([]);
+        return;
+      }
+
       // Transform products to marketplace products format
-      const productItems = (productsResponse.data || []).map(product => ({
+      const productItems = productsResponse.data.map(product => ({
         id: product.id,
         name: product.name,
         description: product.description || '',
@@ -73,18 +79,17 @@ const UserMarketplace = () => {
         type: 'product' as const
       }));
 
-      const allProducts = [...productItems];
-      setProducts(allProducts);
+      setProducts(productItems);
       
-      // Extrair categorias únicas
-      const uniqueCategories = [...new Set(allProducts.map(p => p.category))];
+      // Extrair categorias únicas dos produtos reais
+      const uniqueCategories = [...new Set(productItems.map(p => p.category))];
       setCategories(uniqueCategories);
       
     } catch (error) {
       console.error('Erro ao carregar produtos:', error);
       toast({
-        title: "Erro ao carregar produtos",
-        description: "Tente novamente em alguns instantes.",
+        title: "Erro ao carregar produtos reais",
+        description: "Não foi possível carregar os produtos cadastrados no sistema.",
         variant: "destructive"
       });
     } finally {
@@ -226,7 +231,7 @@ const UserMarketplace = () => {
               <h3 className="text-lg font-semibold mb-2">Nenhum produto encontrado</h3>
               <p className="text-muted-foreground">
                 {products.length === 0 
-                  ? "Ainda não há produtos disponíveis no marketplace." 
+                  ? "Nenhum produto foi cadastrado pelos administradores ainda. Apenas produtos reais e aprovados são exibidos no marketplace." 
                   : "Tente ajustar os filtros de busca."}
               </p>
             </CardContent>

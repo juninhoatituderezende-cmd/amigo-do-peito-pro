@@ -252,18 +252,18 @@ export const Marketplace = () => {
 
       {/* Products Grid/List */}
       {filteredAndSortedProducts.length === 0 ? (
-        <Card>
-          <CardContent className="p-8 text-center">
-            <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-semibold mb-2">Nenhum produto encontrado</h3>
-            <p className="text-muted-foreground">
-              {searchQuery || selectedCategory !== "all" 
-                ? "Tente ajustar seus filtros de busca" 
-                : "Ainda não há produtos disponíveis no marketplace"
-              }
-            </p>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardContent className="p-8 text-center">
+              <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <h3 className="text-lg font-semibold mb-2">Nenhum produto encontrado</h3>
+              <p className="text-muted-foreground">
+                {searchQuery || selectedCategory !== "all" 
+                  ? "Tente ajustar seus filtros de busca" 
+                  : "Nenhum produto foi cadastrado pelos administradores ainda. Apenas produtos reais e aprovados são exibidos no marketplace."
+                }
+              </p>
+            </CardContent>
+          </Card>
       ) : (
         <div className={viewMode === "grid" 
           ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" 

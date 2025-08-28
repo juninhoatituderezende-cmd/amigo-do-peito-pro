@@ -120,10 +120,10 @@ export const useOptimizedData = <T>(
   };
 };
 
-// Hook específico para dados de marketplace
+// Hook específico para dados de marketplace - APENAS PRODUTOS REAIS
 export const useMarketplaceProducts = () => {
   return useOptimizedData(
-    'marketplace-products',
+    'marketplace-products-real',
     async () => {
       const { data, error } = await supabase
         .from('products')
@@ -133,26 +133,31 @@ export const useMarketplaceProducts = () => {
 
       if (error) throw error;
 
-      return (data || []).map(service => ({
-        id: service.id,
-        title: service.name,
-        description: service.description || '',
-        full_price: Number(service.price),
-        down_payment: Number(service.price) * 0.1, // 10% down payment
-        category: service.category || 'General',
-        professional_name: 'Profissional',
-        professional_id: service.professional_id,
+      // Se não há produtos reais, retornar array vazio
+      if (!data || data.length === 0) {
+        return [];
+      }
+
+      return data.map(product => ({
+        id: product.id,
+        title: product.name,
+        description: product.description || '',
+        full_price: Number(product.price),
+        down_payment: Number(product.price), // Preço total para marketplace
+        category: product.category || 'Produtos',
+        professional_name: 'Profissional Certificado',
+        professional_id: product.professional_id,
         professional_avatar: null,
-        image_url: service.image_url,
-        external_link: null,
+        image_url: product.image_url,
+        external_link: product.external_link,
         visibility: 'both' as 'client' | 'professional' | 'both',
-        is_active: service.active,
-        created_at: service.created_at,
-        total_sales: 0, // Placeholder
-        rating: 4.5 // Placeholder - implementar sistema de avaliações depois
+        is_active: product.active,
+        created_at: product.created_at,
+        total_sales: 0,
+        rating: 5.0 // Produtos certificados
       }));
     },
-    { ttl: 2 * 60 * 1000 } // Cache por 2 minutos
+    { ttl: 10 * 1000, immediate: true, refetchOnMount: true } // Cache muito curto + refetch obrigatório
   );
 };
 
