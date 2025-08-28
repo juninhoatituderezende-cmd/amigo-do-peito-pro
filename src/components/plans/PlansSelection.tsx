@@ -157,6 +157,15 @@ export const PlansSelection = ({ onSelectPlan, selectedPlanId }: PlansSelectionP
 
       if (data.success) {
         console.log('✅ Pagamento criado com sucesso:', data);
+        console.log('📊 Dados recebidos:', {
+          payment_id: data.payment_id,
+          amount: data.amount,
+          pix_code: data.pix_code ? 'Presente' : 'Ausente',
+          qr_code: data.qr_code ? 'Presente' : 'Ausente',
+          bank_slip_url: data.bank_slip_url ? 'Presente' : 'Ausente',
+          invoice_url: data.invoice_url ? 'Presente' : 'Ausente'
+        });
+        
         setPaymentData(data);
         setPaymentModalOpen(true);
         

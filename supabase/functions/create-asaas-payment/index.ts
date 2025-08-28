@@ -82,24 +82,64 @@ serve(async (req) => {
 
     const apiKey = atob(asaasConfig.api_key_encrypted) // Descriptografar a chave
 
+    // Primeiro, criar/buscar cliente no Asaas se necessário
+    let customerId = null;
+    
+    // Tentar buscar cliente existente pelo email
+    const customerSearchResponse = await fetch(`${asaasBaseUrl}/customers?email=${encodeURIComponent(user.email)}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'access_token': apiKey
+      }
+    });
+
+    const existingCustomers = await customerSearchResponse.json();
+    
+    if (existingCustomers.data && existingCustomers.data.length > 0) {
+      customerId = existingCustomers.data[0].id;
+      console.log('Cliente existente encontrado:', customerId);
+    } else {
+      // Criar novo cliente
+      const newCustomerData = {
+        name: user.full_name || user.email,
+        email: user.email,
+        cpfCnpj: user.cpf || undefined,
+        phone: user.phone || undefined
+      };
+
+      const createCustomerResponse = await fetch(`${asaasBaseUrl}/customers`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'access_token': apiKey
+        },
+        body: JSON.stringify(newCustomerData)
+      });
+
+      const newCustomer = await createCustomerResponse.json();
+      
+      if (!createCustomerResponse.ok) {
+        console.error('Erro ao criar cliente:', newCustomer);
+        throw new Error(newCustomer.errors?.[0]?.description || 'Erro ao criar cliente');
+      }
+      
+      customerId = newCustomer.id;
+      console.log('Novo cliente criado:', customerId);
+    }
+
     const paymentData = {
-      customer: user.email, // Asaas precisa do email do cliente, não do ID
+      customer: customerId,
       billingType: payment_method === 'pix' ? 'PIX' : 'BOLETO',
       value: entryAmount,
       dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 dias
       description: `Entrada do plano: ${planData.name} (10% do valor total)`,
       externalReference: `plan_${plan_id}_user_${user_id}`,
-      postalService: false,
-      // Dados do cliente
-      customerData: {
-        name: user.full_name || user.email,
-        email: user.email,
-        cpfCnpj: user.cpf || null,
-        phone: user.phone || null
-      }
+      postalService: false
     }
 
     // Criar cobrança no Asaas
+    console.log('Criando cobrança com dados:', paymentData);
     const asaasResponse = await fetch(`${asaasBaseUrl}/payments`, {
       method: 'POST',
       headers: {
@@ -110,6 +150,7 @@ serve(async (req) => {
     })
 
     const asaasResult = await asaasResponse.json()
+    console.log('Resposta completa da API Asaas:', JSON.stringify(asaasResult, null, 2));
 
     if (!asaasResponse.ok) {
       console.error('Erro na API Asaas:', asaasResult)
@@ -118,8 +159,8 @@ serve(async (req) => {
 
     console.log('Cobrança criada com sucesso:', asaasResult.id)
 
-    // Retornar resposta baseada no método de pagamento
-    const responseData = {
+    // Preparar resposta padrão
+    const responseData: any = {
       success: true,
       payment_id: asaasResult.id,
       amount: entryAmount,
@@ -128,17 +169,27 @@ serve(async (req) => {
       status: asaasResult.status
     }
 
-    // Para PIX, adicionar dados específicos
-    if (payment_method === 'pix' && asaasResult.pixTransaction) {
-      responseData.pix_code = asaasResult.pixTransaction.qrCode?.payload || null
-      responseData.qr_code = asaasResult.pixTransaction.qrCode?.encodedImage || null
+    // Adicionar dados específicos baseados no método de pagamento
+    if (payment_method === 'pix') {
+      console.log('Processando dados PIX...');
+      
+      if (asaasResult.pixTransaction) {
+        responseData.pix_code = asaasResult.pixTransaction.qrCode?.payload || null;
+        responseData.qr_code = asaasResult.pixTransaction.qrCode?.encodedImage || null;
+        console.log('PIX Code:', responseData.pix_code ? 'Encontrado' : 'Não encontrado');
+        console.log('QR Code:', responseData.qr_code ? 'Encontrado' : 'Não encontrado');
+      } else {
+        console.warn('pixTransaction não encontrado na resposta');
+      }
+    } else {
+      console.log('Processando dados do boleto...');
+      responseData.invoice_url = asaasResult.invoiceUrl || null;
+      responseData.bank_slip_url = asaasResult.bankSlipUrl || null;
+      console.log('Invoice URL:', responseData.invoice_url ? 'Encontrada' : 'Não encontrada');
+      console.log('Bank Slip URL:', responseData.bank_slip_url ? 'Encontrada' : 'Não encontrada');
     }
-    
-    // Para boleto, adicionar URL
-    if (payment_method !== 'pix') {
-      responseData.invoice_url = asaasResult.invoiceUrl || null
-      responseData.bank_slip_url = asaasResult.bankSlipUrl || null
-    }
+
+    console.log('Dados de resposta finais:', JSON.stringify(responseData, null, 2));
 
     return new Response(JSON.stringify(responseData), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -28,12 +28,21 @@ export const PaymentModal = ({ isOpen, onClose, paymentData, paymentMethod }: Pa
 
   if (!paymentData || !paymentData.success) return null;
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast({
-      title: "Copiado!",
-      description: "Código PIX copiado para a área de transferência.",
-    });
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast({
+        title: "Copiado!",
+        description: "Código PIX copiado para a área de transferência.",
+      });
+    } catch (error) {
+      console.error('Erro ao copiar:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível copiar o código PIX.",
+        variant: "destructive",
+      });
+    }
   };
 
   const downloadQRCode = () => {
@@ -46,8 +55,17 @@ export const PaymentModal = ({ isOpen, onClose, paymentData, paymentMethod }: Pa
   };
 
   const openBankSlip = () => {
+    console.log('🔗 Abrindo boleto:', paymentData.bank_slip_url);
     if (paymentData.bank_slip_url) {
       window.open(paymentData.bank_slip_url, '_blank');
+    } else if (paymentData.invoice_url) {
+      window.open(paymentData.invoice_url, '_blank');
+    } else {
+      toast({
+        title: "Erro",
+        description: "Link do boleto não disponível.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -86,7 +104,7 @@ export const PaymentModal = ({ isOpen, onClose, paymentData, paymentMethod }: Pa
           </Card>
 
           {/* PIX Payment */}
-          {paymentMethod === 'pix' && paymentData.pix_code && (
+          {paymentMethod === 'pix' && (
             <Card>
               <CardContent className="pt-6">
                 <div className="text-center space-y-4">
@@ -95,13 +113,25 @@ export const PaymentModal = ({ isOpen, onClose, paymentData, paymentMethod }: Pa
                     <span className="font-medium">Pagamento via PIX</span>
                   </div>
 
+                  {/* Debug info */}
+                  {process.env.NODE_ENV === 'development' && (
+                    <div className="text-xs text-gray-500 p-2 bg-gray-100 rounded">
+                      PIX Code: {paymentData.pix_code ? 'Disponível' : 'Não disponível'}<br/>
+                      QR Code: {paymentData.qr_code ? 'Disponível' : 'Não disponível'}
+                    </div>
+                  )}
+
                   {/* QR Code */}
-                  {paymentData.qr_code && (
+                  {paymentData.qr_code ? (
                     <div className="flex flex-col items-center space-y-3">
                       <img 
                         src={`data:image/png;base64,${paymentData.qr_code}`}
                         alt="QR Code PIX"
                         className="w-48 h-48 border rounded-lg"
+                        onError={(e) => {
+                          console.error('Erro ao carregar QR Code');
+                          e.currentTarget.style.display = 'none';
+                        }}
                       />
                       <Button 
                         variant="outline" 
@@ -113,31 +143,45 @@ export const PaymentModal = ({ isOpen, onClose, paymentData, paymentMethod }: Pa
                         Baixar QR Code
                       </Button>
                     </div>
+                  ) : (
+                    <div className="p-4 bg-yellow-50 rounded-lg">
+                      <p className="text-sm text-yellow-800">
+                        QR Code não disponível. Use o código PIX abaixo.
+                      </p>
+                    </div>
                   )}
 
                   {/* PIX Code */}
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium">Código PIX:</p>
-                    <div className="p-3 bg-gray-50 rounded-lg border break-all text-xs font-mono">
-                      {paymentData.pix_code}
+                  {paymentData.pix_code ? (
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">Código PIX:</p>
+                      <div className="p-3 bg-gray-50 rounded-lg border break-all text-xs font-mono">
+                        {paymentData.pix_code}
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => copyToClipboard(paymentData.pix_code!)}
+                        className="w-full flex items-center gap-2"
+                      >
+                        <Copy className="h-4 w-4" />
+                        Copiar Código PIX
+                      </Button>
                     </div>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => copyToClipboard(paymentData.pix_code!)}
-                      className="w-full flex items-center gap-2"
-                    >
-                      <Copy className="h-4 w-4" />
-                      Copiar Código PIX
-                    </Button>
-                  </div>
+                  ) : (
+                    <div className="p-4 bg-red-50 rounded-lg">
+                      <p className="text-sm text-red-800">
+                        Código PIX não foi gerado. Entre em contato com o suporte.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
           )}
 
           {/* Boleto Payment */}
-          {(paymentMethod === 'credit_card' || paymentMethod === 'boleto') && paymentData.bank_slip_url && (
+          {paymentMethod === 'boleto' && (
             <Card>
               <CardContent className="pt-6">
                 <div className="text-center space-y-4">
@@ -146,13 +190,29 @@ export const PaymentModal = ({ isOpen, onClose, paymentData, paymentMethod }: Pa
                     <span className="font-medium">Boleto Bancário</span>
                   </div>
 
-                  <Button 
-                    onClick={openBankSlip}
-                    className="w-full flex items-center gap-2"
-                  >
-                    <Download className="h-4 w-4" />
-                    Abrir Boleto
-                  </Button>
+                  {/* Debug info */}
+                  {process.env.NODE_ENV === 'development' && (
+                    <div className="text-xs text-gray-500 p-2 bg-gray-100 rounded">
+                      Bank Slip URL: {paymentData.bank_slip_url ? 'Disponível' : 'Não disponível'}<br/>
+                      Invoice URL: {paymentData.invoice_url ? 'Disponível' : 'Não disponível'}
+                    </div>
+                  )}
+
+                  {(paymentData.bank_slip_url || paymentData.invoice_url) ? (
+                    <Button 
+                      onClick={openBankSlip}
+                      className="w-full flex items-center gap-2"
+                    >
+                      <Download className="h-4 w-4" />
+                      Abrir Boleto
+                    </Button>
+                  ) : (
+                    <div className="p-4 bg-red-50 rounded-lg">
+                      <p className="text-sm text-red-800">
+                        Link do boleto não disponível. Entre em contato com o suporte.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
