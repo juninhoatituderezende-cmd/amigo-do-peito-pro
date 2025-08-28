@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -288,6 +288,9 @@ export function SpecificServicePlansManager({ serviceType, onBack }: SpecificSer
               <DialogTitle>
                 {editingPlan ? "Editar Plano" : "Novo Plano"}
               </DialogTitle>
+              <DialogDescription>
+                {editingPlan ? "Edite as informações do plano" : "Preencha os dados para criar um novo plano"}
+              </DialogDescription>
             </DialogHeader>
             <div className="flex-1 overflow-y-auto px-1">
               <form onSubmit={handleSubmit} className="space-y-4 pb-4">
