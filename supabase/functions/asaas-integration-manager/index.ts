@@ -75,9 +75,9 @@ serve(async (req) => {
 
 // Testar conexão com Asaas
 async function testAsaasConnection(data: any) {
-  logStep("Testing Asaas connection", { environment: data.environment });
+  logStep("Testing Asaas connection", { environment: data.data.environment });
 
-  const baseUrl = data.environment === 'production' 
+  const baseUrl = data.data.environment === 'production' 
     ? 'https://www.asaas.com/api/v3'
     : 'https://sandbox.asaas.com/api/v3';
 
@@ -86,7 +86,7 @@ async function testAsaasConnection(data: any) {
     const response = await fetch(`${baseUrl}/myAccount`, {
       method: 'GET',
       headers: {
-        'access_token': data.api_key,
+        'access_token': data.data.api_key,
         'Content-Type': 'application/json',
         'User-Agent': 'Asaas Integration Client 1.0'
       },
@@ -108,7 +108,7 @@ async function testAsaasConnection(data: any) {
         account_info: {
           name: accountData.name || 'Account validated',
           email: accountData.email || 'N/A',
-          environment: data.environment
+          environment: data.data.environment
         }
       };
     } else {
@@ -125,9 +125,9 @@ async function testAsaasConnection(data: any) {
       
       // Tratamento específico para erros de autenticação
       if (response.status === 401) {
-        throw new Error(`API Key inválida ou expirada. Verifique se a chave está correta para o ambiente ${data.environment}`);
+        throw new Error(`API Key inválida ou expirada. Verifique se a chave está correta para o ambiente ${data.data.environment}`);
       } else if (response.status === 403) {
-        throw new Error(`Acesso negado. Verifique as permissões da API Key para o ambiente ${data.environment}`);
+        throw new Error(`Acesso negado. Verifique as permissões da API Key para o ambiente ${data.data.environment}`);
       } else {
         throw new Error(`Erro na API Asaas: ${response.status} - ${errorText}`);
       }
@@ -145,11 +145,11 @@ async function testAsaasConnection(data: any) {
 
 // Salvar configuração
 async function saveConfiguration(supabaseClient: any, data: any) {
-  logStep("Saving configuration", { environment: data.environment });
+  logStep("Saving configuration", { environment: data.data.environment });
 
   try {
     // Criptografar a API key (simulação básica - em produção usar crypto adequado)
-    const apiKeyEncrypted = btoa(data.api_key);
+    const apiKeyEncrypted = btoa(data.data.api_key);
 
     // Verificar se já existe configuração
     const { data: existing } = await supabaseClient
@@ -161,8 +161,8 @@ async function saveConfiguration(supabaseClient: any, data: any) {
 
     const configData = {
       api_key_encrypted: apiKeyEncrypted,
-      environment: data.environment,
-      status: data.auto_sync ? 'active' : 'inactive',
+      environment: data.data.environment,
+      status: 'active',
       connection_status: 'connected',
       error_message: null,
       updated_at: new Date().toISOString()
