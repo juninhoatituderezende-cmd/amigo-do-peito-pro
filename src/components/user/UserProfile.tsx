@@ -9,13 +9,15 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { User, Mail, Phone, MapPin, Calendar, Edit } from "lucide-react";
+import { User, Mail, Phone, MapPin, Calendar, Edit, CreditCard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { formatCpf, validateCpf } from "@/utils/cpfValidator";
 
 interface UserProfile {
   name: string;
   email: string;
   phone: string;
+  cpf: string;
   address: string;
   city: string;
   joinDate: string;
@@ -31,13 +33,14 @@ interface UserProfile {
 export const UserProfile = () => {
   const { user } = useAuth();
   const [profile, setProfile] = useState<UserProfile>({
-    name: "João Silva",
-    email: "joao@email.com",
-    phone: "+55 11 99999-9999",
-    address: "Rua das Flores, 123",
-    city: "São Paulo, SP",
-    joinDate: "2024-01-10",
-    preferences: ["Procedimentos estéticos", "Promoções especiais"],
+    name: "",
+    email: "",
+    phone: "",
+    cpf: "",
+    address: "",
+    city: "",
+    joinDate: "",
+    preferences: [],
     notifications: {
       email: true,
       sms: false,
@@ -73,9 +76,11 @@ export const UserProfile = () => {
       if (data) {
         setProfile(prev => ({
           ...prev,
-          name: data.full_name || prev.name,
-          email: data.email || prev.email,
-          phone: data.phone || prev.phone,
+          name: data.full_name || "",
+          email: data.email || "",
+          phone: data.phone || "",
+          cpf: data.cpf || "",
+          joinDate: data.created_at ? new Date(data.created_at).toLocaleDateString('pt-BR') : "",
           avatar: data.avatar_url
         }));
       }
@@ -91,13 +96,57 @@ export const UserProfile = () => {
     console.log('Avatar update:', avatarUrl);
   };
 
-  const handleSaveProfile = () => {
-    setProfile(editedProfile);
-    setIsEditingProfile(false);
-    toast({
-      title: "Perfil atualizado!",
-      description: "Suas informações foram salvas com sucesso.",
-    });
+  const handleSaveProfile = async () => {
+    try {
+      if (!user) return;
+
+      // Validar CPF se preenchido
+      if (editedProfile.cpf && !validateCpf(editedProfile.cpf)) {
+        toast({
+          title: "CPF inválido",
+          description: "Por favor, insira um CPF válido no formato XXX.XXX.XXX-XX",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      console.log('Salvando perfil para usuário:', user.id);
+      console.log('Dados a serem salvos:', {
+        full_name: editedProfile.name,
+        phone: editedProfile.phone,
+        cpf: editedProfile.cpf
+      });
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: editedProfile.name,
+          phone: editedProfile.phone,
+          cpf: editedProfile.cpf
+        })
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Erro ao salvar perfil:', error);
+        throw error;
+      }
+
+      setProfile(editedProfile);
+      setIsEditingProfile(false);
+      
+      console.log('Perfil salvo com sucesso');
+      toast({
+        title: "Perfil atualizado!",
+        description: "Suas informações foram salvas com sucesso.",
+      });
+    } catch (error) {
+      console.error('Erro ao salvar perfil:', error);
+      toast({
+        title: "Erro ao salvar",
+        description: "Não foi possível salvar as alterações. Tente novamente.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleNotificationChange = (type: keyof UserProfile["notifications"]) => {
@@ -181,6 +230,19 @@ export const UserProfile = () => {
                     />
                   </div>
                   <div>
+                    <Label htmlFor="cpf">CPF</Label>
+                    <Input
+                      id="cpf"
+                      value={editedProfile.cpf}
+                      onChange={(e) => {
+                        const formattedCpf = formatCpf(e.target.value);
+                        setEditedProfile(prev => ({ ...prev, cpf: formattedCpf }));
+                      }}
+                      placeholder="000.000.000-00"
+                      maxLength={14}
+                    />
+                  </div>
+                  <div>
                     <Label htmlFor="address">Endereço</Label>
                     <Input
                       id="address"
@@ -239,8 +301,15 @@ export const UserProfile = () => {
               <Phone className="h-5 w-5 text-muted-foreground" />
               <div>
                 <p className="text-sm text-muted-foreground">Telefone</p>
-                <p className="font-medium">{profile.phone}</p>
+                <p className="font-medium">{profile.phone || "Não informado"}</p>
               </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <CreditCard className="h-5 w-5 text-muted-foreground" />
+            <div>
+              <p className="text-sm text-muted-foreground">CPF</p>
+              <p className="font-medium">{profile.cpf || "Não informado"}</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
