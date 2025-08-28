@@ -69,13 +69,23 @@ export function SpecificServicePlansManager({ serviceType, onBack }: SpecificSer
 
       if (error) throw error;
 
-      const plansArray = JSON.parse(String(data) || '[]');
-      setPlans(plansArray);
+      // A função RPC retorna JSON como string, precisamos fazer parse
+      let plansArray = [];
+      if (data) {
+        try {
+          plansArray = typeof data === 'string' ? JSON.parse(data) : data;
+        } catch (parseError) {
+          console.error("Erro ao fazer parse dos dados:", parseError);
+          plansArray = [];
+        }
+      }
+      
+      setPlans(Array.isArray(plansArray) ? plansArray : []);
     } catch (error) {
       console.error("Erro ao carregar planos:", error);
       toast({
         title: "Erro",
-        description: "Erro ao carregar planos",
+        description: "Erro ao carregar planos. Tente novamente.",
         variant: "destructive",
       });
     } finally {
