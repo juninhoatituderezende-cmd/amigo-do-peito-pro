@@ -107,15 +107,15 @@ serve(async (req) => {
       console.log('✅ Status atualizado para:', newStatus);
     }
 
-    // Se pagamento confirmado, criar/juntar grupo
+    // Se pagamento confirmado, processar grupo e comissões
     if (shouldCreateGroup && paymentRecord.plan_id) {
-      console.log('🏗️ Criando/juntando usuário ao grupo...');
+      console.log('🏗️ Processando grupo e comissões...');
 
       try {
         // Verificar se usuário já está em algum grupo para este plano
         const { data: existingParticipation } = await supabaseClient
           .from('group_participants')
-          .select('id')
+          .select('id, group_id')
           .eq('user_id', paymentRecord.user_id)
           .single();
 
@@ -134,11 +134,41 @@ serve(async (req) => {
 
           // Se não existe grupo disponível, criar novo
           if (!groupId) {
-            const { data: planData } = await supabaseClient
+            // Buscar dados do plano - verificar em ambas as tabelas
+            let planData = null;
+            
+            // Tentar buscar em custom_plans primeiro
+            const { data: customPlan } = await supabaseClient
               .from('custom_plans')
-              .select('max_participants, price')
+              .select('max_participants, price, name')
               .eq('id', paymentRecord.plan_id)
               .single();
+
+            if (customPlan) {
+              planData = customPlan;
+            } else {
+              // Buscar em planos_tatuador
+              const { data: tattooPlan } = await supabaseClient
+                .from('planos_tatuador')
+                .select('max_participants, price, name')
+                .eq('id', paymentRecord.plan_id)
+                .single();
+
+              if (tattooPlan) {
+                planData = tattooPlan;
+              } else {
+                // Buscar em planos_dentista
+                const { data: dentalPlan } = await supabaseClient
+                  .from('planos_dentista')
+                  .select('max_participants, price, name')
+                  .eq('id', paymentRecord.plan_id)
+                  .single();
+
+                if (dentalPlan) {
+                  planData = dentalPlan;
+                }
+              }
+            }
 
             if (planData) {
               // Obter próximo número de grupo
@@ -178,6 +208,18 @@ serve(async (req) => {
 
           // Adicionar usuário ao grupo
           if (groupId) {
+            // Buscar se há referrer no pagamento
+            let referrerId = null;
+            const { data: userProfile } = await supabaseClient
+              .from('profiles')
+              .select('referred_by')
+              .eq('user_id', paymentRecord.user_id)
+              .single();
+
+            if (userProfile?.referred_by) {
+              referrerId = userProfile.referred_by;
+            }
+
             const { error: participantError } = await supabaseClient
               .from('group_participants')
               .insert({
@@ -185,7 +227,8 @@ serve(async (req) => {
                 group_id: groupId,
                 amount_paid: paymentRecord.amount,
                 status: 'active',
-                joined_at: new Date().toISOString()
+                joined_at: new Date().toISOString(),
+                referrer_id: referrerId
               });
 
             if (participantError) {
@@ -193,31 +236,128 @@ serve(async (req) => {
               throw participantError;
             }
 
-            // Atualizar contadores do grupo
-            const { data: updatedGroup, error: updateGroupError } = await supabaseClient
+            // Atualizar contadores do grupo manualmente
+            const { data: currentGroup } = await supabaseClient
               .from('plan_groups')
-              .update({
-                current_participants: supabaseClient.rpc('increment', 1),
-                current_amount: supabaseClient.rpc('add', paymentRecord.amount),
-                updated_at: new Date().toISOString()
-              })
+              .select('current_participants, current_amount, max_participants')
               .eq('id', groupId)
-              .select()
               .single();
 
-            if (updateGroupError) {
-              console.error('❌ Erro ao atualizar grupo:', updateGroupError);
-            } else {
-              console.log('✅ Usuário adicionado ao grupo:', groupId);
+            if (currentGroup) {
+              const newParticipants = currentGroup.current_participants + 1;
+              const newAmount = currentGroup.current_amount + paymentRecord.amount;
 
-              // Verificar se grupo ficou completo
-              if (updatedGroup && updatedGroup.current_participants >= updatedGroup.max_participants) {
+              const { data: updatedGroup, error: updateGroupError } = await supabaseClient
+                .from('plan_groups')
+                .update({
+                  current_participants: newParticipants,
+                  current_amount: newAmount,
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', groupId)
+                .select()
+                .single();
+
+              if (updateGroupError) {
+                console.error('❌ Erro ao atualizar grupo:', updateGroupError);
+              } else {
+                console.log('✅ Usuário adicionado ao grupo:', groupId);
+
+                // Verificar se grupo ficou completo
+                if (newParticipants >= currentGroup.max_participants) {
+                  await supabaseClient
+                    .from('plan_groups')
+                    .update({ status: 'complete', contemplated_at: new Date().toISOString() })
+                    .eq('id', groupId);
+
+                  console.log('🎉 Grupo completado:', groupId);
+                }
+              }
+            }
+
+            // Processar comissões MLM se houver referrer
+            if (referrerId) {
+              console.log('💰 Processando comissões MLM...');
+              
+              try {
+                // Calcular comissões (percentuais estilo iFood)
+                const totalAmount = paymentRecord.amount;
+                const platformAmount = Math.round(totalAmount * 0.50); // 50% plataforma
+                const professionalAmount = Math.round(totalAmount * 0.30); // 30% profissional
+                const referrerAmount = Math.round(totalAmount * 0.20); // 20% referrer
+
+                // Buscar user_id do referrer
+                const { data: referrerProfile } = await supabaseClient
+                  .from('profiles')
+                  .select('user_id')
+                  .eq('id', referrerId)
+                  .single();
+
+                if (referrerProfile) {
+                  // Creditar referrer
+                  const { error: creditError } = await supabaseClient
+                    .from('credit_transactions')
+                    .insert({
+                      user_id: referrerProfile.user_id,
+                      type: 'referral_commission',
+                      amount: referrerAmount,
+                      description: `Comissão de referência: ${paymentRecord.plan_name} (20%)`,
+                      source_type: 'payment',
+                      commission_rate: 20,
+                      reference_id: paymentRecord.id
+                    });
+
+                  if (!creditError) {
+                    // Atualizar saldo do referrer
+                    await supabaseClient
+                      .from('user_credits')
+                      .update({
+                        total_credits: supabaseClient.rpc('increment', referrerAmount),
+                        available_credits: supabaseClient.rpc('increment', referrerAmount),
+                        updated_at: new Date().toISOString()
+                      })
+                      .eq('user_id', referrerProfile.user_id);
+
+                    // Notificar referrer
+                    await supabaseClient
+                      .from('notification_triggers')
+                      .insert({
+                        user_id: referrerProfile.user_id,
+                        event_type: 'commission_earned',
+                        title: 'Comissão Recebida!',
+                        message: `Você recebeu R$ ${referrerAmount} de comissão pela indicação de ${paymentRecord.plan_name}`,
+                        data: {
+                          payment_id: paymentRecord.id,
+                          amount: referrerAmount,
+                          plan_name: paymentRecord.plan_name,
+                          commission_rate: 20
+                        }
+                      });
+
+                    console.log('✅ Comissão do referrer processada:', referrerAmount);
+                  }
+                }
+
+                // Registrar split de pagamento
                 await supabaseClient
-                  .from('plan_groups')
-                  .update({ status: 'complete', contemplated_at: new Date().toISOString() })
-                  .eq('id', groupId);
+                  .from('payment_splits')
+                  .insert({
+                    payment_id: paymentRecord.id,
+                    service_id: paymentRecord.plan_id,
+                    professional_id: null, // Será definido quando necessário
+                    referrer_id: referrerId,
+                    total_amount: totalAmount,
+                    professional_amount: professionalAmount,
+                    platform_amount: platformAmount,
+                    referrer_amount: referrerAmount,
+                    status: 'processed'
+                  });
 
-                console.log('🎉 Grupo completado:', groupId);
+                console.log('✅ Payment split registrado');
+
+              } catch (commissionError) {
+                console.error('❌ Erro ao processar comissões:', commissionError);
+                // Não falhar o webhook por erro de comissão
               }
             }
 
