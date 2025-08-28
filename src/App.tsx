@@ -168,7 +168,7 @@ const App = () => (
                 </ProtectedRoute>
               } />
               <Route path="/plans" element={<Plans />} />
-              <Route path="/plano/:planCode" element={<PlanSubscription />} />
+              <Route path="/plano/:planId" element={<PlanDetails />} />
               <Route path="/plano-detalhes/:planId" element={<PlanDetails />} />
               
               {/* Professional Routes */}

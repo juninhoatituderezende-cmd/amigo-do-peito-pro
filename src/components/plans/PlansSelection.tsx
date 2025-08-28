@@ -191,7 +191,7 @@ export const PlansSelection = ({ onSelectPlan, selectedPlanId }: PlansSelectionP
         throw error;
       }
 
-      if (data.success) {
+      if (data?.success) {
         console.log('✅ Pagamento criado com sucesso:', data);
         console.log('📊 Dados recebidos:', {
           payment_id: data.payment_id,
@@ -210,16 +210,41 @@ export const PlansSelection = ({ onSelectPlan, selectedPlanId }: PlansSelectionP
           description: `${method === 'pix' ? 'PIX' : 'Boleto'} de R$ ${data.amount} gerado para o plano ${data.plan_name}`,
         });
       } else {
-        console.error('❌ Erro no processamento:', data.error);
-        throw new Error(data.error || 'Erro desconhecido');
+        // Tratar erro específico de CPF
+        if (data?.error?.includes('CPF') || data?.error?.includes('CNPJ')) {
+          console.error('❌ CPF/CNPJ não informado');
+          toast({
+            title: "CPF necessário",
+            description: "É necessário cadastrar seu CPF no perfil para criar pagamentos. Redirecionando para o perfil...",
+            variant: "destructive",
+          });
+          // Redirecionar para página de perfil após 2 segundos
+          setTimeout(() => {
+            window.location.href = '/usuario/perfil';
+          }, 2000);
+          return;
+        }
+        
+        console.error('❌ Erro no processamento:', data?.error);
+        throw new Error(data?.error || 'Erro desconhecido');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('💥 Erro ao processar pagamento:', error);
-      toast({
-        title: "Erro no pagamento",
-        description: error.message || "Erro ao processar pagamento. Tente novamente.",
-        variant: "destructive",
-      });
+      
+      // Tratamento específico para erro de CPF
+      if (error.message?.includes('CPF') || error.message?.includes('CNPJ')) {
+        toast({
+          title: "CPF necessário",
+          description: "Complete seu perfil com CPF para realizar pagamentos.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Erro no pagamento",
+          description: error.message || "Erro ao processar pagamento. Tente novamente.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setProcessingPayment(false);
     }
