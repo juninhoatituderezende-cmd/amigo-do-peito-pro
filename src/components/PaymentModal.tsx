@@ -35,9 +35,9 @@ export const PaymentModal = ({ plan, isOpen, onClose, onSuccess }: PaymentModalP
 
     try {
       setLoading(true);
-      console.log('🚀 DIRETO PIX - Gerando para:', plan.name, 'R$', plan.price);
+      console.log('🚀 PIX ULTRA SIMPLES - Gerando para:', plan.name, 'R$', plan.price);
 
-      const { data: paymentResponse, error } = await supabase.functions.invoke('create-asaas-payment', {
+      const { data: paymentResponse, error } = await supabase.functions.invoke('create-simple-pix', {
         body: {
           plan_id: plan.id,
           plan_category: 'tattoo',
@@ -48,7 +48,7 @@ export const PaymentModal = ({ plan, isOpen, onClose, onSuccess }: PaymentModalP
       });
 
       if (error) {
-        console.error('❌ Erro PIX:', error);
+        console.error('❌ Erro PIX SIMPLES:', error);
         throw new Error(error.message || 'Erro ao gerar PIX');
       }
 
@@ -56,7 +56,7 @@ export const PaymentModal = ({ plan, isOpen, onClose, onSuccess }: PaymentModalP
         throw new Error(paymentResponse?.error || 'Falha ao gerar PIX');
       }
 
-      console.log('✅ PIX INSTANTÂNEO gerado:', paymentResponse);
+      console.log('✅ PIX SIMPLES FUNCIONOU:', paymentResponse);
       setPixData(paymentResponse);
 
       toast({
