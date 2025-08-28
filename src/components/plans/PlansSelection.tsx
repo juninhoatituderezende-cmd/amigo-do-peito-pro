@@ -121,10 +121,22 @@ export const PlansSelection = ({ onSelectPlan, selectedPlanId }: PlansSelectionP
     try {
       console.log('🚀 Iniciando processo de compra do plano:', selectedPlan.name, 'Método:', method);
       
-      // 1. Verificar autenticação
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        console.log('❌ Usuário não autenticado');
+      // 1. Verificar autenticação com validação robusta
+      console.log('🔐 Verificando sessão do usuário...');
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error('❌ Erro ao obter sessão:', sessionError);
+        toast({
+          title: "Erro de autenticação",
+          description: "Erro ao verificar login. Tente fazer login novamente.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (!session || !session.user) {
+        console.log('❌ Usuário não autenticado - sessão inválida');
         toast({
           title: "Login necessário",
           description: "Faça login para comprar um plano.",
@@ -133,7 +145,31 @@ export const PlansSelection = ({ onSelectPlan, selectedPlanId }: PlansSelectionP
         return;
       }
 
+      // 2. Verificar se o token é válido
+      const tokenExpiry = session.expires_at;
+      const now = Math.floor(Date.now() / 1000);
+      
+      if (tokenExpiry && tokenExpiry < now) {
+        console.log('⚠️ Token expirado, tentando renovar sessão...');
+        const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession();
+        
+        if (refreshError || !refreshedSession) {
+          console.error('❌ Falha ao renovar sessão:', refreshError);
+          toast({
+            title: "Sessão expirada",
+            description: "Sua sessão expirou. Faça login novamente.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        console.log('✅ Sessão renovada com sucesso');
+      }
+
       console.log('✅ Usuário autenticado:', session.user.id);
+      console.log('📧 Email do usuário:', session.user.email);
+      console.log('🕒 Token expira em:', new Date((tokenExpiry || 0) * 1000).toLocaleString());
+      
       setProcessingPayment(true);
       setPaymentMethod(method);
 
