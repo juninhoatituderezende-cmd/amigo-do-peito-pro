@@ -61,7 +61,7 @@ export const Marketplace = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
-  const { balance, useCredits: useUserCredits } = useCredits();
+  const { balance, useCredits: spendCredits } = useCredits();
 
   // Usar hook otimizado com cache para produtos
   const { data: products = [], loading } = useMarketplaceProducts();
@@ -129,7 +129,7 @@ export const Marketplace = () => {
   const handleCreditPayment = async () => {
     if (!selectedProduct || !user) return;
 
-    const success = await useUserCredits(
+    const success = await spendCredits(
       selectedProduct.down_payment,
       'marketplace_purchase',
       `Compra: ${selectedProduct.title}`,

@@ -29,7 +29,7 @@ const UserMarketplace = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const creditsHook = useCredits();
-  const { balance, useCredits: useCreditsFunction } = creditsHook;
+  const { balance, useCredits: spendCredits } = creditsHook;
   const [products, setProducts] = useState<MarketplaceProduct[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<MarketplaceProduct[]>([]);
   const [loading, setLoading] = useState(true);
@@ -133,7 +133,7 @@ const UserMarketplace = () => {
       return;
     }
 
-    const success = await useCreditsFunction(
+    const success = await spendCredits(
       product.valor_total,
       'marketplace_purchase',
       `Compra no marketplace: ${product.name}`,
