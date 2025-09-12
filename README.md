@@ -87,6 +87,24 @@ supabase/
 └── migrations/         # SQL setup
 ```
 
+### Checkout e Webhook (modelo 1 líder ⇒ 9 indicados)
+
+- Checkout (`supabase/functions/create-asaas-payment`):
+  - Cria `orders` com `user_id` (profiles.id), `plan_id` (custom_plans.id), `intended_leader_id` opcional, `amount_cents` (entry_price*100), `currency='BRL'`, `provider_session_id` inicial.
+  - Chama Asaas e usa `externalReference = "order=<order_id>;leader=<intended_leader_id?>"`.
+- Webhook (`supabase/functions/asaas-webhook`):
+  - Idempotência via `processed_payments(provider_event_id)`.
+  - Valida valor: `orders.amount_cents` vs `custom_plans.entry_price*100`.
+  - Fluxo: sem líder → cria grupo do comprador e membership líder; com líder → tenta join atômico via `join_group_membership`; se cheio, fallback cria grupo próprio.
+  - Se `current_size == capacity`: marca grupo `completed` e emite trigger em `notification_triggers`.
+
+### Realtime para barra de progresso
+
+- Canal: Realtime da tabela `groups`.
+- Eventos:
+  - Update em `groups.current_size`/`status`.
+  - Insert em `group_memberships`.
+
 ## 📊 **Monitoramento**
 
 ### **Logs das Functions**

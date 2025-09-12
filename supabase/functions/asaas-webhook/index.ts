@@ -14,412 +14,234 @@ serve(async (req) => {
   }
 
   try {
-    // Verificar se é POST
     if (req.method !== "POST") {
-      console.log('❌ Método não permitido:', req.method);
-      return new Response('Method not allowed', { status: 405 });
+      return new Response('Method not allowed', { status: 405, headers: corsHeaders });
     }
 
-    // Parse do body
-    const body = await req.json();
-    console.log('📝 Dados do webhook:', JSON.stringify(body, null, 2));
-
-    // Validar estrutura do webhook
-    if (!body.event || !body.payment) {
-      console.log('❌ Estrutura de webhook inválida');
-      return new Response('Invalid webhook structure', { status: 400 });
+    // Read raw body for signature validation
+    const rawBody = await req.text();
+    const body = JSON.parse(rawBody || '{}');
+    if (!body?.event || !body?.payment) {
+      return new Response('Invalid webhook structure', { status: 400, headers: corsHeaders });
     }
 
     const { event, payment } = body;
-    console.log('🎯 Evento:', event);
-    console.log('💳 Pagamento ID:', payment.id);
-    console.log('💰 Status:', payment.status);
 
-    // Inicializar cliente Supabase
+    // Validate signature if secret configured
+    const webhookSecret = Deno.env.get('ASAAS_WEBHOOK_SECRET');
+    const receivedSig = req.headers.get('x-asaas-signature') || req.headers.get('asaas-signature') || '';
+    if (webhookSecret) {
+      const encoder = new TextEncoder();
+      const key = await crypto.subtle.importKey(
+        'raw',
+        encoder.encode(webhookSecret),
+        { name: 'HMAC', hash: 'SHA-256' },
+        false,
+        ['sign']
+      );
+      const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(rawBody));
+      const signatureHex = Array.from(new Uint8Array(signature)).map(b => b.toString(16).padStart(2, '0')).join('');
+      if (receivedSig && receivedSig !== signatureHex) {
+        return new Response('Invalid signature', { status: 401, headers: corsHeaders });
+      }
+    }
+
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
       { auth: { persistSession: false } }
     );
 
-    // Buscar pagamento no banco (verificar nas duas tabelas)
-    const { data: paymentRecord, error: paymentError } = await supabaseClient
-      .from('payments')
-      .select('*')
-      .eq('asaas_payment_id', payment.id)
+    // Idempotency via processed_payments
+    const providerEventId = `asaas:${event}:${payment.id}:${payment.status || ''}`;
+    const { error: idempError } = await supabaseClient
+      .from('processed_payments')
+      .insert({ provider_event_id: providerEventId })
+    if (idempError && idempError.code === '23505') {
+      return new Response(JSON.stringify({ success: true, duplicated: true }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // Only process paid events
+    const isPaid = event === 'PAYMENT_CONFIRMED' || event === 'PAYMENT_RECEIVED' || payment?.status === 'RECEIVED' || payment?.status === 'CONFIRMED';
+    if (!isPaid) {
+      return new Response(JSON.stringify({ success: true, message: 'Event ignored' }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // Parse order_id from externalReference "order=<id>;leader=<id>"
+    const extRef: string = payment?.externalReference || '';
+    const parseMap = new Map<string, string>();
+    if (extRef) {
+      for (const part of extRef.split(';')) {
+        const [k, v] = part.split('=');
+        if (k && v) parseMap.set(k.trim(), v.trim());
+      }
+    }
+    const orderId = parseMap.get('order');
+    const intendedLeaderId = parseMap.get('leader') || null;
+    if (!orderId) {
+      return new Response('Missing order reference', { status: 400, headers: corsHeaders });
+    }
+
+    // Load order
+    const { data: order, error: orderErr } = await supabaseClient
+      .from('orders')
+      .select('*, user:orders_user_id_fkey(id), plan:orders_plan_id_fkey(id, price)')
+      .eq('id', orderId)
       .single();
-
-    const { data: transacaoRecord, error: transacaoError } = await supabaseClient
-      .from('transacoes')
-      .select('*')
-      .eq('asaas_payment_id', payment.id)
-      .single();
-
-    const recordToUpdate = paymentRecord || transacaoRecord;
-
-    if ((paymentError && transacaoError) || !recordToUpdate) {
-      console.log('❌ Pagamento não encontrado no banco:', payment.id);
-      return new Response('Payment not found', { status: 404 });
+    if (orderErr || !order) {
+      return new Response('Order not found', { status: 404, headers: corsHeaders });
     }
 
-    console.log('💾 Registro encontrado:', recordToUpdate.id);
-
-    // Processar evento baseado no status
-    let newStatus = recordToUpdate.status;
-    let shouldCreateGroup = false;
-
-    switch (event) {
-      case 'PAYMENT_CONFIRMED':
-      case 'PAYMENT_RECEIVED':
-        console.log('✅ Pagamento confirmado');
-        newStatus = 'paid';
-        shouldCreateGroup = true;
-        break;
-
-      case 'PAYMENT_OVERDUE':
-        console.log('⏰ Pagamento em atraso');
-        newStatus = 'overdue';
-        break;
-
-      case 'PAYMENT_DELETED':
-        console.log('🗑️ Pagamento cancelado');
-        newStatus = 'cancelled';
-        break;
-
-      default:
-        console.log('ℹ️ Evento não processado:', event);
-        break;
+    // Validate amount consistency (prefer entry_price if available)
+    const { data: planRow } = await supabaseClient
+      .from('custom_plans')
+      .select('entry_price, price')
+      .eq('id', order.plan_id)
+      .maybeSingle();
+    const basePrice = planRow?.entry_price ?? planRow?.price;
+    const expectedCents = basePrice != null ? Math.round(Number(basePrice) * 100) : order.amount_cents;
+    if (order.amount_cents !== expectedCents) {
+      await supabaseClient.from('notification_triggers').insert({
+        user_id: null,
+        event_type: 'payment_amount_mismatch',
+        title: 'Divergência de valor',
+        message: `Order ${order.id} amount ${order.amount_cents} != expected ${expectedCents}`,
+        data: { order_id: order.id, expected_cents: expectedCents, order_cents: order.amount_cents }
+      });
+      return new Response('Amount mismatch', { status: 422, headers: corsHeaders });
     }
 
-    // Atualizar status do pagamento/transação
-    if (newStatus !== recordToUpdate.status) {
-      const updateData: any = {
-        status: newStatus,
-        updated_at: new Date().toISOString()
-      };
-
-      if (newStatus === 'paid') {
-        updateData.paid_at = new Date().toISOString();
-      }
-
-      // Atualizar na tabela payments se existir
-      if (paymentRecord) {
-        const { error: updatePaymentError } = await supabaseClient
-          .from('payments')
-          .update(updateData)
-          .eq('id', paymentRecord.id);
-
-        if (updatePaymentError) {
-          console.error('❌ Erro ao atualizar payments:', updatePaymentError);
-        }
-      }
-
-      // Atualizar na tabela transacoes se existir
-      if (transacaoRecord) {
-        const { error: updateTransacaoError } = await supabaseClient
-          .from('transacoes')
-          .update(updateData)
-          .eq('id', transacaoRecord.id);
-
-        if (updateTransacaoError) {
-          console.error('❌ Erro ao atualizar transacoes:', updateTransacaoError);
-        }
-      }
-
-      console.log('✅ Status atualizado para:', newStatus);
+    // If already paid, exit idempotently
+    if (order.status === 'paid') {
+      return new Response(JSON.stringify({ success: true, already_paid: true }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    // Se pagamento confirmado, processar grupo e comissões
-    if (shouldCreateGroup && recordToUpdate.plan_id) {
-      console.log('🏗️ Processando grupo e comissões...');
+    const buyerProfileId: string = order.user_id;
 
-      try {
-        // Verificar se usuário já está em algum grupo para este plano
-        const { data: existingParticipation } = await supabaseClient
-          .from('group_participants')
-          .select('id, group_id')
-          .eq('user_id', recordToUpdate.user_id || recordToUpdate.usuario_id)
+    // Resolve or create target group
+    let groupId: string | null = null;
+    let finalLeaderId: string | null = intendedLeaderId || order.intended_leader_id || null;
+
+    if (!finalLeaderId) {
+      // Create a new group for buyer as leader
+      const { data: newGroup, error: groupErr } = await supabaseClient
+        .from('groups')
+        .insert({ leader_id: buyerProfileId, plan_id: order.plan_id, capacity: 10, current_size: 0, status: 'active' })
+        .select('id, capacity')
+        .single();
+      if (groupErr && groupErr.code !== '23505') { // ignore unique conflicts
+        console.error('Erro ao criar grupo próprio:', groupErr);
+      }
+      if (newGroup) groupId = newGroup.id;
+
+      // If conflict due to uq_active_group_per_leader_plan, fetch existing
+      if (!groupId) {
+        const { data: existingGroup } = await supabaseClient
+          .from('groups')
+          .select('id, capacity, current_size')
+          .eq('leader_id', buyerProfileId)
+          .eq('plan_id', order.plan_id)
+          .eq('status', 'active')
+          .order('created_at', { ascending: true })
+          .limit(1)
           .single();
+        groupId = existingGroup?.id || null;
+      }
 
-        if (!existingParticipation) {
-          // Buscar grupo disponível para o plano
-          const { data: availableGroup } = await supabaseClient
-            .from('plan_groups')
-            .select('*')
-            .eq('service_id', recordToUpdate.plan_id)
-            .eq('status', 'forming')
-            .order('created_at', { ascending: true })
-            .limit(1)
+      // Join as leader
+      if (groupId) {
+        await supabaseClient.rpc('join_group_membership', { p_group_id: groupId, p_user_profile_id: buyerProfileId, p_role: 'leader' });
+      }
+    } else {
+      // Try to find active group for intended leader and same plan
+      const { data: targetGroup } = await supabaseClient
+        .from('groups')
+        .select('id, capacity, current_size')
+        .eq('leader_id', finalLeaderId)
+        .eq('plan_id', order.plan_id)
+        .eq('status', 'active')
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .single();
+      groupId = targetGroup?.id || null;
+
+      if (!groupId) {
+        // Fallback: create own group
+        const { data: ownGroup } = await supabaseClient
+          .from('groups')
+          .insert({ leader_id: buyerProfileId, plan_id: order.plan_id, capacity: 10, current_size: 0, status: 'active' })
+          .select('id')
+          .single();
+        groupId = ownGroup?.id || null;
+        finalLeaderId = buyerProfileId;
+        if (groupId) await supabaseClient.rpc('join_group_membership', { p_group_id: groupId, p_user_profile_id: buyerProfileId, p_role: 'leader' });
+      } else {
+        // Attempt to join as member atomically
+        const { data: joinResult } = await supabaseClient.rpc('join_group_membership', { p_group_id: groupId, p_user_profile_id: buyerProfileId, p_role: 'member' });
+        const newSize = Array.isArray(joinResult) && joinResult.length > 0 ? joinResult[0]?.new_size : null;
+        if (newSize === null) {
+          // Group likely full. Fallback to own group as leader
+          const { data: ownGroup2 } = await supabaseClient
+            .from('groups')
+            .insert({ leader_id: buyerProfileId, plan_id: order.plan_id, capacity: 10, current_size: 0, status: 'active' })
+            .select('id')
             .single();
-
-          let groupId = availableGroup?.id;
-
-          // Se não existe grupo disponível, criar novo
-          if (!groupId) {
-            // Buscar dados do plano - verificar em ambas as tabelas
-            let planData = null;
-            
-              // Tentar buscar em custom_plans primeiro
-              const { data: customPlan } = await supabaseClient
-                .from('custom_plans')
-                .select('max_participants, price, name')
-                .eq('id', recordToUpdate.plan_id)
-              .single();
-
-            if (customPlan) {
-              planData = customPlan;
-            } else {
-                // Buscar em planos_tatuador
-                const { data: tattooPlan } = await supabaseClient
-                  .from('planos_tatuador')
-                  .select('max_participants, price, name')
-                  .eq('id', recordToUpdate.plan_id)
-                .single();
-
-              if (tattooPlan) {
-                planData = tattooPlan;
-              } else {
-                  // Buscar em planos_dentista
-                  const { data: dentalPlan } = await supabaseClient
-                    .from('planos_dentista')
-                    .select('max_participants, price, name')
-                    .eq('id', recordToUpdate.plan_id)
-                  .single();
-
-                if (dentalPlan) {
-                  planData = dentalPlan;
-                }
-              }
-            }
-
-            if (planData) {
-                // Obter próximo número de grupo
-                const { data: lastGroup } = await supabaseClient
-                  .from('plan_groups')
-                  .select('group_number')
-                  .eq('service_id', recordToUpdate.plan_id)
-                .order('group_number', { ascending: false })
-                .limit(1)
-                .single();
-
-              const nextGroupNumber = (lastGroup?.group_number || 0) + 1;
-
-                const { data: newGroup, error: groupError } = await supabaseClient
-                  .from('plan_groups')
-                  .insert({
-                    service_id: recordToUpdate.plan_id,
-                  max_participants: planData.max_participants,
-                  target_amount: planData.price,
-                  current_participants: 0,
-                  current_amount: 0,
-                  status: 'forming',
-                  group_number: nextGroupNumber
-                })
-                .select()
-                .single();
-
-              if (groupError) {
-                console.error('❌ Erro ao criar grupo:', groupError);
-                throw groupError;
-              }
-
-              groupId = newGroup.id;
-              console.log('🆕 Novo grupo criado:', groupId);
-            }
-          }
-
-          // Adicionar usuário ao grupo
-          if (groupId) {
-            // Buscar se há referrer no pagamento
-            let referrerId = null;
-            const { data: userProfile } = await supabaseClient
-              .from('profiles')
-              .select('referred_by')
-              .eq('user_id', recordToUpdate.user_id || recordToUpdate.usuario_id)
-              .single();
-
-            if (userProfile?.referred_by) {
-              referrerId = userProfile.referred_by;
-            }
-
-            const { error: participantError } = await supabaseClient
-              .from('group_participants')
-              .insert({
-                user_id: recordToUpdate.user_id || recordToUpdate.usuario_id,
-                group_id: groupId,
-                amount_paid: recordToUpdate.amount || recordToUpdate.valor,
-                status: 'active',
-                joined_at: new Date().toISOString(),
-                referrer_id: referrerId
-              });
-
-            if (participantError) {
-              console.error('❌ Erro ao adicionar participante:', participantError);
-              throw participantError;
-            }
-
-            // Atualizar contadores do grupo manualmente
-            const { data: currentGroup } = await supabaseClient
-              .from('plan_groups')
-              .select('current_participants, current_amount, max_participants')
-              .eq('id', groupId)
-              .single();
-
-            if (currentGroup) {
-              const newParticipants = currentGroup.current_participants + 1;
-              const newAmount = currentGroup.current_amount + (recordToUpdate.amount || recordToUpdate.valor);
-
-              const { data: updatedGroup, error: updateGroupError } = await supabaseClient
-                .from('plan_groups')
-                .update({
-                  current_participants: newParticipants,
-                  current_amount: newAmount,
-                  updated_at: new Date().toISOString()
-                })
-                .eq('id', groupId)
-                .select()
-                .single();
-
-              if (updateGroupError) {
-                console.error('❌ Erro ao atualizar grupo:', updateGroupError);
-              } else {
-                console.log('✅ Usuário adicionado ao grupo:', groupId);
-
-                // Verificar se grupo ficou completo
-                if (newParticipants >= currentGroup.max_participants) {
-                  await supabaseClient
-                    .from('plan_groups')
-                    .update({ status: 'complete', contemplated_at: new Date().toISOString() })
-                    .eq('id', groupId);
-
-                  console.log('🎉 Grupo completado:', groupId);
-                }
-              }
-            }
-
-            // Processar comissões MLM se houver referrer
-            if (referrerId) {
-              console.log('💰 Processando comissões MLM...');
-              
-              try {
-                // Calcular comissões (percentuais estilo iFood)
-                const totalAmount = recordToUpdate.amount || recordToUpdate.valor;
-                const platformAmount = Math.round(totalAmount * 0.50); // 50% plataforma
-                const professionalAmount = Math.round(totalAmount * 0.30); // 30% profissional
-                const referrerAmount = Math.round(totalAmount * 0.20); // 20% referrer
-
-                // Buscar user_id do referrer
-                const { data: referrerProfile } = await supabaseClient
-                  .from('profiles')
-                  .select('user_id')
-                  .eq('id', referrerId)
-                  .single();
-
-                if (referrerProfile) {
-                  // Creditar referrer
-                    const { error: creditError } = await supabaseClient
-                      .from('credit_transactions')
-                      .insert({
-                        user_id: referrerProfile.user_id,
-                        type: 'referral_commission',
-                        amount: referrerAmount,
-                        description: `Comissão de referência: ${recordToUpdate.plan_name || 'Plano'} (20%)`,
-                        source_type: 'payment',
-                        commission_rate: 20,
-                        reference_id: recordToUpdate.id
-                      });
-
-                  if (!creditError) {
-                    // Atualizar saldo do referrer
-                    await supabaseClient
-                      .from('user_credits')
-                      .update({
-                        total_credits: supabaseClient.rpc('increment', referrerAmount),
-                        available_credits: supabaseClient.rpc('increment', referrerAmount),
-                        updated_at: new Date().toISOString()
-                      })
-                      .eq('user_id', referrerProfile.user_id);
-
-                    // Notificar referrer
-                      await supabaseClient
-                        .from('notification_triggers')
-                        .insert({
-                          user_id: referrerProfile.user_id,
-                          event_type: 'commission_earned',
-                          title: 'Comissão Recebida!',
-                          message: `Você recebeu R$ ${referrerAmount} de comissão pela indicação de ${recordToUpdate.plan_name || 'um plano'}`,
-                          data: {
-                            payment_id: recordToUpdate.id,
-                            amount: referrerAmount,
-                            plan_name: recordToUpdate.plan_name,
-                            commission_rate: 20
-                          }
-                        });
-
-                    console.log('✅ Comissão do referrer processada:', referrerAmount);
-                  }
-                }
-
-                // Registrar split de pagamento
-                await supabaseClient
-                  .from('payment_splits')
-                  .insert({
-                    payment_id: recordToUpdate.id,
-                    service_id: recordToUpdate.plan_id,
-                    professional_id: null, // Será definido quando necessário
-                    referrer_id: referrerId,
-                    total_amount: totalAmount,
-                    professional_amount: professionalAmount,
-                    platform_amount: platformAmount,
-                    referrer_amount: referrerAmount,
-                    status: 'processed'
-                  });
-
-                console.log('✅ Payment split registrado');
-
-              } catch (commissionError) {
-                console.error('❌ Erro ao processar comissões:', commissionError);
-                // Não falhar o webhook por erro de comissão
-              }
-            }
-
-            // Criar notificação para o usuário
-            await supabaseClient
-              .from('notification_triggers')
-              .insert({
-                user_id: recordToUpdate.user_id || recordToUpdate.usuario_id,
-                event_type: 'payment_confirmed',
-                title: 'Pagamento Confirmado!',
-                message: `Seu pagamento de R$ ${recordToUpdate.amount || recordToUpdate.valor} foi confirmado e você foi adicionado ao grupo.`,
-                data: {
-                  payment_id: recordToUpdate.id,
-                  group_id: groupId,
-                  amount: recordToUpdate.amount || recordToUpdate.valor,
-                  plan_name: recordToUpdate.plan_name || 'Plano'
-                }
-              });
-          }
-        } else {
-          console.log('ℹ️ Usuário já está em um grupo');
+          groupId = ownGroup2?.id || null;
+          finalLeaderId = buyerProfileId;
+          if (groupId) await supabaseClient.rpc('join_group_membership', { p_group_id: groupId, p_user_profile_id: buyerProfileId, p_role: 'leader' });
         }
-
-      } catch (error) {
-        console.error('❌ Erro ao processar grupo:', error);
-        // Não falhar o webhook se der erro no grupo
       }
     }
 
-    console.log('🎉 Webhook processado com sucesso');
-    
-    return new Response(JSON.stringify({ 
-      success: true, 
-      message: 'Webhook processed successfully',
-      payment_id: payment.id,
-      status: newStatus
-    }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
-    });
+    // Mark order paid
+    await supabaseClient.from('orders').update({ status: 'paid', updated_at: new Date().toISOString() }).eq('id', order.id);
+
+    // On completion: if current_size == capacity, mark completed and notify
+    if (groupId) {
+      const { data: grp } = await supabaseClient.from('groups').select('id, current_size, capacity, status').eq('id', groupId).single();
+      if (grp && grp.current_size >= grp.capacity && grp.status !== 'completed') {
+        await supabaseClient.from('groups').update({ status: 'completed', contemplated_at: new Date().toISOString() }).eq('id', groupId);
+        await supabaseClient.from('notification_triggers').insert({
+          user_id: null,
+          event_type: 'group_complete',
+          title: 'Grupo completo!',
+          message: `Grupo ${groupId} atingiu ${grp.capacity}/${grp.capacity}.`,
+          data: { group_id: groupId, plan_id: order.plan_id }
+        });
+      }
+    }
+
+    // Commission hook when there is intended leader different than buyer
+    if (finalLeaderId && finalLeaderId !== buyerProfileId) {
+      // Fetch leader auth user_id for credit_transactions
+      const { data: leaderProfile } = await supabaseClient.from('profiles').select('user_id').eq('id', finalLeaderId).single();
+      const commissionAmount = Math.round(order.amount_cents * 0.25) / 100; // decimal BRL
+      if (leaderProfile?.user_id && commissionAmount > 0) {
+        // Idempotent insert
+        const { data: existingTx } = await supabaseClient
+          .from('credit_transactions')
+          .select('id')
+          .eq('source_type', 'influencer_commission')
+          .eq('reference_id', providerEventId)
+          .single();
+        if (!existingTx) {
+          await supabaseClient.from('credit_transactions').insert({
+            user_id: leaderProfile.user_id,
+            type: 'earned',
+            amount: commissionAmount,
+            description: 'Comissão por indicação (25%)',
+            reference_id: providerEventId,
+            reference_table: 'processed_payments',
+            status: 'pending',
+            source_type: 'influencer_commission',
+            commission_rate: 25,
+            related_user_id: finalLeaderId
+          });
+        }
+      }
+    }
+
+    return new Response(JSON.stringify({ success: true, order_id: order.id, group_id: groupId }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
   } catch (error) {
     console.error('💥 Erro no webhook:', error);
