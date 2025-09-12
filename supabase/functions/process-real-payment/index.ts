@@ -64,6 +64,21 @@ serve(async (req) => {
 
       if (paymentError) throw paymentError;
 
+      // Record influencer click/conversion if influencer_code provided
+      if (influencer_code) {
+        try {
+          await supabaseClient.rpc('record_influencer_conversion', {
+            p_referral_code: influencer_code,
+            p_client_id: user_id,
+            p_payment_id: payment.id,
+            p_entry_value: plan.entry_value,
+            p_product_total_value: plan.total_price || null
+          });
+        } catch (e) {
+          console.warn('record_influencer_conversion failed', e);
+        }
+      }
+
       result = {
         payment_type: "pix",
         pix_code: pixCode,
@@ -133,6 +148,21 @@ serve(async (req) => {
         .single();
 
       if (paymentError) throw paymentError;
+
+      // Record influencer conversion if influencer_code provided
+      if (influencer_code) {
+        try {
+          await supabaseClient.rpc('record_influencer_conversion', {
+            p_referral_code: influencer_code,
+            p_client_id: user_id,
+            p_payment_id: payment.id,
+            p_entry_value: plan.entry_value,
+            p_product_total_value: plan.total_price || null
+          });
+        } catch (e) {
+          console.warn('record_influencer_conversion failed', e);
+        }
+      }
 
       result = {
         payment_type: "stripe",

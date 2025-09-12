@@ -159,6 +159,19 @@ serve(async (req) => {
           .from("influencer_commissions")
           .update({ status: 'confirmed' })
           .eq("referral_code", referral_code)
+        // Record influencer conversion and credit transaction
+        try {
+          await supabase.rpc('record_influencer_conversion', {
+            p_referral_code: referral_code,
+            p_client_id: user.id,
+            p_payment_id: purchase.id,
+            p_entry_value: purchase.amount_paid,
+            p_product_total_value: null
+          });
+        } catch (e) {
+          console.log('record_influencer_conversion failed', e);
+        }
+
           .eq("client_id", user_id);
           
         if (commissionUpdateError) {

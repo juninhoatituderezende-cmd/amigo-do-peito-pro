@@ -1,3 +1,46 @@
+## Etapa 2 – Perfis Influenciador e Profissional (MVP pronto)
+
+Arquivos novos/alterados principais:
+- supabase/migrations/20250912_influencer_tracking.sql (novo)
+- supabase/migrations/20250912_professional_flow.sql (novo)
+- supabase/functions/process-real-payment/index.ts (editado)
+- supabase/functions/secure-pix-webhook/index.ts (editado)
+- supabase/functions/confirm-mlm-payment/index.ts (editado)
+- src/hooks/useReferralTracking.ts (editado)
+- src/components/influencer/InfluencerDashboard.tsx (editado)
+- src/components/influencer/InfluencerProducts.tsx (editado)
+- src/components/influencer/ReferralLinks.tsx (editado – remove mocks)
+- src/pages/pro/ProDashboard.tsx (editado – dados reais e confirmação de serviço)
+- src/components/admin/ReportsAnalytics.tsx (editado – remove seção mock)
+- src/components/admin/GroupsOverview.tsx (editado – remove mocks)
+
+SQL novo (scripts):
+- 20250912_influencer_tracking.sql
+  - Tabelas: public.influencer_clicks, public.influencer_conversions
+  - RPCs: record_influencer_click, record_influencer_conversion, resolve_influencer_by_code
+  - Índices e RLS; trigger espelho para credit_transactions em inserts de influencer_commissions
+
+- 20250912_professional_flow.sql
+  - Garantia de existência: contemplations, service_history, professional_reviews, pagamentos_profissionais
+  - Trigger on contemplations -> cria pagamentos_profissionais (released) + insere service_history
+  - Trigger on pagamentos_profissionais (paid) -> insere em credit_transactions para carteira do profissional
+
+Back-end:
+- process-real-payment: registra conversão de influenciador via RPC ao criar pagamento (PIX/Stripe)
+- secure-pix-webhook: ao confirmar pagamento, registra conversão, insere credit_transactions para bônus, e mantém splits
+- confirm-mlm-payment: registra conversão de influenciador pós-confirmação
+
+Front-end:
+- useReferralTracking: dispara record_influencer_click ao detectar ?ref= (best-effort)
+- InfluencerDashboard/Products: consomem dados reais de plan_referral_links, influencer_commissions e credit_transactions
+- ProDashboard: carrega contemplations/service_history/notifications reais e aciona release-professional-payment
+- Admin: removidos blocos com mocks remanescentes
+
+Como testar E2E (resumo):
+1) Influenciador: acessar uma URL com ?ref=CODE -> verificar linha em influencer_clicks; realizar compra com influencer_code -> verificar influencer_conversions, influencer_commissions e credit_transactions (referral_bonus).
+2) Profissional: marcar uma contemplation como service_confirmed -> verificar criação de pagamentos_profissionais (released); executar função release-professional-payment -> status paid e crédito em credit_transactions.
+3) Admin: validar que relatórios não exibem mocks e que aprovações/validações utilizam dados reais.
+
 # Resumo das Correções no Painel Administrativo
 
 ## 🚀 Problemas Corrigidos

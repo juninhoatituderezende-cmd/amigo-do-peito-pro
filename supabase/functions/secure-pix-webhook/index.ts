@@ -295,7 +295,7 @@ serve(async (req) => {
             });
           } else {
             // Process referral normally
-            const commissionAmount = paymentRecord.amount * 0.1; // 10% commission
+            const commissionAmount = paymentRecord.amount * 0.10; // 10% of entry/payment amount
 
             // Update referred user's network record
             await supabaseClient
@@ -320,7 +320,7 @@ serve(async (req) => {
                 onConflict: "referrer_id,referred_id"
               });
 
-            // Create commission record
+            // Create commission record (MLM side)
             await supabaseClient
               .from("mlm_commissions")
               .insert({
@@ -332,6 +332,36 @@ serve(async (req) => {
                 type: "referral",
                 status: "pending",
               });
+
+            // Record influencer conversion and pending commission in dedicated tables
+            try {
+              await supabaseClient.rpc('record_influencer_conversion', {
+                p_referral_code: paymentRecord.influencer_code,
+                p_client_id: paymentRecord.user_id,
+                p_payment_id: paymentRecord.id,
+                p_entry_value: paymentRecord.amount,
+                p_product_total_value: null
+              });
+            } catch (e) {
+              logStep('record_influencer_conversion failed', { error: String(e) });
+            }
+
+            // Also register a credit transaction for referrer (auditable wallet)
+            try {
+              await supabaseClient
+                .from('credit_transactions')
+                .insert({
+                  user_id: referrer.user_id,
+                  type: 'earned',
+                  amount: commissionAmount,
+                  description: `Comissão de indicação (10%) sobre pagamento ${paymentRecord.id}`,
+                  source_type: 'referral_bonus',
+                  commission_rate: 10,
+                  reference_id: paymentRecord.id
+                });
+            } catch (e) {
+              logStep('credit_transactions insert failed', { error: String(e) });
+            }
 
             logStep("Secure referral commission processed");
           }

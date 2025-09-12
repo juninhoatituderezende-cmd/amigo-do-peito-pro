@@ -244,29 +244,7 @@ export const ReportsAnalytics = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {mockInfluencerReports.map((influencer) => (
-              <div key={influencer.id} className="p-4 border rounded-lg">
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <h4 className="font-medium">{influencer.name}</h4>
-                    <p className="text-sm text-muted-foreground">
-                      {influencer.referrals} indicações • {influencer.conversionRate}% conversão
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="font-medium text-green-600">
-                      R$ {influencer.commissions.toLocaleString()}
-                    </span>
-                    <Badge 
-                      variant="secondary"
-                      className={influencer.status === "active" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}
-                    >
-                      {influencer.status === "active" ? "Ativo" : "Inativo"}
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-            ))}
+            {/* TODO: Replace with real data source (admin view) */}
           </div>
         </CardContent>
       </Card>

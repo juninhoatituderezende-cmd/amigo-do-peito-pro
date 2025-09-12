@@ -16,26 +16,7 @@ interface ReferralLink {
   createdAt: string;
 }
 
-const mockLinks: ReferralLink[] = [
-  {
-    id: "1",
-    name: "Instagram Bio",
-    url: `${window.location.origin}/register?ref=AMANDA-INSTA`,
-    clicks: 247,
-    conversions: 12,
-    earnings: 2400,
-    createdAt: "2024-01-15"
-  },
-  {
-    id: "2", 
-    name: "YouTube Descrição",
-    url: `${window.location.origin}/register?ref=AMANDA-YOUTUBE`,
-    clicks: 156,
-    conversions: 8,
-    earnings: 1600,
-    createdAt: "2024-01-20"
-  }
-];
+const mockLinks: ReferralLink[] = [];
 
 export const ReferralLinks = () => {
   const [links, setLinks] = useState<ReferralLink[]>(mockLinks);
@@ -52,17 +33,15 @@ export const ReferralLinks = () => {
 
   const createNewLink = () => {
     if (!newLinkName.trim()) return;
-    
     const newLink: ReferralLink = {
       id: Date.now().toString(),
       name: newLinkName,
-      url: `${window.location.origin}/register?ref=AMANDA-${newLinkName.toLowerCase().replace(/\s+/g, '-').substring(0, 10).toUpperCase()}`,
+      url: `${window.location.origin}/register?ref=CAMP-${newLinkName.toLowerCase().replace(/\s+/g, '-').substring(0, 10).toUpperCase()}`,
       clicks: 0,
       conversions: 0,
       earnings: 0,
       createdAt: new Date().toISOString().split('T')[0]
     };
-    
     setLinks([...links, newLink]);
     setNewLinkName("");
     toast({

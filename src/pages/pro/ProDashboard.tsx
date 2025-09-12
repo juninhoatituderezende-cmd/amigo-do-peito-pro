@@ -109,26 +109,57 @@ const ProDashboard: React.FC = () => {
       
       setProfessional(professionalInfo);
 
-      // Use mock contemplations since table doesn't exist
-      const mockContemplations = [
-        {
-          id: '1',
-          user_id: '1',
-          user_name: 'João Silva',
-          entry_date: new Date().toISOString(),
-          referral_count: 9,
-          service_confirmed: false,
-          payment_status: 'released' as const,
-          before_photos: [],
-          after_photos: []
-        }
-      ];
+      // Carregar contemplations reais
+      const { data: contData } = await supabase
+        .from('contemplations')
+        .select('id, user_id, service_confirmed, payment_status, created_at')
+        .eq('professional_id', user.id)
+        .order('created_at', { ascending: false });
 
-      setContemplations(mockContemplations);
+      const formattedContemplations: Contemplation[] = (contData || []).map((c: any) => ({
+        id: c.id,
+        user_id: c.user_id,
+        user_name: 'Cliente',
+        entry_date: c.created_at,
+        referral_count: 9,
+        service_confirmed: !!c.service_confirmed,
+        payment_status: (c.payment_status || 'pending') as any,
+        before_photos: [],
+        after_photos: []
+      }));
+      setContemplations(formattedContemplations);
 
-      // Use mock data since tables don't exist
-      setServiceHistory([]);
-      setNotifications([]);
+      // Carregar histórico de serviços
+      const { data: histData } = await supabase
+        .from('service_history')
+        .select('*')
+        .eq('professional_id', user.id)
+        .order('service_date', { ascending: false });
+      const formattedHistory: ServiceHistory[] = (histData || []).map((s: any) => ({
+        id: s.id,
+        client_name: s.client_name,
+        service_date: s.service_date,
+        amount: Number(s.amount),
+        payment_status: (s.payment_status || 'pending') as any,
+        rating: s.rating,
+        review: s.review
+      }));
+      setServiceHistory(formattedHistory);
+
+      // Carregar notificações
+      const { data: notifData } = await supabase
+        .from('professional_notifications')
+        .select('*')
+        .eq('professional_id', user.id)
+        .order('created_at', { ascending: false });
+      const formattedNotifications: Notification[] = (notifData || []).map((n: any) => ({
+        id: n.id,
+        message: n.message,
+        type: n.type,
+        created_at: n.created_at,
+        read: n.read
+      }));
+      setNotifications(formattedNotifications);
 
     } catch (error) {
       console.error('Error loading dashboard data:', error);
@@ -144,10 +175,40 @@ const ProDashboard: React.FC = () => {
 
   const handleConfirmService = async (contemplationId: string) => {
     try {
-      // Mock service confirmation since table doesn't exist
+      // Atualiza contemplação e cria histórico
+      const { error: updateError } = await supabase
+        .from('contemplations')
+        .update({ service_confirmed: true, confirmation_date: new Date().toISOString(), payment_status: 'released' })
+        .eq('id', contemplationId);
+      if (updateError) throw updateError;
+
+      // Buscar pagamento gerado para esta contemplação
+      const { data: paymentRow } = await supabase
+        .from('pagamentos_profissionais')
+        .select('id')
+        .eq('contemplation_id', contemplationId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      // Chamar edge function para liberar pagamento (redundante, mas mantido para consistência)
+      // @ts-ignore
+      const baseUrl = (import.meta as any).env?.VITE_SUPABASE_URL || (window as any)?.ENV?.VITE_SUPABASE_URL;
+      const response = await fetch(`${baseUrl}/functions/v1/release-professional-payment`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('sb-access-token') || ''}`
+        },
+        body: JSON.stringify({ payment_id: paymentRow?.id || contemplationId, admin_id: user?.id })
+      });
+      if (!response.ok) {
+        console.warn('release-professional-payment failed');
+      }
+
       toast({
         title: "Serviço confirmado!",
-        description: "O serviço foi confirmado e o pagamento será liberado.",
+        description: "O pagamento foi liberado para sua carteira.",
       });
 
       setSelectedContemplation(null);

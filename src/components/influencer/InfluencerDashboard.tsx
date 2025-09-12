@@ -83,28 +83,52 @@ export function InfluencerDashboard() {
         return;
       }
 
-      // Carregar links de referência usando products como mock
-      const { data: servicesData } = await supabase
-        .from('products')
-        .select('*')
-        .limit(5);
+      // Carregar links de referência reais
+      const links: any[] = [];
+      const { data: myProfile } = await supabase
+        .from('profiles')
+        .select('user_id, referral_code, created_at')
+        .eq('user_id', user.id)
+        .single();
 
-      const mockLinks = servicesData?.map(service => ({
-        id: service.id,
-        referral_code: `REF-${service.id.slice(0, 8)}`,
-        link_url: `/ref/${service.id}`,
-        clicks_count: Math.floor(Math.random() * 100),
-        conversions_count: Math.floor(Math.random() * 10),
-        total_commission: Math.floor(Math.random() * 500),
-        active: true,
-        created_at: service.created_at
-      })) || [];
-
-      if (mockLinks) {
-        setReferralLinks(mockLinks);
+      if (myProfile?.referral_code) {
+        links.push({
+          id: myProfile.referral_code,
+          referral_code: myProfile.referral_code,
+          link_url: `/inscrever?ref=${myProfile.referral_code}`,
+          clicks_count: 0,
+          conversions_count: 0,
+          total_commission: 0,
+          active: true,
+          created_at: myProfile.created_at || new Date().toISOString()
+        });
       }
 
-      // Carregar comissões usando credit_transactions
+      const { data: planLinks } = await supabase
+        .from('plan_referral_links')
+        .select('id, referral_code, link_url, clicks_count, conversions_count, total_commission, active, created_at')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (planLinks && planLinks.length > 0) {
+        for (const l of planLinks) {
+          links.push({
+            id: l.id,
+            referral_code: l.referral_code,
+            link_url: l.link_url,
+            clicks_count: l.clicks_count || 0,
+            conversions_count: l.conversions_count || 0,
+            total_commission: Number(l.total_commission || 0),
+            active: l.active,
+            created_at: l.created_at
+          });
+        }
+      }
+
+      setReferralLinks(links as any);
+
+      // Carregar comissões usando credit_transactions e influencer_commissions
       const { data: commissionsData } = await supabase
         .from('credit_transactions')
         .select('*')
@@ -112,38 +136,50 @@ export function InfluencerDashboard() {
         .eq('type', 'earned')
         .order('created_at', { ascending: false });
 
-      if (commissionsData) {
-        const formattedCommissions: Commission[] = commissionsData.map(commission => ({
-          id: commission.id,
-          client_name: 'Cliente Desconhecido',
-          participation_amount: Number(commission.amount) * 4, // Simula valor de entrada
-          commission_amount: Number(commission.amount), // Comissão recebida
-          status: commission.status || 'completed',
-          created_at: commission.created_at || new Date().toISOString(),
-          plan_name: commission.description || 'Comissão de Referência'
+      const formattedFromCredits: Commission[] = (commissionsData || [])
+        .filter((t: any) => t.source_type === 'referral_bonus' || (t.description || '').toLowerCase().includes('comiss'))
+        .map((t: any) => ({
+          id: t.id,
+          client_name: 'Indicação',
+          participation_amount: Number(t.amount) * 10, // aproximação do total
+          commission_amount: Number(t.amount),
+          status: t.status || 'completed',
+          created_at: t.created_at || new Date().toISOString(),
+          plan_name: t.description || 'Comissão de Indicação'
         }));
 
-        setCommissions(formattedCommissions);
+      const { data: influencerComms } = await supabase
+        .from('influencer_commissions')
+        .select('id, entry_value, commission_amount, status, created_at')
+        .eq('influencer_id', user.id)
+        .order('created_at', { ascending: false });
 
-        // Calcular estatísticas
-        const totalReferrals = mockLinks?.length || 0;
-        const totalConversions = mockLinks?.reduce((sum, link) => sum + (link.conversions_count || 0), 0) || 0;
-        const totalClicks = mockLinks?.reduce((sum, link) => sum + (link.clicks_count || 0), 0) || 0;
-        const pendingCommission = formattedCommissions
-          .filter(c => c.status === 'pending')
-          .reduce((sum, c) => sum + c.commission_amount, 0);
-        const paidCommission = formattedCommissions
-          .filter(c => c.status === 'paid')
-          .reduce((sum, c) => sum + c.commission_amount, 0);
+      const formattedFromInfluencer: Commission[] = (influencerComms || []).map((c: any) => ({
+        id: c.id,
+        client_name: 'Indicação',
+        participation_amount: Number(c.entry_value || 0),
+        commission_amount: Number(c.commission_amount || 0),
+        status: c.status || 'pending',
+        created_at: c.created_at,
+        plan_name: 'Comissão de Indicação'
+      }));
 
-        setStats({
-          total_referrals: totalReferrals,
-          total_conversions: totalConversions,
-          pending_commission: pendingCommission,
-          paid_commission: paidCommission,
-          total_clicks: totalClicks
-        });
-      }
+      const allComms: Commission[] = [...formattedFromInfluencer, ...formattedFromCredits];
+      setCommissions(allComms);
+
+      const totalReferrals = links.length;
+      const totalConversions = links.reduce((sum, link) => sum + (link.conversions_count || 0), 0);
+      const totalClicks = links.reduce((sum, link) => sum + (link.clicks_count || 0), 0);
+      const pendingCommission = allComms.filter(c => c.status === 'pending').reduce((sum, c) => sum + c.commission_amount, 0);
+      const paidCommission = allComms.filter(c => c.status === 'paid').reduce((sum, c) => sum + c.commission_amount, 0);
+
+      setStats({
+        total_referrals: totalReferrals,
+        total_conversions: totalConversions,
+        pending_commission: pendingCommission,
+        paid_commission: paidCommission,
+        total_clicks: totalClicks
+      });
 
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
