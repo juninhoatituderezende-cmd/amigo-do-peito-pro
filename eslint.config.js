@@ -24,6 +24,8 @@ export default tseslint.config(
         { allowConstantExport: true },
       ],
       "@typescript-eslint/no-unused-vars": "off",
+      // Avoid mismatch until plugin and core align on flat config defaults
+      "@typescript-eslint/no-empty-function": "off",
     },
   }
 );

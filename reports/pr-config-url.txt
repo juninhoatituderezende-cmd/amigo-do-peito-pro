@@ -1,0 +1,1 @@
+Open PR manually: https://github.com/juninhoatituderezende-cmd/amigo-do-peito-pro/compare/principal...fix/config-updates?expand=1
