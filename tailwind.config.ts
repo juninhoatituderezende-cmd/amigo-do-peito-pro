@@ -142,5 +142,8 @@ export default {
             }
 		}
 	},
-	plugins: [require("tailwindcss-animate")],
+	plugins: [
+		// Use dynamic import to avoid require in ESM
+		(await import("tailwindcss-animate")).default ?? (await import("tailwindcss-animate"))
+	],
 } satisfies Config;
