@@ -18,7 +18,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const { plan_id, plan_category, user_id, payment_method = 'pix', municipio = 'sao_paulo' } = await req.json()
+    const { plan_id, plan_category, user_id, payment_method = 'pix', municipio = 'sao_paulo', intended_leader_id = null } = await req.json()
 
     console.log('Iniciando criação de pagamento:', { plan_id, plan_category, user_id, payment_method, municipio })
 
@@ -198,13 +198,52 @@ serve(async (req) => {
       console.log('✅ Novo cliente criado com sucesso:', customerId);
     }
 
+    // Create Order before provider call to carry order_id in externalReference
+    const orderId = crypto.randomUUID()
+    const amountCents = Math.round(Number(entryAmount) * 100)
+
+    // Validate intended leader (if provided) exists
+    let validatedLeaderId: string | null = null
+    if (intended_leader_id) {
+      const { data: leaderProfile } = await supabaseClient
+        .from('profiles')
+        .select('id')
+        .eq('id', intended_leader_id)
+        .single()
+      validatedLeaderId = leaderProfile?.id || null
+    }
+
+    // Insert Order with temporary provider_session_id = orderId (updated after ASAAS)
+    const { data: orderRecord, error: orderError } = await supabaseClient
+      .from('orders')
+      .insert({
+        id: orderId,
+        user_id: user.id, // profiles.id
+        plan_id: plan_id,
+        intended_leader_id: validatedLeaderId,
+        provider_session_id: orderId,
+        amount_cents: amountCents,
+        currency: 'BRL',
+        status: 'pending',
+        metadata: { plan_table_source: planTableSource }
+      })
+      .select()
+      .single()
+
+    if (orderError) {
+      console.error('❌ Erro ao criar Order:', orderError)
+      throw new Error('Erro ao criar pedido')
+    }
+
+    const externalRef = `order=${orderRecord.id};leader=${validatedLeaderId || ''}`
+
     const paymentData = {
       customer: customerId,
       billingType: payment_method === 'pix' ? 'PIX' : 'BOLETO',
       value: entryAmount,
       dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 dias
       description: `Entrada do plano: ${planData.name} (10% do valor total)`,
-      externalReference: `plan_${plan_id}_user_${user_id}`,
+      externalReference: externalRef,
       postalService: false
     }
 
@@ -272,7 +311,7 @@ serve(async (req) => {
       }
     }
 
-    // Salvar transação no banco de dados
+    // Salvar transação no banco de dados (legado/compatibilidade)
     const { data: transacaoRecord, error: transacaoError } = await supabaseClient
       .from('transacoes')
       .insert({
@@ -316,7 +355,7 @@ serve(async (req) => {
         plan_name: planData.name,
         customer_id: customerId,
         due_date: asaasResult.dueDate,
-        external_reference: `plan_${plan_id}_user_${user_id}`
+        external_reference: externalRef
       })
       .select()
       .single();
@@ -342,6 +381,16 @@ serve(async (req) => {
     // Fallback para invoiceUrl genérica
     else if (asaasResult.invoiceUrl) {
       redirectUrl = asaasResult.invoiceUrl;
+    }
+
+    // Update order with provider session id (ASAAS payment id)
+    const { error: updateOrderSessionError } = await supabaseClient
+      .from('orders')
+      .update({ provider_session_id: asaasResult.id, metadata: { ...orderRecord.metadata, asaas_payment_id: asaasResult.id } })
+      .eq('id', orderRecord.id)
+
+    if (updateOrderSessionError) {
+      console.warn('⚠️ Falha ao atualizar provider_session_id do Order:', updateOrderSessionError)
     }
 
     // Retornar dados otimizados para checkout
