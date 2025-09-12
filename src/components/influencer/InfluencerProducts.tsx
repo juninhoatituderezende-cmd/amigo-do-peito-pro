@@ -109,11 +109,18 @@ export const InfluencerProducts = () => {
 
   const loadAffiliateStats = async () => {
     try {
-      // Mock affiliate stats since the tables don't exist
-      const totalLinks = products.length;
-      const totalClicks = products.reduce((sum, product) => sum + (product.my_clicks || 0), 0);
-      const totalConversions = products.reduce((sum, product) => sum + (product.my_conversions || 0), 0);
-      const totalCommission = products.reduce((sum, product) => sum + (product.my_commission_earned || 0), 0);
+      if (!user) return;
+
+      // Contar links reais do usuário
+      const { data: planLinks } = await supabase
+        .from('plan_referral_links')
+        .select('id, clicks_count, conversions_count, total_commission')
+        .eq('user_id', user.id);
+
+      const totalLinks = planLinks?.length || 0;
+      const totalClicks = (planLinks || []).reduce((sum: number, l: any) => sum + (l.clicks_count || 0), 0);
+      const totalConversions = (planLinks || []).reduce((sum: number, l: any) => sum + (l.conversions_count || 0), 0);
+      const totalCommission = (planLinks || []).reduce((sum: number, l: any) => sum + Number(l.total_commission || 0), 0);
       const conversionRate = totalClicks > 0 ? (totalConversions / totalClicks) * 100 : 0;
 
       setAffiliateStats({
@@ -130,8 +137,17 @@ export const InfluencerProducts = () => {
 
   const createAffiliateLink = async (productId: string) => {
     try {
-      const referralCode = `INF${user?.id?.slice(-6)}${productId.slice(-6)}${Date.now().toString().slice(-4)}`.toUpperCase();
-      const affiliateUrl = `${window.location.origin}/ref/${referralCode}`;
+      if (!user) throw new Error('Não autenticado');
+
+      // Gerar/obter link por plano customizado, se existir
+      // Caso não haja plano, usar referral global do profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('referral_code')
+        .eq('user_id', user.id)
+        .single();
+
+      let affiliateUrl = `${window.location.origin}/inscrever?ref=${profile?.referral_code}`;
       
       // Update the product in state
       setProducts(prev => prev.map(product => 
@@ -212,7 +228,7 @@ export const InfluencerProducts = () => {
   };
 
   const calculateCommission = (price: number) => {
-    return price * 0.25; // 25% commission for influencers
+    return price * 0.25; // 25% sobre a entrada
   };
 
   if (loading) {

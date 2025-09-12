@@ -88,6 +88,32 @@ export const useReferralTracking = (): ReferralTracking => {
       // Prioriza o código da URL se for válido
       setReferralCodeState(urlReferralCode);
       secureStorage.setItem('pendingReferralCode', urlReferralCode);
+
+      // Disparar tracking de clique de forma best-effort
+      try {
+        // Using window.env fallback to avoid TS import.meta typing issues in some setups
+        // @ts-ignore
+        const baseUrl = (import.meta as any).env?.VITE_SUPABASE_URL || (window as any)?.ENV?.VITE_SUPABASE_URL;
+        // @ts-ignore
+        const anonKey = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || (window as any)?.ENV?.VITE_SUPABASE_ANON_KEY;
+        fetch(`${baseUrl}/rest/v1/rpc/record_influencer_click`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': anonKey,
+            'Authorization': `Bearer ${anonKey}`
+          },
+          body: JSON.stringify({
+            p_referral_code: urlReferralCode,
+            p_user_id: null,
+            p_user_agent: navigator.userAgent,
+            p_ip_hash: null,
+            p_context: { path: window.location.pathname }
+          })
+        });
+      } catch (e) {
+        // best-effort, ignore errors
+      }
     } else if (savedReferralCode) {
       // Usa o código salvo se não houver na URL
       setReferralCodeState(savedReferralCode);

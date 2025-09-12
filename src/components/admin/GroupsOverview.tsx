@@ -15,40 +15,7 @@ interface GroupData {
   createdAt: string;
 }
 
-const mockGroups: GroupData[] = [
-  {
-    id: "1",
-    name: "Grupo Fechamento Braço #1",
-    members: 8,
-    totalPaid: 3200,
-    currentValue: 3200,
-    targetValue: 4000,
-    status: "filling",
-    createdAt: "2024-01-15"
-  },
-  {
-    id: "2", 
-    name: "Grupo Prótese Dental #2",
-    members: 10,
-    totalPaid: 5000,
-    currentValue: 5000,
-    targetValue: 5000,
-    status: "contemplated",
-    contemplatedMember: "Maria Silva",
-    createdAt: "2024-01-10"
-  },
-  {
-    id: "3",
-    name: "Grupo Fechamento Perna #1", 
-    members: 12,
-    totalPaid: 6000,
-    currentValue: 6000,
-    targetValue: 6000,
-    status: "completed",
-    contemplatedMember: "João Santos",
-    createdAt: "2024-01-05"
-  }
-];
+const mockGroups: GroupData[] = [];
 
 export const GroupsOverview = () => {
   const getStatusColor = (status: GroupData["status"]) => {
