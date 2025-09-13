@@ -196,6 +196,55 @@ serve(async (req) => {
     // Mark order paid
     await supabaseClient.from('orders').update({ status: 'paid', updated_at: new Date().toISOString() }).eq('id', order.id);
 
+    // Mirror to legacy plan_groups/group_participants so existing dashboards work
+    try {
+      // Resolve buyer auth.user id from profiles.id
+      const { data: buyerProfileRow } = await supabaseClient
+        .from('profiles')
+        .select('user_id, referral_code')
+        .eq('id', buyerProfileId)
+        .single();
+
+      const buyerAuthUserId = buyerProfileRow?.user_id;
+      const entryAmount = expectedCents / 100.0;
+
+      if (buyerAuthUserId) {
+        if (finalLeaderId && finalLeaderId !== buyerProfileId) {
+          // Join by leader's referral code
+          const { data: leaderProfileRow } = await supabaseClient
+            .from('profiles')
+            .select('referral_code')
+            .eq('id', finalLeaderId)
+            .single();
+
+          const leaderRefCode = leaderProfileRow?.referral_code;
+          if (leaderRefCode) {
+            await supabaseClient.rpc('join_group_by_referral', {
+              user_uuid: buyerAuthUserId,
+              referral_code_param: leaderRefCode,
+              entry_amount: entryAmount
+            });
+          } else {
+            // Fallback: create own group
+            await supabaseClient.rpc('create_user_plan_group', {
+              user_uuid: buyerAuthUserId,
+              plan_uuid: order.plan_id,
+              entry_amount: entryAmount
+            });
+          }
+        } else {
+          // Create buyer's own group and add as first participant
+          await supabaseClient.rpc('create_user_plan_group', {
+            user_uuid: buyerAuthUserId,
+            plan_uuid: order.plan_id,
+            entry_amount: entryAmount
+          });
+        }
+      }
+    } catch (mirrorErr) {
+      console.warn('[asaas-webhook] plan_groups mirror failed (non-fatal):', mirrorErr);
+    }
+
     // On completion: if current_size == capacity, mark completed and notify
     if (groupId) {
       const { data: grp } = await supabaseClient.from('groups').select('id, current_size, capacity, status').eq('id', groupId).single();

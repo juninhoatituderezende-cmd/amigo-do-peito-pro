@@ -60,13 +60,29 @@ export const PaymentCheckout = ({ plan, onBack, onSuccess }: PaymentCheckoutProp
       });
 
       // Chamar edge function para criar pagamento via Asaas
+      // Resolver líder pretendido a partir do código de referência na URL (se houver)
+      let intendedLeaderId: string | null = null;
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const refCodeFromUrl = urlParams.get('ref');
+        if (refCodeFromUrl) {
+          const { data: leaderProfile } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('referral_code', refCodeFromUrl)
+            .maybeSingle();
+          intendedLeaderId = leaderProfile?.id || null;
+        }
+      } catch {}
+
       const { data: response, error } = await supabase.functions.invoke('create-asaas-payment', {
         body: {
           plan_id: plan.id,
           plan_category: 'tatuador', // Detectar automaticamente baseado no plano
           user_id: user.id,
           payment_method: method,
-          municipio: 'sao_paulo'
+          municipio: 'sao_paulo',
+          intended_leader_id: intendedLeaderId || undefined
         }
       });
 
