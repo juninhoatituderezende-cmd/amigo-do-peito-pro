@@ -254,12 +254,30 @@ export const PlansSelection = ({ onSelectPlan, selectedPlanId }: PlansSelectionP
         user_name: profileData.full_name
       });
       
+      // Capturar referral da URL/localStorage para associar líder pretendido
+      // O backend aceita intended_leader_id via externalReference leader=<id> quando disponível
+      let intendedLeaderId: string | null = null;
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const refCodeFromUrl = urlParams.get('ref');
+        if (refCodeFromUrl) {
+          // Resolve profile by referral_code
+          const { data: leaderProfile } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('referral_code', refCodeFromUrl)
+            .maybeSingle();
+          intendedLeaderId = leaderProfile?.id || null;
+        }
+      } catch {}
+
       const { data, error } = await supabase.functions.invoke('create-asaas-payment', {
         body: {
           plan_id: selectedPlan.id,
           plan_category: selectedPlan.category,
           user_id: session.user.id,
-          payment_method: method
+          payment_method: method,
+          intended_leader_id: intendedLeaderId || undefined
         }
       });
 

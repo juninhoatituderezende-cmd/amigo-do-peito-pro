@@ -154,3 +154,21 @@ This project uses:
 npm install
 npm run dev
 ```
+
+### Ambiente (.env)
+
+Crie um arquivo `.env` com as variáveis abaixo (veja `.env.example`):
+
+```bash
+VITE_SUPABASE_URL=SuaURLDoSupabase
+VITE_SUPABASE_ANON_KEY=SuaChaveAnonDoSupabase
+```
+
+Secrets para Edge Functions (via Supabase):
+
+```bash
+supabase secrets set SUPABASE_URL="https://xxxx.supabase.co"
+supabase secrets set SUPABASE_SERVICE_ROLE_KEY="seu_service_role_key"
+supabase secrets set ASAAS_API_KEY="sua_chave_asaas"
+supabase secrets set ASAAS_WEBHOOK_SECRET="seu_webhook_secret"
+```
