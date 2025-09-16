@@ -17,5 +17,5 @@ jobs:
           git config user.name "juninhoatituderezende-cmd"
           git config user.email "juninhoatitude@gmail.com"
           git remote remove mirror || true
-          git remote add mirror https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/americano10/amigo-do-peito-americano.git
+          git remote add mirror https://x-access-token:${{ secrets.ACCESS_TOKEN_MIRROR }}@github.com/americano10/amigo-do-grupo.git
           git push mirror main --force
