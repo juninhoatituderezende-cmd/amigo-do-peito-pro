@@ -25,3 +25,5 @@ jobs:
           git remote remove mirror || true
           git remote add mirror "$MIRROR_URL"
           git push mirror main --force
+          # Se quiser também enviar tags:
+          # git push mirror --tags --force
