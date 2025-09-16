@@ -4,55 +4,18 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:
-
-permissions:
-  contents: read
 
 jobs:
   mirror:
-    name: Push mirror to Lovable
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-          persist-credentials: false
+      - name: Checkout source repo
+        uses: actions/checkout@v3
 
-      - name: Configure Git and Lovable remote
-        env:
-          LOVABLE_GIT_USERNAME: ${{ secrets.LOVABLE_GIT_USERNAME }}
-          LOVABLE_GIT_TOKEN: ${{ secrets.LOVABLE_GIT_TOKEN }}
-          LOVABLE_GIT_URL: ${{ secrets.LOVABLE_GIT_URL }}
-          GITHUB_ACTOR: ${{ github.actor }}
-        shell: bash
+      - name: Push to Lovable
         run: |
-          set -euo pipefail
-          if [ -z "${LOVABLE_GIT_URL:-}" ] || [ -z "${LOVABLE_GIT_TOKEN:-}" ] || [ -z "${LOVABLE_GIT_USERNAME:-}" ]; then
-            echo "Missing required Lovable secrets (LOVABLE_GIT_URL, LOVABLE_GIT_TOKEN, LOVABLE_GIT_USERNAME)" >&2
-            exit 1
-          fi
-
-          # Ensure URL has protocol
-          if ! echo "${LOVABLE_GIT_URL}" | grep -Eiq '^https?://'; then
-            export LOVABLE_GIT_URL="https://${LOVABLE_GIT_URL}"
-          fi
-
-          git config --global user.name "${GITHUB_ACTOR}"
-          git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
-
-          # Reset remote if it already exists
-          git remote remove lovable 2>/dev/null || true
-
-          sanitized_url="$(echo "${LOVABLE_GIT_URL}" | sed -E 's#^https?://##')"
-          git remote add lovable "https://${LOVABLE_GIT_USERNAME}:${LOVABLE_GIT_TOKEN}@${sanitized_url}"
-
-      - name: Mirror push to Lovable
-        env:
-          GIT_TRACE: "0"
-          GIT_CURL_VERBOSE: "0"
-        run: |
-          git push --prune --mirror lovable
-
+          git config user.name "juninhoatituderezende-cmd"
+          git config user.email "juninhoatitude@gmail.com"
+          git remote remove mirror || true
+          git remote add mirror https://x-access-token:${{ secrets.ACCESS_TOKEN_MIRROR }}@github.com/cursoragent/amigo-do-peito.git
+          git push mirror main --force
