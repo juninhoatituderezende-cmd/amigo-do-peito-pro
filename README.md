@@ -172,3 +172,4 @@ supabase secrets set SUPABASE_SERVICE_ROLE_KEY="seu_service_role_key"
 supabase secrets set ASAAS_API_KEY="sua_chave_asaas"
 supabase secrets set ASAAS_WEBHOOK_SECRET="seu_webhook_secret"
 ```
+ 
