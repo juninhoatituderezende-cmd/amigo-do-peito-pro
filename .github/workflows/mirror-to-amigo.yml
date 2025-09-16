@@ -1,0 +1,20 @@
+name: Mirror to amigo-do-grupo
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source repo
+        uses: actions/checkout@v3
+
+      - name: Push to amigo-do-grupo
+        run: |
+          git config --global user.name "juninhoatituderezende"
+          git config --global user.email "juninhoatituderezende@gmail.com"
+          git remote add mirror https://x-access-token:${{ secrets.GH_PAT }}@github.com/americano10/amigo-do-grupo.git
+          git push mirror main --force
