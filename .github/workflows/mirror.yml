@@ -1,0 +1,20 @@
+name: Mirror to Americano10
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Push changes to Americano10
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git remote add mirror https://x-access-token:${{ secrets.MIRROR_TOKEN }}@github.com/americano10/amigo-do-grupo.git
+          git push mirror main --force
