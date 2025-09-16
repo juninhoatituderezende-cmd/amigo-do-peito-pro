@@ -12,9 +12,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Push changes to Lovable
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git remote add lovable https://x-access-token:${{ secrets.LOVABLE_TOKEN }}@github.com/americano10/amigo-do-peito.git
-          git push lovable main --force
+    - name: Push changes to Lovable
+      run: |
+        git config --global user.name "juninhoatituderezende-cmd"
+        git config --global user.email "juninhoatitude@gmail.com"
+        git remote add lovable https://x-access-token:${{ secrets.ACCESS_TOKEN_MIRROR }}@github.com/SEU-USUARIO/SEU-REPOSITORIO-DESTINO.git
+        git push lovable main --force
