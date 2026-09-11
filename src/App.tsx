@@ -8,7 +8,6 @@ import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
 import { AdminLoginRedirect } from "@/components/AdminLoginRedirect";
 import { AuthRedirect } from "@/components/AuthRedirect";
 import { ScrollToTop, ConnectionStatus } from "@/components/ui/ux-improvements";
-import { diagnostics } from "@/lib/diagnostics";
 import { ProWallet } from "@/components/pro/ProWallet";
 import { InfluencerWallet } from "@/components/influencer/InfluencerWallet";
 import { MobileDebugPanel } from "./components/MobileDebugPanel";
@@ -31,19 +30,12 @@ import { RelatoriosContabeis } from "./components/admin/RelatoriosContabeis";
 import { ContratacaoMonitor } from "./components/admin/ContratacaoMonitor";
 import { PlansMonitor } from "./components/admin/PlansMonitor";
 import { DataValidationMonitor } from "./components/admin/DataValidationMonitor";
-import Register from "./pages/Register";
-import ProfessionalLogin from "./pages/ProfessionalLogin";
 import Confirmation from "./pages/Confirmation";
 import ProDashboard from "./pages/pro/ProDashboard";
 import ProProfile from "./pages/pro/ProProfile";
 import ProSchedule from "./pages/pro/ProSchedule";
 import ProFinances from "./pages/pro/ProFinances";
 import ProServices from "./pages/pro/ProServices";
-import UserRegister from "./pages/UserRegister";
-import UserLogin from "./pages/UserLogin";
-import CreateAdmin from "./pages/CreateAdmin";
-import CreateAdmins from "./pages/CreateAdmins";
-import QuickLogin from "./pages/QuickLogin";
 import UserDashboard from "./pages/user/UserDashboard";
 import UserMarketplace from "./pages/user/UserMarketplace";
 import UserWithdrawals from "./pages/user/UserWithdrawals";
@@ -57,10 +49,7 @@ import UserCredits from "./pages/user/UserCredits";
 import UserProfile from "./pages/user/UserProfile";
 import Marketplace from "./pages/Marketplace";
 import Plans from "./pages/Plans";
-import PlanSubscription from "./pages/PlanSubscription";
 import PaymentReturn from "./pages/PaymentReturn";
-import InfluencerRegister from "./pages/InfluencerRegister";
-import InfluencerLogin from "./pages/InfluencerLogin";
 import InfluencerDashboard from "./pages/influencer/InfluencerDashboard";
 import InfluencerTools from "./pages/influencer/InfluencerTools";
 import MLMProducts from "./pages/MLMProducts";
@@ -73,17 +62,11 @@ import About from "./pages/About";
 import EmailConfirmationHelp from "./pages/EmailConfirmationHelp";
 import Todos from "./pages/Todos";
 
-// Initialize diagnostics
-
-diagnostics.enableDebugMode();
-
-// QueryClient is now imported from config file
-
 const App = () => (
   <ErrorBoundary>
     <Suspense fallback={
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+        <div className="animate-spin rounded-rounded-full h-32 w-32 border-b-2 border-primary"></div>
       </div>
     }>
       <BrowserRouter>
@@ -95,28 +78,22 @@ const App = () => (
             <AuthRedirect />
             <ScrollToTop />
             <Routes>
-              {/* Public Routes */}
               <Route path="/" element={<Index />} />
               <Route path="/sobre" element={<About />} />
               <Route path="/confirmacao-email" element={<EmailConfirmationHelp />} />
               <Route path="/todos" element={<Todos />} />
-              
-              {/* Nova rota unificada de autenticação */}
               <Route path="/auth" element={<Auth />} />
-              
-              {/* Rotas de compatibilidade - redirecionam para /auth */}
               <Route path="/cadastro" element={<Navigate to="/auth?mode=register" replace />} />
               <Route path="/usuario/cadastro" element={<Navigate to="/auth?mode=register" replace />} />
               <Route path="/usuario/login" element={<Navigate to="/auth?mode=login" replace />} />
               <Route path="/influenciador/cadastro" element={<Navigate to="/auth?mode=register" replace />} />
               <Route path="/influenciador/login" element={<Navigate to="/auth?mode=login" replace />} />
               <Route path="/profissional/login" element={<Navigate to="/auth?mode=login" replace />} />
-              
               <Route path="/confirmacao" element={<Confirmation />} />
               <Route path="/admin-login" element={<AdminLogin />} />
-              <Route path="/login-rapido" element={<QuickLogin />} />
-              <Route path="/create-admin" element={<CreateAdmin />} />
-              <Route path="/create-admins" element={<CreateAdmins />} />
+              <Route path="/login-rapido" element={<Navigate to="/auth?mode=login" replace />} />
+              <Route path="/create-admin" element={<Navigate to="/auth" replace />} />
+              <Route path="/create-admins" element={<Navigate to="/auth" replace />} />
               <Route path="/usuario/dashboard" element={
                 <ProtectedRoute role="user">
                   <UserDashboard />
@@ -171,8 +148,6 @@ const App = () => (
               <Route path="/plano/:planId" element={<PlanDetailsComponent />} />
               <Route path="/plano-detalhes/:planId" element={<PlanDetailsComponent />} />
               <Route path="/pagamento/retorno" element={<PaymentReturn />} />
-              
-              {/* Professional Routes */}
               <Route path="/profissional/dashboard" element={
                 <ProtectedRoute role="professional">
                   <ProDashboard />
@@ -218,8 +193,6 @@ const App = () => (
                   </div>
                 </ProtectedRoute>
               } />
-              
-              {/* Influencer Routes */}
               <Route path="/influenciador/dashboard" element={
                 <ProtectedRoute role="influencer">
                   <InfluencerDashboard />
@@ -250,15 +223,10 @@ const App = () => (
                   </div>
                 </ProtectedRoute>
               } />
-              
-              {/* MLM Routes */}
               <Route path="/mlm/products" element={<MLMProducts />} />
               <Route path="/mlm/dashboard" element={<MLMDashboard />} />
               <Route path="/mlm/success" element={<MLMSuccess />} />
               <Route path="/mlm/cancel" element={<MLMCancel />} />
-              
-              {/* Admin Routes - Protected with AdminProtectedRoute */}
-              {/* Admin-login route for direct admin access */}
               <Route path="/admin" element={
                 <AdminLoginRedirect>
                   <AdminLogin />
@@ -314,39 +282,37 @@ const App = () => (
                   <AdminNotificacoes />
                 </AdminProtectedRoute>
               } />
-               <Route path="/admin/relatorios" element={
-                 <AdminProtectedRoute>
-                   <AdminRelatorios />
-                 </AdminProtectedRoute>
-               } />
-               <Route path="/admin/relatorios-contabeis" element={
-                 <AdminProtectedRoute>
-                   <RelatoriosContabeis />
-                 </AdminProtectedRoute>
-               } />
-               <Route path="/admin/monitor-contratacoes" element={
-                 <AdminProtectedRoute>
-                   <ContratacaoMonitor />
-                 </AdminProtectedRoute>
-               } />
-               <Route path="/admin/monitor-planos" element={
-                 <AdminProtectedRoute>
-                   <PlansMonitor />
-                 </AdminProtectedRoute>
-               } />
-               <Route path="/admin/validacao-dados" element={
-                 <AdminProtectedRoute>
-                   <DataValidationMonitor />
-                 </AdminProtectedRoute>
-               } />
-              
-              {/* Catch-all route */}
+              <Route path="/admin/relatorios" element={
+                <AdminProtectedRoute>
+                  <AdminRelatorios />
+                </AdminProtectedRoute>
+              } />
+              <Route path="/admin/relatorios-contabeis" element={
+                <AdminProtectedRoute>
+                  <RelatoriosContabeis />
+                </AdminProtectedRoute>
+              } />
+              <Route path="/admin/monitor-contratacoes" element={
+                <AdminProtectedRoute>
+                  <ContratacaoMonitor />
+                </AdminProtectedRoute>
+              } />
+              <Route path="/admin/monitor-planos" element={
+                <AdminProtectedRoute>
+                  <PlansMonitor />
+                </AdminProtectedRoute>
+              } />
+              <Route path="/admin/validacao-dados" element={
+                <AdminProtectedRoute>
+                  <DataValidationMonitor />
+                </AdminProtectedRoute>
+              } />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </TooltipProvider>
         </AuthProvider>
       </BrowserRouter>
-      <MobileDebugPanel />
+      {import.meta.env.DEV ? <MobileDebugPanel /> : null}
     </Suspense>
   </ErrorBoundary>
 );
